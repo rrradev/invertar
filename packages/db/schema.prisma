@@ -19,6 +19,7 @@ model Organization {
 model User {
   id                String       @id @default(cuid())
   username          String
+  email             String
   hashedPassword    String?
   oneTimeAccessCode String?      @unique
   oneTimeAccessCodeExpiry DateTime?
@@ -34,6 +35,7 @@ model User {
   updatedAt         DateTime     @updatedAt
 
   @@unique([organizationId, username])
+  @@unique([organizationId, email])
 }
 
 enum UserRole {

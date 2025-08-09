@@ -17,5 +17,12 @@ export const setPasswordInput = z.object({
   oneTimeAccessCode: z.string().min(6),
 });
 
+export const createAdminInput = z.object({
+  username: z.string().min(3, "Username must be at least 3 characters"),
+  email: z.string().email("Invalid email address"),
+  organizationName: z.string().min(1, "Organization name is required"),
+});
+
 export type LoginInput = z.infer<typeof loginInput>;
 export type SetPasswordInput = z.infer<typeof setPasswordInput>;
+export type CreateAdminInput = z.infer<typeof createAdminInput>;
