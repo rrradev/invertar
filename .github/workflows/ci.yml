@@ -43,8 +43,8 @@ jobs:
         run: pnpm exec prisma generate
         working-directory: packages/db
 
-      - name: Run server and tests
-        run: pnpm exec concurrently "pnpm dev:server" "pnpm test"
-
-
-
+      - name: Start server, wait for it, then run tests
+        run: |
+          pnpm dev:server &
+          pnpm exec wait-on tcp:3000
+          pnpm test 
