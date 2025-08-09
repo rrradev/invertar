@@ -10,6 +10,7 @@ on:
     branches:
       - main
       - develop
+  workflow_dispatch:
 
 jobs:
   test:
@@ -47,4 +48,5 @@ jobs:
         run: |
           pnpm dev:server &
           pnpm exec wait-on tcp:3000
+
           pnpm test 
