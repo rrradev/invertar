@@ -24,6 +24,10 @@ const trpcOptions: FastifyTRPCPluginOptions<typeof appRouter> = {
 
 server.register(fastifyTRPCPlugin, trpcOptions);
 
+server.get('/health', async (request, reply) => {
+  reply.code(200).send({ status: 'ok' });
+});
+
 (async () => {
   try {
     await server.listen({ port: 3000 });
