@@ -14,12 +14,7 @@ on:
 jobs:
   test:
     runs-on: ubuntu-latest
-    env:
-      JWT_SECRET: ${{ secrets.JWT_SECRET }}
-      DATABASE_URL: ${{ secrets.DATABASE_URL }}
-      SUPERADMIN_USERNAME: ${{ secrets.SUPERADMIN_USERNAME }}
-      SUPERADMIN_PASSWORD: ${{ secrets.SUPERADMIN_PASSWORD }}
-      SUPERADMIN_ORGANIZATION: ${{ secrets.SUPERADMIN_ORGANIZATION }}
+    environment: test 
 
     steps:
       - name: Checkout code
@@ -52,6 +47,7 @@ jobs:
 
       - name: Run tests
         run: pnpm test
+
 
 
 
