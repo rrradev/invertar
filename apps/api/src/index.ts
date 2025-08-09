@@ -4,6 +4,7 @@ import { appRouter } from './appRouter';
 import { fastifyTRPCPlugin } from '@trpc/server/adapters/fastify';
 import type { FastifyTRPCPluginOptions } from '@trpc/server/adapters/fastify';
 import { createContext } from './context';
+import { TRPCError } from '@trpc/server';
 
 const server = Fastify({
   maxParamLength: 5000,
@@ -17,7 +18,7 @@ const trpcOptions: FastifyTRPCPluginOptions<typeof appRouter> = {
   trpcOptions: {
     router: appRouter,
     createContext: createContext,
-    onError({ path, error }: { path?: string; error: TRPCErrorLike }) {
+    onError({ path, error }: { path?: string; error: TRPCError }) {
       server.log.error(`Error in tRPC handler on path '${path}': ${error.message}`);
     },
   },

@@ -31,7 +31,7 @@ export const t = initTRPC.context<Context>().create({
 export const router = t.router;
 export const publicProcedure = t.procedure;
 
-export const protectedProcedure = t.procedure.use(({ ctx, next }: { ctx: Context; next: MiddlewareFunction }) => {
+export const protectedProcedure = t.procedure.use(({ ctx, next }) => {
   const allowedRoles: UserRoleType[] = ['ADMIN', 'USER'];
   if (!ctx.user || !allowedRoles.includes(ctx.user.role)) {
     throw new TRPCError({ code: 'UNAUTHORIZED' });
@@ -39,7 +39,7 @@ export const protectedProcedure = t.procedure.use(({ ctx, next }: { ctx: Context
   return next();
 });
 
-export const adminProcedure = t.procedure.use(({ ctx, next }: { ctx: Context; next: any }) => {
+export const adminProcedure = t.procedure.use(({ ctx, next }) => {
   if (!ctx.user || ctx.user.role !== UserRole.ADMIN) {
     throw new TRPCError({ code: 'FORBIDDEN' });
   }
