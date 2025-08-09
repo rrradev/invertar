@@ -1,0 +1,38 @@
+{
+  "compilerOptions": {
+    "target": "ES2020",
+    "module": "CommonJS",
+    "strict": true,
+    "esModuleInterop": true,
+    "skipLibCheck": true,
+    "forceConsistentCasingInFileNames": true,
+    "moduleResolution": "node",
+    "baseUrl": ".",
+    "paths": {
+      "@repo/db": [
+        "packages/db"
+      ],
+      "@repo/auth/*": [
+        "packages/auth/src/*"
+      ],
+      "@repo/types/*": [
+        "packages/types/*"
+      ]
+    },
+  },
+  "exclude": [
+    "node_modules",
+    "dist"
+  ],
+    "references": [
+    {
+      "path": "packages/db"
+    },
+    {
+      "path": "packages/auth"
+    },
+    {
+      "path": "packages/types"
+    }
+  ]
+}

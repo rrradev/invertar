@@ -1,0 +1,85 @@
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+model Organization {
+  id        String    @id @default(cuid())
+  name      String    @unique
+  users     User[]
+  folders   Folder[]
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+}
+
+model User {
+  id                String       @id @default(cuid())
+  username          String
+  hashedPassword    String?
+  oneTimeAccessCode String?      @unique
+  oneTimeAccessCodeExpiry DateTime?
+  role              UserRole     @default(USER)
+  organizationId    String
+  organization      Organization @relation(fields: [organizationId], references: [id])
+
+  // Back-relations for lastModifiedBy
+  modifiedFolders   Folder[]     @relation("FolderLastModifiedBy")
+  modifiedItems     Item[]       @relation("ItemLastModifiedBy")
+
+  createdAt         DateTime     @default(now())
+  updatedAt         DateTime     @updatedAt
+
+  @@unique([organizationId, username])
+}
+
+enum UserRole {
+  ADMIN
+  USER
+  SUPER_ADMIN
+}
+
+model Folder {
+  id               String   @id @default(cuid())
+  name             String
+  organizationId   String
+  organization     Organization @relation(fields: [organizationId], references: [id])
+  items            Item[]
+  photos           Photo[]
+
+  lastModifiedById String
+  lastModifiedBy   User     @relation("FolderLastModifiedBy", fields: [lastModifiedById], references: [id])
+
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+}
+
+model Item {
+  id               String   @id @default(cuid())
+  name             String
+  description      String?
+  price            Float
+  quantity         Int      @default(0)
+  folderId         String
+  folder           Folder   @relation(fields: [folderId], references: [id])
+  photos           Photo[]
+
+  lastModifiedById String
+  lastModifiedBy   User     @relation("ItemLastModifiedBy", fields: [lastModifiedById], references: [id])
+
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+}
+
+model Photo {
+  id        String   @id @default(cuid())
+  url       String
+  itemId    String?  // Photo belongs either to an item
+  folderId  String?  // or to a folder
+  item      Item?    @relation(fields: [itemId], references: [id])
+  folder    Folder?  @relation(fields: [folderId], references: [id])
+  createdAt DateTime @default(now())
+}
