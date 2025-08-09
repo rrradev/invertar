@@ -17,7 +17,7 @@ const trpcOptions: FastifyTRPCPluginOptions<typeof appRouter> = {
   trpcOptions: {
     router: appRouter,
     createContext: createContext,
-    onError({ path, error }: { path?: string; error: any }) {
+    onError({ path, error }: { path?: string; error: TRPCErrorLike }) {
       server.log.error(`Error in tRPC handler on path '${path}': ${error.message}`);
     },
   },
