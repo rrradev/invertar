@@ -39,8 +39,12 @@ jobs:
       - name: Install dependencies
         run: pnpm install
 
+      - name: Generate Prisma client
+        run: pnpm exec prisma generate
+
       - name: Run server and tests
         run: pnpm exec concurrently "pnpm dev:server" "pnpm test"
+
 
 
 
