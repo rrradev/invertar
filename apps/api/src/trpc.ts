@@ -1,7 +1,6 @@
 import { initTRPC, TRPCError } from "@trpc/server";
 import type { Context } from './context';
-import { UserRoleType } from "@repo/types/users/roles";
-import { UserRole } from "@prisma/client";
+import { UserRole, UserRoleType } from "@repo/types/users/roles";
 import z, { ZodError } from "zod";
 
 export const t = initTRPC.context<Context>().create({
