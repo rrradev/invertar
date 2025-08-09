@@ -1,8 +1,8 @@
 import { z } from 'zod';
 
 export const loginInput = z.object({
-  username: z.string().min(1, "Username is required").trim(),
-  organizationName: z.string().min(1, "Organization name is required").trim(),
+  username: z.string().trim().min(1, "Username is required"),
+  organizationName: z.string().trim().min(1, "Organization name is required"),
   password: z.string().min(1, "Password is required"),
 });
 

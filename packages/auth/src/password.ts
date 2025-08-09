@@ -1,6 +1,9 @@
 import bcrypt from 'bcrypt';
 
-const SALT_ROUNDS = parseInt(process.env.BCRYPT_SALT_ROUNDS || '12', 10);
+const SALT_ROUNDS = (() => {
+  const rounds = parseInt(process.env.BCRYPT_SALT_ROUNDS || '12', 10);
+  return isNaN(rounds) ? 12 : rounds;
+})();
 
 /**
  * Hashes a password using bcrypt
