@@ -1,0 +1,53 @@
+name: CI
+
+on:
+  push:
+    branches:
+      - main
+      - develop
+      - feature/**
+  pull_request:
+    branches:
+      - main
+      - develop
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    env:
+      JWT_SECRET: ${{ secrets.JWT_SECRET }}
+      DATABASE_URL: ${{ secrets.DATABASE_URL }}
+      SUPERADMIN_USERNAME: ${{ secrets.SUPERADMIN_USERNAME }}
+      SUPERADMIN_PASSWORD: ${{ secrets.SUPERADMIN_PASSWORD }}
+      SUPERADMIN_ORGANIZATION: ${{ secrets.SUPERADMIN_ORGANIZATION }}
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'pnpm'
+
+      - name: Install pnpm
+        run: npm install -g pnpm
+
+      - name: Install dependencies
+        run: pnpm install
+
+      - name: Start API server
+        run: pnpm dev:server &
+
+      - name: Wait for server to be ready
+        run: |
+          n=0
+          until curl -sf http://localhost:3000/health || [ $n -ge 30 ]; do
+            echo "Waiting for server..."
+            sleep 2
+            n=$((n+1))
+          done
+
+      - name: Run tests
+        run: pnpm test
