@@ -11,7 +11,7 @@ export const authRouter = router({
     .input(
       loginInput
     )
-    .mutation(async ({ input }: { input: any }) => {
+    .mutation(async ({ input }: { input: LoginInput }) => {
       const org = await prisma.organization.findUnique({
         where: { name: input.organizationName },
       });
