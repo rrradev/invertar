@@ -41,13 +41,10 @@ jobs:
 
       - name: Generate Prisma client
         run: pnpm exec prisma generate
+        working-directory: packages/db
 
       - name: Run server and tests
         run: pnpm exec concurrently "pnpm dev:server" "pnpm test"
-
-
-
-
 
 
 
