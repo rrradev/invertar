@@ -23,7 +23,6 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: '22.15.0'
-          cache: 'pnpm'
 
       - name: Setup pnpm
         uses: pnpm/action-setup@v2
@@ -37,8 +36,6 @@ jobs:
 
       - name: Install dependencies
         run: pnpm install
-
-      # ...rest of your steps...
 
       - name: Start API server
         run: pnpm dev:server &
@@ -54,4 +51,5 @@ jobs:
 
       - name: Run tests
         run: pnpm test
+
 
