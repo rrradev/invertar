@@ -1,3 +1,3 @@
-import { PrismaClient } from "@prisma/client";
+import { PrismaClient } from "./mock-client";
 
 export const prisma = new PrismaClient();
