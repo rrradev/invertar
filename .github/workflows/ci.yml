@@ -39,20 +39,9 @@ jobs:
       - name: Install dependencies
         run: pnpm install
 
-      - name: Start API server
-        run: pnpm dev:server &
+      - name: Run server and tests
+        run: pnpm exec concurrently "pnpm dev:server" "pnpm test"
 
-      - name: Wait for server to be ready
-        run: |
-          n=0
-          until curl -sf http://localhost:3000/health || [ $n -ge 10 ]; do
-            echo "Waiting for server..."
-            sleep 2
-            n=$((n+1))
-          done
-
-      - name: Run tests
-        run: pnpm test
 
 
 
