@@ -14,12 +14,6 @@ on:
 jobs:
   test:
     runs-on: ubuntu-latest
-    env:
-      JWT_SECRET: ${{ secrets.JWT_SECRET }}
-      DATABASE_URL: ${{ secrets.DATABASE_URL }}
-      SUPERADMIN_USERNAME: ${{ secrets.SUPERADMIN_USERNAME }}
-      SUPERADMIN_PASSWORD: ${{ secrets.SUPERADMIN_PASSWORD }}
-      SUPERADMIN_ORGANIZATION: ${{ secrets.SUPERADMIN_ORGANIZATION }}
 
     steps:
       - name: Checkout code
@@ -31,19 +25,20 @@ jobs:
           node-version: '22.15.0'
           cache: 'pnpm'
 
-      - name: Enable Corepack
-        run: corepack enable
-
       - name: Setup pnpm
         uses: pnpm/action-setup@v2
         with:
           version: 10.13.1
 
-      - name: Install pnpm globally (fallback)
-        run: npm install -g pnpm
+      - name: Debug pnpm installation
+        run: |
+          which pnpm || echo "pnpm not found in PATH"
+          pnpm --version || echo "pnpm version not available"
 
       - name: Install dependencies
         run: pnpm install
+
+      # ...rest of your steps...
 
       - name: Start API server
         run: pnpm dev:server &
@@ -59,3 +54,4 @@ jobs:
 
       - name: Run tests
         run: pnpm test
+
