@@ -31,7 +31,7 @@ export const t = initTRPC.context<Context>().create({
 export const router = t.router;
 export const publicProcedure = t.procedure;
 
-export const protectedProcedure = t.procedure.use(({ ctx, next }: { ctx: Context; next: any }) => {
+export const protectedProcedure = t.procedure.use(({ ctx, next }: { ctx: Context; next: MiddlewareFunction }) => {
   const allowedRoles: UserRoleType[] = ['ADMIN', 'USER'];
   if (!ctx.user || !allowedRoles.includes(ctx.user.role)) {
     throw new TRPCError({ code: 'UNAUTHORIZED' });
