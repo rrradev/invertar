@@ -20,11 +20,16 @@
       ]
     },
   },
+  "include": [
+    "packages/**/*",
+    "tests/**/*",
+    "tests/global.d.ts"
+  ],
   "exclude": [
     "node_modules",
     "dist"
   ],
-    "references": [
+  "references": [
     {
       "path": "packages/db"
     },

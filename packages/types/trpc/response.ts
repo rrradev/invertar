@@ -12,6 +12,6 @@ export class Success<
 }
 
 export type SuccessResponse<
-  TStatus extends SuccessStatus,
-  TExtra extends Record<string, any> = {}
+  TExtra extends Record<string, any> = {},
+  TStatus extends SuccessStatus = SuccessStatus
 > = { status: TStatus } & TExtra;

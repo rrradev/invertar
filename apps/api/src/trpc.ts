@@ -11,17 +11,17 @@ export const t = initTRPC.context<Context>().create({
       message = 'Something went wrong';
     }
 
-    if(error.cause instanceof ZodError) {
-      message = '';
+    if (error.cause instanceof ZodError) {
+      const messages = error.cause.issues.map(issue => issue.message).filter(Boolean);
+      message = messages.join(', ') || 'Validation error';
     }
 
     return {
       ...shape,
       message,
       data: {
-        zodError: error.cause instanceof ZodError
-          ? z.treeifyError(error.cause)
-          : null,
+        ...shape.data,
+        stack: {}
       },
     };
   },

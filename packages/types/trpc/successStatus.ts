@@ -4,4 +4,5 @@ export type SuccessStatus =
   | 'PROCEED'
   | 'ACCOUNT_CREATED'
   | 'EMAIL_SENT'
-  | 'ADMIN_CREATED';
+  | 'ADMIN_CREATED'
+  | 'VALID_ACCESS_CODE';
