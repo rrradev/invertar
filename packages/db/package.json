@@ -4,7 +4,7 @@
   "description": "Database utilities and Prisma client for the invertar application",
   "main": "index.ts",
   "scripts": {
-    "seed": "ts-node seed.ts"
+    "seed": "ts-node seed.ts",
     "build": "tsc",
     "dev": "tsc --watch",
     "clean": "rm -rf dist",
