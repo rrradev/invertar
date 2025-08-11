@@ -46,7 +46,11 @@ export const authRouter = router({
         throw new TRPCError({ code: "UNAUTHORIZED", message: "Password not set. Request access code." });
       }
 
-      const isValid = await verifyPassword(input.password || "", user.hashedPassword);
+      if (!input.password) {
+        throw new TRPCError({ code: "UNAUTHORIZED", message: "Password is required." });
+      }
+
+      const isValid = await verifyPassword(input.password, user.hashedPassword);
       if (!isValid) throw new TRPCError({ code: "UNAUTHORIZED", message: "Invalid credentials." });
 
       const token = generateJwt({

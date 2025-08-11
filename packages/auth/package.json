@@ -1,12 +1,14 @@
 {
   "name": "@repo/auth",
   "version": "1.0.0",
-  "description": "",
-  "main": "index.ts",
+  "description": "Authentication utilities for the invertar application",
+  "main": "src/index.ts",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "build": "tsc",
+    "dev": "tsc --watch",
+    "clean": "rm -rf dist"
   },
-  "keywords": [],
+  "keywords": ["auth", "jwt", "password", "bcrypt"],
   "author": "rradev",
   "license": "ISC",
   "packageManager": "pnpm@10.13.1",
