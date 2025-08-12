@@ -1,10 +1,10 @@
 import { Dispatcher, request } from 'undici';
-import { URL } from 'node:url';
 import { UserRole } from '@repo/types/users/roles';
-import { TRPCError } from '@trpc/server';
-import { Success, SuccessResponse } from '@repo/types/trpc/response';
+import { SuccessResponse, ErrorResponse } from '@repo/types/trpc/response';
 
-export async function req<T extends SuccessResponse | TRPCError>(
+export const baseUrl = process.env.BASE_USER ?? 'http://localhost:3000';
+
+export async function req<T extends SuccessResponse | ErrorResponse>(
   method: 'GET' | 'POST' = 'POST',
   procedure: string,
   input?: unknown,

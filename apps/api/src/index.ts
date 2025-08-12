@@ -1,8 +1,7 @@
 import Fastify from 'fastify';
 import cors from '@fastify/cors';
 import { appRouter } from './appRouter';
-import { fastifyTRPCPlugin } from '@trpc/server/adapters/fastify';
-import type { FastifyTRPCPluginOptions } from '@trpc/server/adapters/fastify';
+import { fastifyTRPCPlugin, FastifyTRPCPluginOptions } from '@trpc/server/adapters/fastify';
 import { createContext } from './context';
 import { TRPCError } from '@trpc/server';
 
@@ -14,13 +13,14 @@ export function buildServer() {
 
   server.register(cors, { origin: true });
 
-const trpcOptions: FastifyTRPCPluginOptions<typeof appRouter> = {
-  prefix: '/trpc',
-  trpcOptions: {
-    router: appRouter,
-    createContext: createContext,
-    onError({ path, error }: { path?: string; error: TRPCError }) {
-      server.log.error(`Error in tRPC handler on path '${path}': ${error.message}`);
+  const trpcOptions: FastifyTRPCPluginOptions<typeof appRouter> = {
+    prefix: '/trpc',
+    trpcOptions: {
+      router: appRouter,
+      createContext: createContext,
+      onError({ path, error }) {
+        server.log.error(`Error in tRPC handler on path '${path}': ${error.message}`);
+      },
     },
   };
 
@@ -45,3 +45,5 @@ if (require.main === module) {
     }
   })();
 }
+
+export { TRPCError };

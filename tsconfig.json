@@ -7,6 +7,7 @@
     "skipLibCheck": true,
     "forceConsistentCasingInFileNames": true,
     "moduleResolution": "node",
+    "outDir": "dist",
     "baseUrl": ".",
     "paths": {
       "@repo/db": [
@@ -15,19 +16,26 @@
       "@repo/auth/*": [
         "packages/auth/src/*"
       ],
+      "@repo/auth": [
+        "packages/auth/src"
+      ],
       "@repo/types/*": [
         "packages/types/*"
+      ],
+      "@repo/types": [
+        "packages/types"
+      ],
+      "@repo/api": [
+        "apps/api"
       ]
-    },
+    }
   },
-  "include": [
-    "packages/**/*",
-    "tests/**/*",
-    "tests/global.d.ts"
-  ],
   "exclude": [
     "node_modules",
-    "dist"
+    // "dist",
+    // "vitest.config.ts",
+    // "tests",
+    "**/dist"
   ],
   "references": [
     {
@@ -38,6 +46,9 @@
     },
     {
       "path": "packages/types"
+    },
+    {
+      "path": "apps/api"
     }
   ]
 }

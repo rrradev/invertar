@@ -1,8 +1,7 @@
 import { test, expect, beforeAll } from 'vitest';
 import { getToken, req } from './config/config';
 import { CreateAdminInput, LoginInput, SetPasswordWithCodeInput } from '@repo/types/schemas/auth';
-import { SuccessResponse } from '@repo/types/trpc/response';
-import { TRPCError } from '@trpc/server';
+import { SuccessResponse,  ErrorResponse } from '@repo/types/trpc/response';
 import { UserRole } from '@repo/types/users/roles';
 
 const SUPER_ADMIN_CREATE_ADMIN = 'superAdmin.createAdmin';
@@ -74,7 +73,7 @@ test('create admin', async () => {
         organizationName,
     };
 
-    const loginErrorRes = await req<TRPCError>(
+    const loginErrorRes = await req<ErrorResponse>(
         'POST',
         'auth.login',
         loginWrongCodeInput
@@ -89,7 +88,7 @@ test('create admin', async () => {
         oneTimeAccessCode: 'wrongCode2345DF',
     };
 
-    const setPasswordWrongCodeRes = await req<TRPCError>(
+    const setPasswordWrongCodeRes = await req<ErrorResponse>(
         'POST',
         'auth.setPasswordWithCode',
         setPasswordWrongCodeInput
@@ -103,7 +102,7 @@ test('create admin', async () => {
         oneTimeAccessCode: createAdminRes.oneTimeAccessCode,
     };
 
-    const invalidPassRes = await req<TRPCError>(
+    const invalidPassRes = await req<ErrorResponse>(
         'POST',
         'auth.setPasswordWithCode',
         invalidPassInput
@@ -137,7 +136,7 @@ test('create admin with invalid organization format', async () => {
         organizationName: 'no',
     };
 
-    const res = await req<TRPCError>(
+    const res = await req<ErrorResponse>(
         'POST',
         SUPER_ADMIN_CREATE_ADMIN,
         createAdminInput,
@@ -154,7 +153,7 @@ test('create admin with duplicate username', async () => {
         organizationName,
     };
 
-    const res = await req<TRPCError>(
+    const res = await req<ErrorResponse>(
         'POST',
         SUPER_ADMIN_CREATE_ADMIN,
         createAdminInput,
@@ -171,7 +170,7 @@ test('create admin with duplicate email', async () => {
         organizationName,
     };
 
-    const res = await req<TRPCError>(
+    const res = await req<ErrorResponse>(
         'POST',
         SUPER_ADMIN_CREATE_ADMIN,
         createAdminInput,
@@ -188,7 +187,7 @@ test('create admin with invalid email format', async () => {
         organizationName,
     };
 
-    const res = await req<TRPCError>(
+    const res = await req<ErrorResponse>(
         'POST',
         SUPER_ADMIN_CREATE_ADMIN,
         createAdminInput,
@@ -206,7 +205,7 @@ test('create admin with invalid username format', async () => {
         organizationName,
     };
 
-    const res = await req<TRPCError>(
+    const res = await req<ErrorResponse>(
         'POST',
         SUPER_ADMIN_CREATE_ADMIN,
         createAdminInput,

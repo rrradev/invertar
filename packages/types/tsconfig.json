@@ -3,17 +3,18 @@
   "compilerOptions": {
     "moduleResolution": "node",
     "esModuleInterop": true,
-    "types": [
-      "node"
-    ],
+    "types": ["node"],
     "composite": true,
     "incremental": true,
+    "declaration": true,
+    "declarationMap": true,
     "tsBuildInfoFile": "./node_modules/.cache/tsbuildinfo/types.tsbuildinfo",
     "outDir": "dist",
-    "rootDir": ".",
+    "rootDir": "."
   },
-  "include": [
-    "."
-  ],
-
+  "include": ["**/*"],
+  "exclude": [
+    "node_modules",
+    "dist"
+  ]
 }

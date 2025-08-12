@@ -15,3 +15,9 @@ export type SuccessResponse<
   TExtra extends Record<string, any> = {},
   TStatus extends SuccessStatus = SuccessStatus
 > = { status: TStatus } & TExtra;
+
+export type ErrorResponse = {
+  status: string;
+  message: string;
+  code: string;
+};

@@ -7,5 +7,12 @@
     "outDir": "dist",
     "rootDir": "."
   },
-  "include": ["index.ts"]
+  "include": ["index.ts", "seed.ts"],
+  "exclude": [
+    "node_modules",
+    "dist"
+  ],
+  "references": [
+    { "path": "../auth" }
+  ]
 }

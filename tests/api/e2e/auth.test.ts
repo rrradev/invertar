@@ -1,8 +1,7 @@
 import { test, expect } from 'vitest';
 import { req } from './config/config';
 import { LoginInput } from '@repo/types/schemas/auth';
-import { SuccessResponse } from '@repo/types/trpc/response';
-import { TRPCError } from '@trpc/server';
+import { ErrorResponse, SuccessResponse } from '@repo/types/trpc/response';
 
 const username = process.env.SUPERADMIN_USERNAME!;
 const password = process.env.SUPERADMIN_PASSWORD!;
@@ -35,7 +34,7 @@ test('login with invalid org', async () => {
         organizationName: 'ksd',
     };
 
-    const res = await req<TRPCError>(
+    const res = await req<ErrorResponse>(
         'POST',
         AUTH_LOGIN,
         loginInput
@@ -51,7 +50,7 @@ test('login with invalid username', async () => {
         organizationName
     };
 
-    const res = await req<TRPCError>(
+    const res = await req<ErrorResponse>(
         'POST',
         AUTH_LOGIN,
         loginInput
@@ -67,7 +66,7 @@ test('login with invalid password', async () => {
         organizationName
     };
 
-    const res = await req<TRPCError>(
+    const res = await req<ErrorResponse>(
         'POST',
         AUTH_LOGIN,
         loginInput
