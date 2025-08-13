@@ -29,7 +29,7 @@ export const superAdminRouter = router({
 
       return new Success({
         status: 'SUCCESS',
-        admins: admins.map(admin => ({
+        admins: admins.map((admin: any) => ({
           ...admin,
           hasInitialPassword: !!admin.oneTimeAccessCode,
         })),

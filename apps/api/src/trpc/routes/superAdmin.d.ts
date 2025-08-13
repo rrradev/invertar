@@ -1,3 +1,4 @@
+import { Success } from "@repo/types/trpc/response";
 export declare const superAdminRouter: import("@trpc/server").TRPCBuiltRouter<{
     ctx: {
         user: any;
@@ -12,12 +13,27 @@ export declare const superAdminRouter: import("@trpc/server").TRPCBuiltRouter<{
 }, import("@trpc/server").TRPCDecorateCreateRouterOptions<{
     listAdmins: import("@trpc/server").TRPCQueryProcedure<{
         input: void;
-        output: any;
+        output: Success<"SUCCESS", {
+            status: "SUCCESS";
+            admins: any;
+        }>;
         meta: object;
     }>;
     createAdmin: import("@trpc/server").TRPCMutationProcedure<{
-        input: any;
-        output: any;
+        input: {
+            username: string;
+            email: string;
+            organizationName: string;
+        };
+        output: Success<"ADMIN_CREATED", {
+            status: "ADMIN_CREATED";
+            userId: any;
+            username: any;
+            email: any;
+            organizationName: string;
+            oneTimeAccessCode: any;
+            expiresAt: Date;
+        }>;
         meta: object;
     }>;
 }>>;
