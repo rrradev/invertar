@@ -1,40 +1,49 @@
 import Fastify from 'fastify';
 import cors from '@fastify/cors';
 import { appRouter } from './appRouter';
-import { fastifyTRPCPlugin } from '@trpc/server/adapters/fastify';
-import type { FastifyTRPCPluginOptions } from '@trpc/server/adapters/fastify';
+import { fastifyTRPCPlugin, FastifyTRPCPluginOptions } from '@trpc/server/adapters/fastify';
 import { createContext } from './context';
 import { TRPCError } from '@trpc/server';
 
-const server = Fastify({
-  maxParamLength: 5000,
-  logger: true,
-});
+export function buildServer() {
+  const server = Fastify({
+    maxParamLength: 5000,
+    logger: true,
+  });
 
-server.register(cors, { origin: true });
+  server.register(cors, { origin: true });
 
-const trpcOptions: FastifyTRPCPluginOptions<typeof appRouter> = {
-  prefix: '/trpc',
-  trpcOptions: {
-    router: appRouter,
-    createContext: createContext,
-    onError({ path, error }: { path?: string; error: TRPCError }) {
-      server.log.error(`Error in tRPC handler on path '${path}': ${error.message}`);
+  const trpcOptions: FastifyTRPCPluginOptions<typeof appRouter> = {
+    prefix: '/trpc',
+    trpcOptions: {
+      router: appRouter,
+      createContext: createContext,
+      onError({ path, error }) {
+        server.log.error(`Error in tRPC handler on path '${path}': ${error.message}`);
+      },
     },
-  },
-};
+  };
 
-server.register(fastifyTRPCPlugin, trpcOptions);
+  server.register(fastifyTRPCPlugin, trpcOptions);
 
-server.get('/health', async (request, reply) => {
-  reply.code(200).send({ status: 'ok' });
-});
+  server.get('/health', async (request, reply) => {
+    reply.code(200).send({ status: 'ok' });
+  });
 
-(async () => {
-  try {
-    await server.listen({ port: 3000 });
-  } catch (err) {
-    server.log.error(err);
-    process.exit(1);
-  }
-})();
+  return server;
+}
+
+if (require.main === module) {
+  (async () => {
+    const server = buildServer();
+    try {
+      await server.listen({ port: 3000 });
+      console.log('Server listening on port 3000');
+    } catch (err) {
+      server.log.error(err);
+      process.exit(1);
+    }
+  })();
+}
+
+export { TRPCError };

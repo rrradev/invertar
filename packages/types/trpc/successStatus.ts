@@ -3,4 +3,6 @@ export type SuccessStatus =
   | 'PASSWORD_SET'
   | 'PROCEED'
   | 'ACCOUNT_CREATED'
-  | 'EMAIL_SENT';
+  | 'EMAIL_SENT'
+  | 'ADMIN_CREATED'
+  | 'VALID_ACCESS_CODE';

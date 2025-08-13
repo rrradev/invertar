@@ -7,6 +7,7 @@
     "skipLibCheck": true,
     "forceConsistentCasingInFileNames": true,
     "moduleResolution": "node",
+    "outDir": "dist",
     "baseUrl": ".",
     "paths": {
       "@repo/db": [
@@ -15,16 +16,25 @@
       "@repo/auth/*": [
         "packages/auth/src/*"
       ],
+      "@repo/auth": [
+        "packages/auth/src"
+      ],
       "@repo/types/*": [
         "packages/types/*"
+      ],
+      "@repo/types": [
+        "packages/types"
+      ],
+      "@repo/api": [
+        "apps/api"
       ]
-    },
+    }
   },
   "exclude": [
     "node_modules",
-    "dist"
+    "**/dist"
   ],
-    "references": [
+  "references": [
     {
       "path": "packages/db"
     },
@@ -33,6 +43,9 @@
     },
     {
       "path": "packages/types"
+    },
+    {
+      "path": "apps/api"
     }
   ]
 }

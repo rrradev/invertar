@@ -3,7 +3,7 @@ import { TRPCError } from "@trpc/server";
 import { hashPassword, verifyPassword } from "@repo/auth/password";
 import { generateJwt } from "@repo/auth/jwt";
 import { prisma } from "@repo/db";
-import { loginInput, setPasswordInput } from '@repo/types/schemas/auth';
+import { loginInput, setPasswordWithCodeInput } from '@repo/types/schemas/auth';
 import { Success } from "@repo/types/trpc/response";
 
 export const authRouter = router({
@@ -37,7 +37,7 @@ export const authRouter = router({
         }
 
         return new Success({
-          status: 'SUCCESS',
+          status: 'VALID_ACCESS_CODE',
           userId: user.id
         });
       }
@@ -65,7 +65,7 @@ export const authRouter = router({
 
   setPasswordWithCode: publicProcedure
     .input(
-      setPasswordInput
+      setPasswordWithCodeInput
     )
     .mutation(async ({ input }) => {
       const user = await prisma.user.findUnique({
@@ -90,8 +90,13 @@ export const authRouter = router({
         },
       });
 
-      return new Success({ status: 'PASSWORD_SET' });
+    const token = generateJwt({
+        id: user.id,
+        role: user.role,
+        organizationId: user.organizationId,
+      });
 
+      return new Success({ status: 'PASSWORD_SET', token });
     }),
 
 });

@@ -1,32 +1,39 @@
-import { initTRPC, TRPCError } from "@trpc/server";
+import { initTRPC, TRPCError, type TRPCErrorShape } from "@trpc/server";
 import type { Context } from './context';
 import { UserRole, UserRoleType } from "@repo/types/users/roles";
-import z, { ZodError } from "zod";
+import { de } from "zod/v4/locales/index.cjs";
+
 
 export const t = initTRPC.context<Context>().create({
-  errorFormatter({ shape, error }: { shape: any; error: any }) {
+  errorFormatter({ shape, error }: { shape: TRPCErrorShape; error: TRPCError }) {
     let message = shape.message;
 
     if (error.code === 'INTERNAL_SERVER_ERROR') {
       message = 'Something went wrong';
     }
 
-    if(error.cause instanceof ZodError) {
-      message = '';
+    if (error.code === 'BAD_REQUEST') {
+      try {
+        const issues = JSON.parse(error.message);
+        if (Array.isArray(issues)) {
+          const messages = issues.map((issue: any) => issue.message);
+          message = messages.join(', ') || 'Validation error';
+        }
+      } catch {
+        message = shape.message;
+      }
     }
 
+    if (shape.data && typeof shape.data === 'object' && 'stack' in shape.data) {
+      // @ts-ignore
+      delete shape.data.stack;
+    }
     return {
       ...shape,
       message,
-      data: {
-        zodError: error.cause instanceof ZodError
-          ? z.treeifyError(error.cause)
-          : null,
-      },
     };
-  },
+  }
 });
-
 
 export const router = t.router;
 export const publicProcedure = t.procedure;
