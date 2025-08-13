@@ -13,6 +13,7 @@ const envSchema = z.object({
   SUPERADMIN_USERNAME: z.string().min(1, 'SUPERADMIN_USERNAME is required'),
   SUPERADMIN_PASSWORD: z.string().min(1, 'SUPERADMIN_PASSWORD is required'),
   SUPERADMIN_ORGANIZATION: z.string().min(1, 'SUPERADMIN_ORGANIZATION is required'),
+  ADMIN_EMAIL: z.string().min(1, 'ADMIN_EMAIL is required'),
   ADMIN_USERNAME: z.string().min(1, 'ADMIN_USERNAME is required'),
   ADMIN_PASSWORD: z.string().min(1, 'ADMIN_PASSWORD is required'),
   ADMIN_ORGANIZATION: z.string().min(1, 'ADMIN_ORGANIZATION is required'),

@@ -20,6 +20,10 @@ jobs:
       SUPERADMIN_USERNAME: ${{ secrets.SUPERADMIN_USERNAME }}
       SUPERADMIN_PASSWORD: ${{ secrets.SUPERADMIN_PASSWORD }}
       SUPERADMIN_ORGANIZATION: ${{ secrets.SUPERADMIN_ORGANIZATION }}
+      ADMIN_USERNAME: ${{ secrets.ADMIN_USERNAME }}
+      ADMIN_PASSWORD: ${{ secrets.ADMIN_PASSWORD }}
+      ADMIN_ORGANIZATION: ${{ secrets.ADMIN_ORGANIZATION }}
+      ADMIN_EMAIL: ${{ secrets.ADMIN_EMAIL }}
 
     steps:
       - name: Checkout code
