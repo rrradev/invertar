@@ -4,6 +4,7 @@
   "description": "",
   "main": "index.ts",
   "scripts": {
+    "build": "tsc --build",
     "dev:server": "pnpm --filter api dev",
     "test": "vitest run --reporter verbose",
     "prisma:migrate:dev": "pnpm --filter db exec prisma migrate dev",

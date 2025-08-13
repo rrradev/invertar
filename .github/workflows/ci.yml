@@ -42,9 +42,8 @@ jobs:
         run: pnpm exec prisma generate
         working-directory: packages/db
 
-      - name: Start server, wait for it, then run tests
-        run: |
-          pnpm dev:server &
-          pnpm exec wait-on tcp:3000
+      - name: Build TypeScript
+        run: pnpm build
 
-          pnpm test 
+      - name: Run API tests
+        run: pnpm test
