@@ -28,8 +28,6 @@ if (!parsed.success) {
   process.exit(1);
 }
 
-(globalThis as any).baseUrl = 'http://localhost:3000';
-
 export async function setup() {
   const username = process.env.SUPERADMIN_USERNAME!;
   const password = process.env.SUPERADMIN_PASSWORD!;

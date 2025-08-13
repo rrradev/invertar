@@ -1,4 +1,5 @@
 import bcrypt from 'bcrypt';
+import crypto from "crypto";
 
 const SALT_ROUNDS = (() => {
   const rounds = parseInt(process.env.BCRYPT_SALT_ROUNDS || '12', 10);
@@ -30,8 +31,6 @@ export async function verifyPassword(password: string, hash: string): Promise<bo
   }
   return await bcrypt.compare(password, hash);
 }
-
-import crypto from "crypto";
 
 export function generateAccessCode(length = 8) {
   const chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
