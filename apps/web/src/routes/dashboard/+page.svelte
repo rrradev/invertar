@@ -3,14 +3,8 @@
   import { goto } from '$app/navigation';
   import { auth } from '$lib/stores/auth';
   import { trpc } from '$lib/trpc';
-
-  interface Admin {
-    id: string;
-    username: string;
-    email: string;
-    createdAt: string;
-    hasInitialPassword: boolean;
-  }
+  import { UserRole } from '@repo/types/users';
+  import type { Admin } from '@repo/types/users';
 
   let user: any = null;
   let admins: Admin[] = [];
@@ -33,7 +27,7 @@
       user = authUser;
       if (!authUser) {
         goto('/login');
-      } else if (authUser.role !== 'SUPER_ADMIN') {
+      } else if (authUser.role !== UserRole.SUPER_ADMIN) {
         error = 'Access denied. Super admin privileges required.';
       } else {
         loadAdmins();
@@ -43,7 +37,7 @@
   });
 
   async function loadAdmins() {
-    if (!user || user.role !== 'SUPER_ADMIN') return;
+    if (!user || user.role !== UserRole.SUPER_ADMIN) return;
     
     try {
       isLoading = true;
@@ -139,7 +133,7 @@
 
   <!-- Main Content -->
   <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-    {#if user && user.role === 'SUPER_ADMIN'}
+    {#if user && user.role === UserRole.SUPER_ADMIN}
       <!-- Page Header -->
       <div class="mb-8">
         <div class="sm:flex sm:items-center sm:justify-between">

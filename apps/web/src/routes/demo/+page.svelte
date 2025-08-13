@@ -1,13 +1,8 @@
 <script lang="ts">
-  interface Admin {
-    id: string;
-    username: string;
-    email: string;
-    createdAt: string;
-    hasInitialPassword: boolean;
-  }
+  import { UserRole } from '@repo/types/users';
+  import type { Admin } from '@repo/types/users';
 
-  let user = { role: 'SUPER_ADMIN', id: '1', organizationId: '1' };
+  let user = { role: UserRole.SUPER_ADMIN, id: '1', organizationId: '1' };
   let admins: Admin[] = [
     {
       id: '1',
@@ -102,7 +97,7 @@
         
         <div class="flex items-center space-x-4">
           <div class="flex items-center space-x-3">
-            <span class="text-sm text-gray-700">Welcome, SUPER_ADMIN</span>
+            <span class="text-sm text-gray-700">Welcome, {UserRole.SUPER_ADMIN}</span>
             <button class="px-3 py-2 text-sm font-medium text-gray-700 hover:text-gray-900 hover:bg-gray-100 rounded-md transition-colors">
               Sign out
             </button>

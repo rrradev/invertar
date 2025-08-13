@@ -1,11 +1,6 @@
 import { writable } from 'svelte/store';
 import { browser } from '$app/environment';
-
-interface User {
-  id: string;
-  role: 'SUPER_ADMIN' | 'ADMIN' | 'USER';
-  organizationId: string;
-}
+import type { User } from '@repo/types/users';
 
 interface AuthState {
   user: User | null;
