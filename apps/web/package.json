@@ -58,5 +58,9 @@
 	},
 	"keywords": [
 		"svelte"
-	]
+	],
+	"dependencies": {
+		"@tanstack/svelte-query": "^5.83.1",
+		"@trpc/client": "^11.4.4"
+	}
 }

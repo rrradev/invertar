@@ -7,6 +7,35 @@ import { UserRole } from "@repo/types/users/roles";
 import { generateAccessCode } from "@repo/auth/password";
 
 export const superAdminRouter = router({
+  listAdmins: superAdminProcedure
+    .query(async ({ ctx }) => {
+      const admins = await prisma.user.findMany({
+        where: {
+          organizationId: ctx.user!.organizationId,
+          role: UserRole.ADMIN,
+        },
+        select: {
+          id: true,
+          username: true,
+          email: true,
+          createdAt: true,
+          oneTimeAccessCode: true,
+          oneTimeAccessCodeExpiry: true,
+        },
+        orderBy: {
+          createdAt: 'desc',
+        },
+      });
+
+      return new Success({
+        status: 'SUCCESS',
+        admins: admins.map(admin => ({
+          ...admin,
+          hasInitialPassword: !!admin.oneTimeAccessCode,
+        })),
+      });
+    }),
+
   createAdmin: superAdminProcedure
     .input(createAdminInput)
     .mutation(async ({ input }) => {
