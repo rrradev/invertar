@@ -4,15 +4,19 @@
   "description": "",
   "main": "index.ts",
   "scripts": {
+    "clean": "tsc --build --clean",
     "build": "tsc --build",
     "dev:server": "pnpm --filter api dev",
+    "dev:web": "pnpm --filter web dev",
     "test": "vitest run --reporter verbose",
     "prisma:migrate:dev": "pnpm --filter db exec prisma migrate dev",
     "prisma:migrate:deploy": "pnpm --filter db exec prisma migrate deploy",
     "prisma:generate": "pnpm --filter db exec prisma generate",
     "db:seed": "pnpm exec ts-node -r tsconfig-paths/register packages/db/seed.ts"
   },
-  "keywords": [],
+  "keywords": [
+    
+  ],
   "author": "",
   "license": "ISC",
   "packageManager": "pnpm@10.13.1",
@@ -30,5 +34,10 @@
     "vite-tsconfig-paths": "^5.1.4",
     "vitest": "^3.2.4",
     "wait-on": "^8.0.4"
+  },
+  "pnpm": {
+    "onlyBuiltDependencies": [
+      "esbuild"
+    ]
   }
 }

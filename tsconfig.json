@@ -27,12 +27,16 @@
       ],
       "@repo/api": [
         "apps/api"
+      ],
+      "@repo/web": [
+        "apps/web"
       ]
     }
   },
   "exclude": [
     "node_modules",
-    "**/dist"
+    "**/dist",
+    "apps/web"
   ],
   "references": [
     {
