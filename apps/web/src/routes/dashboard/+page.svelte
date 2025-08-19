@@ -6,7 +6,7 @@
 	import { UserRole } from '@repo/types/users';
 	import type { Admin, User } from '@repo/types/users';
 
-	let user: User = null;
+	let user: User | null = null;
 	let admins: Admin[] = [];
 	let isLoading = true;
 	let isCreating = false;
