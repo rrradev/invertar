@@ -5,7 +5,6 @@ import { appRouter } from './appRouter';
 import { fastifyTRPCPlugin, FastifyTRPCPluginOptions } from '@trpc/server/adapters/fastify';
 import { createContext } from './context';
 import { TRPCError } from '@trpc/server';
-import type { inferProcedureOutput } from "@trpc/server";
 
 export function buildServer() {
   const server = Fastify({
@@ -37,4 +36,3 @@ export function buildServer() {
 
 export { TRPCError };
 export type AppRouter = typeof appRouter;
-export type ListAdminsOutput = inferProcedureOutput<AppRouter["superAdmin"]["listAdmins"]>;

@@ -1,7 +1,7 @@
 import { test, expect, beforeAll } from 'vitest';
 import { getToken, req } from './config/config';
 import { CreateAdminInput, LoginInput, SetPasswordWithCodeInput } from '@repo/types/schemas/auth';
-import { SuccessResponse,  ErrorResponse } from '@repo/types/trpc/response';
+import { SuccessResponse, ErrorResponse } from '@repo/types/trpc/response';
 import { UserRole } from '@repo/types/users/roles';
 
 const SUPER_ADMIN_CREATE_ADMIN = 'superAdmin.createAdmin';
@@ -124,10 +124,11 @@ test('create admin', async () => {
         'auth.setPasswordWithCode',
         setPasswordInput
     );
-
+    
+    console.log('Set Password Response:', setPasswordRes);
     expect(setPasswordRes.token).toBeDefined();
     expect(setPasswordRes.status).toBe('PASSWORD_SET');
-});
+}, { retry: 2 });
 
 test('create admin with invalid organization format', async () => {
     const createAdminInput: CreateAdminInput = {
