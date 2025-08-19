@@ -1,7 +1,7 @@
 import { router, superAdminProcedure } from "../../trpc";
 import { TRPCError } from "@trpc/server";
 import { prisma } from "@repo/db";
-import { createAdminInput, deleteAdminInput, refreshOTACInput } from '@repo/types/schemas/auth';
+import { createAdminInput, deleteAdminInput, refreshOTACInput, resetAdminInput } from '@repo/types/schemas/auth';
 import { UserRole } from "@repo/types/users/roles";
 import { generateAccessCode } from "@repo/auth/password";
 import { Admin } from "@repo/types/users";
@@ -189,6 +189,51 @@ export const superAdminRouter = router({
       return {
         status: 'OTAC_REFRESHED',
         message: `OTAC refreshed for ${adminToRefresh.username}.`,
+        oneTimeAccessCode,
+        expiresAt: oneTimeAccessCodeExpiry.toISOString(),
+      };
+    }),
+
+  resetAdmin: superAdminProcedure
+    .input(resetAdminInput)
+    .mutation(async ({ input }) => {
+      // First check if the admin exists and is actually an admin
+      const adminToReset = await prisma.user.findUnique({
+        where: { id: input.adminId },
+        select: { role: true, username: true },
+      });
+
+      if (!adminToReset) {
+        throw new TRPCError({
+          code: "NOT_FOUND",
+          message: "Admin not found."
+        });
+      }
+
+      if (adminToReset.role !== UserRole.ADMIN) {
+        throw new TRPCError({
+          code: "BAD_REQUEST",
+          message: "User is not an admin."
+        });
+      }
+
+      // Generate new OTAC and expiry, clear password
+      const oneTimeAccessCode = generateAccessCode();
+      const oneTimeAccessCodeExpiry = new Date(Date.now() + 24 * 60 * 60 * 1000);
+
+      // Update the admin: clear password and set new OTAC
+      const updatedAdmin = await prisma.user.update({
+        where: { id: input.adminId },
+        data: {
+          password: null, // Clear the password
+          oneTimeAccessCode,
+          oneTimeAccessCodeExpiry,
+        },
+      });
+
+      return {
+        status: 'ADMIN_RESET',
+        message: `Admin ${adminToReset.username} reset successfully. Password cleared and new OTAC generated.`,
         oneTimeAccessCode,
         expiresAt: oneTimeAccessCodeExpiry.toISOString(),
       };

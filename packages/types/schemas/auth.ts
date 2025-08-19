@@ -33,8 +33,13 @@ export const refreshOTACInput = z.object({
   adminId: z.string().min(1, "Admin ID is required"),
 });
 
+export const resetAdminInput = z.object({
+  adminId: z.string().min(1, "Admin ID is required"),
+});
+
 export type LoginInput = z.infer<typeof loginInput>;
 export type SetPasswordWithCodeInput = z.infer<typeof setPasswordWithCodeInput>;
 export type CreateAdminInput = z.infer<typeof createAdminInput>;
 export type DeleteAdminInput = z.infer<typeof deleteAdminInput>;
 export type RefreshOTACInput = z.infer<typeof refreshOTACInput>;
+export type ResetAdminInput = z.infer<typeof resetAdminInput>;
