@@ -2,16 +2,15 @@ import { router, superAdminProcedure } from "../../trpc";
 import { TRPCError } from "@trpc/server";
 import { prisma } from "@repo/db";
 import { createAdminInput } from '@repo/types/schemas/auth';
-import { Success } from "@repo/types/trpc/response";
 import { UserRole } from "@repo/types/users/roles";
 import { generateAccessCode } from "@repo/auth/password";
+import { Admin } from "@repo/types/users";
 
 export const superAdminRouter = router({
   listAdmins: superAdminProcedure
     .query(async ({ ctx }) => {
       const admins = await prisma.user.findMany({
         where: {
-          organizationId: ctx.user!.organizationId,
           role: UserRole.ADMIN,
         },
         select: {
@@ -21,19 +20,32 @@ export const superAdminRouter = router({
           createdAt: true,
           oneTimeAccessCode: true,
           oneTimeAccessCodeExpiry: true,
+          organization: {
+            select: {
+              name: true,
+            },
+          },
         },
         orderBy: {
           createdAt: 'desc',
         },
-      });
+      })
 
-      return new Success({
+
+      let formatted = admins.map(admin => ({
+        id: admin.id,
+        username: admin.username,
+        email: admin.email,
+        createdAt: admin.createdAt.toISOString(),
+        oneTimeAccessCode: admin.oneTimeAccessCode,
+        organizationName: admin.organization?.name || 'N/A',
+        hasInitialPassword: Boolean(admin.oneTimeAccessCode),
+      })) as Admin[];
+
+      return {
         status: 'SUCCESS',
-        admins: admins.map((admin: any) => ({
-          ...admin,
-          hasInitialPassword: !!admin.oneTimeAccessCode,
-        })),
-      });
+        admins: formatted  ,
+      };
     }),
 
   createAdmin: superAdminProcedure
@@ -92,7 +104,7 @@ export const superAdminRouter = router({
         },
       });
 
-      return new Success({
+      return {
         status: 'ADMIN_CREATED',
         userId: newAdmin.id,
         username: newAdmin.username,
@@ -100,6 +112,7 @@ export const superAdminRouter = router({
         organizationName: input.organizationName,
         oneTimeAccessCode,
         expiresAt: oneTimeAccessCodeExpiry,
-      });
+      };
     }),
 });
+

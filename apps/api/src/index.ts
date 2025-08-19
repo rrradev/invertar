@@ -1,9 +1,11 @@
+import './load-env';
 import Fastify from 'fastify';
 import cors from '@fastify/cors';
 import { appRouter } from './appRouter';
 import { fastifyTRPCPlugin, FastifyTRPCPluginOptions } from '@trpc/server/adapters/fastify';
 import { createContext } from './context';
 import { TRPCError } from '@trpc/server';
+import type { inferProcedureOutput } from "@trpc/server";
 
 export function buildServer() {
   const server = Fastify({
@@ -33,17 +35,6 @@ export function buildServer() {
   return server;
 }
 
-if (require.main === module) {
-  (async () => {
-    const server = buildServer();
-    try {
-      await server.listen({ port: 3000 });
-      console.log('Server listening on port 3000');
-    } catch (err) {
-      server.log.error(err);
-      process.exit(1);
-    }
-  })();
-}
-
 export { TRPCError };
+export type AppRouter = typeof appRouter;
+export type ListAdminsOutput = inferProcedureOutput<AppRouter["superAdmin"]["listAdmins"]>;

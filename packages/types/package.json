@@ -1,12 +1,13 @@
 {
   "name": "@repo/types",
+  "private": true,
   "version": "1.0.0",
-  "description": "Shared TypeScript types and schemas for the invertar application",
+  "type": "module",
   "main": "index.ts",
+  "description": "Shared TypeScript types and schemas for the invertar application",
   "scripts": {
-    "build": "tsc",
-    "dev": "tsc --watch",
-    "clean": "rm -rf dist"
+    "build": "echo \"@repo/types is source only in dev\"",
+    "dev": "tsc --w -p . --noEmit"
   },
   "keywords": ["types", "schemas", "zod"],
   "author": "rradev",

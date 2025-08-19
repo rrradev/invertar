@@ -10,7 +10,6 @@
   let isLoading = false;
   let error = '';
 
-  // Check if already authenticated
   onMount(() => {
     auth.initialize();
     const unsubscribe = auth.subscribe(({ user }) => {
@@ -42,6 +41,7 @@
         // Decode the JWT to get user info (basic decode, not validation)
         const payload = JSON.parse(atob(result.token.split('.')[1]));
         auth.login(result.token, {
+          username,
           id: payload.id,
           role: payload.role,
           organizationId: payload.organizationId
@@ -49,7 +49,7 @@
         goto('/dashboard');
       } else if (result.status === 'VALID_ACCESS_CODE') {
         // Redirect to set password page
-        goto(`/set-password?userId=${result.userId}`);
+        goto(`/set-password?userId=${result.userId}&code=${password}`);
       }
     } catch (err: any) {
       error = err.message || 'Login failed. Please check your credentials.';

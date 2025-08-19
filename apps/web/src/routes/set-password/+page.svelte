@@ -15,6 +15,7 @@
   onMount(() => {
     const urlParams = new URLSearchParams(window.location.search);
     userId = urlParams.get('userId') || '';
+     oneTimeAccessCode = urlParams.get('code') || ''; 
     
     if (!userId) {
       error = 'Invalid access. User ID is required.';
@@ -22,7 +23,7 @@
   });
 
   async function handleSetPassword() {
-    if (!oneTimeAccessCode.trim() || !newPassword.trim() || !confirmPassword.trim()) {
+    if (!newPassword.trim() || !confirmPassword.trim()) {
       error = 'All fields are required';
       return;
     }
@@ -80,7 +81,6 @@
         </svg>
       </div>
       <h2 class="text-4xl font-bold text-gray-900 mb-2">Set Your Password</h2>
-      <p class="text-gray-600">Use your one-time access code to create a secure password</p>
     </div>
 
     <div class="bg-white/80 backdrop-blur-sm rounded-2xl shadow-xl border border-white/20 p-8">
@@ -90,22 +90,6 @@
             {error}
           </div>
         {/if}
-
-        <div>
-          <label for="oneTimeAccessCode" class="block text-sm font-medium text-gray-700 mb-2">
-            One-Time Access Code
-          </label>
-          <input
-            id="oneTimeAccessCode"
-            type="text"
-            bind:value={oneTimeAccessCode}
-            on:keypress={handleKeyPress}
-            class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-colors bg-white/50 backdrop-blur-sm"
-            placeholder="Enter your access code"
-            disabled={isLoading}
-          />
-          <p class="mt-1 text-xs text-gray-500">This code was provided by your administrator</p>
-        </div>
 
         <div>
           <label for="newPassword" class="block text-sm font-medium text-gray-700 mb-2">

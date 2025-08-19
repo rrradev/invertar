@@ -1,4 +1,4 @@
-import { UserRoleType } from "../users/roles";
+import { UserRoleType } from "../users/roles.js";
 
 export type JWTPayload = {
   id: string;

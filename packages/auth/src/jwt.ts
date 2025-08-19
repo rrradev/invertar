@@ -1,6 +1,6 @@
 import jwt from "jsonwebtoken";
-import { JWTPayload } from "@repo/types/auth/jwt";
-import { UserRole } from "@repo/types/users/roles";
+import { JWTPayload } from "@repo/types/auth";
+import { UserRole } from "@repo/types/users";
 
 const JWT_SECRET = process.env.JWT_SECRET!;
 const JWT_EXPIRES_IN = "1d";

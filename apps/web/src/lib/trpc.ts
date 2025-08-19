@@ -1,12 +1,14 @@
-import { createTRPCClient, httpBatchLink } from '@trpc/client';
-import type { AppRouter } from '@repo/api/src/appRouter';
+import { createTRPCProxyClient, httpBatchLink } from '@trpc/client';
+import type { AppRouter } from '@repo/api';
 
 const getBaseUrl = () => {
-  if (typeof window !== 'undefined') return ''; // browser should use relative url
-  return `http://localhost:3000`; // dev SSR should use localhost
+  if (typeof window !== 'undefined') {
+    return 'http://localhost:3000';
+  }
+  return 'http://localhost:3000';
 };
 
-export const trpc = createTRPCClient<AppRouter>({
+export const trpc = createTRPCProxyClient<AppRouter>({
   links: [
     httpBatchLink({
       url: `${getBaseUrl()}/trpc`,
