@@ -1,12 +1,16 @@
 import { config } from 'dotenv';
-import { resolve } from 'path';
+import { fileURLToPath } from 'url';
+import { dirname, resolve } from 'path';
 import { z } from 'zod';
 
-config({ path: resolve(__dirname, '../../.env') });
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = dirname(__filename);
+
+config({ path: resolve(__dirname, '../../../.env') });
 
 const envSchema = z.object({
   JWT_SECRET: z.string().min(1, 'JWT_SECRET is required'),
-  DATABASE_URL: z.string().min(1, 'DATABASE_URL'),
+  DATABASE_URL: z.string().min(1, 'DATABASE_URL is required'),
 });
 
 const parsed = envSchema.safeParse(process.env);
@@ -16,3 +20,4 @@ if (!parsed.success) {
   process.exit(1);
 }
 
+export const env = parsed.data;

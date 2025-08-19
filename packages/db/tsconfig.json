@@ -5,14 +5,11 @@
     "incremental": true,
     "tsBuildInfoFile": "./node_modules/.cache/tsbuildinfo/db.tsbuildinfo",
     "outDir": "dist",
-    "rootDir": "."
+    "rootDir": "./*"
   },
   "include": ["index.ts", "seed.ts"],
   "exclude": [
     "node_modules",
     "dist"
   ],
-  "references": [
-    { "path": "../auth" }
-  ]
 }

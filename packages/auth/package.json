@@ -2,7 +2,6 @@
   "name": "@repo/auth",
   "version": "1.0.0",
   "description": "Authentication utilities for the invertar application",
-  "main": "src/index.ts",
   "scripts": {
     "build": "tsc",
     "dev": "tsc --watch",

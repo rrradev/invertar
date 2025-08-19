@@ -1,7 +1,7 @@
 import { prisma } from '@repo/db';
 import { config } from 'dotenv';
 import { z } from 'zod';
-import { buildServer } from '../apps/api/src/index';
+import { buildServer } from '@repo/api';
 import { hashPassword } from '@repo/auth/password';
 import { UserRole } from '@repo/types/users/roles';
 
