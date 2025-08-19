@@ -49,9 +49,9 @@
       });
 
       if (result.status === 'PASSWORD_SET' && result.token) {
-        // Decode the JWT to get user info
         const payload = JSON.parse(atob(result.token.split('.')[1]));
         auth.login(result.token, {
+          username: payload.username,
           id: payload.id,
           role: payload.role,
           organizationId: payload.organizationId

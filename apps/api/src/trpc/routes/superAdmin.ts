@@ -225,7 +225,7 @@ export const superAdminRouter = router({
       const updatedAdmin = await prisma.user.update({
         where: { id: input.adminId },
         data: {
-          password: null, // Clear the password
+          hashedPassword: null, // Clear the password
           oneTimeAccessCode,
           oneTimeAccessCodeExpiry,
         },

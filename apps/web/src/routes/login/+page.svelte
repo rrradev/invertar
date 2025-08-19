@@ -38,7 +38,7 @@
       });
 
       if (result.status === 'SUCCESS' && result.token) {
-        // Decode the JWT to get user info (basic decode, not validation)
+
         const payload = JSON.parse(atob(result.token.split('.')[1]));
         auth.login(result.token, {
           username,
