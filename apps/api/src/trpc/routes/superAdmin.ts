@@ -38,6 +38,7 @@ export const superAdminRouter = router({
         email: admin.email,
         createdAt: admin.createdAt.toISOString(),
         oneTimeAccessCode: admin.oneTimeAccessCode,
+        oneTimeAccessCodeExpiry: admin.oneTimeAccessCodeExpiry?.toISOString(),
         organizationName: admin.organization?.name || 'N/A',
         hasInitialPassword: Boolean(admin.oneTimeAccessCode),
       })) as Admin[];

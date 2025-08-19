@@ -14,9 +14,9 @@ export const setPasswordWithCodeInput = z.object({
     .regex(/[a-z]/, "Password must contain at least one lowercase letter")
     .regex(/\d/, "Password must contain at least one number")
     .regex(/[\W_]/, "Password must contain at least one special character"),
-  oneTimeAccessCode: z.string().min(8, "One-time access code must be at least 8 characters")
-    .regex(/\d/, "One-time access code must contain at least one number")
-    .regex(/[A-Z]/, "One-time access code must contain at least one uppercase letter"),
+  oneTimeAccessCode: z.string().min(12, "One-time access code must be at least 12 characters")
+    .regex(/^(?=(?:.*[A-Z]){6,})(?=(?:.*\d){6,})[A-Z0-9]+$/, 
+           "Access code must have at least 6 letters and 6 numbers"),
 });
 
 export const createAdminInput = z.object({

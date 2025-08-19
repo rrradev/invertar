@@ -32,14 +32,30 @@ export async function verifyPassword(password: string, hash: string): Promise<bo
   return await bcrypt.compare(password, hash);
 }
 
-export function generateAccessCode(length = 8) {
-  const chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
-  let result = "";
-  const bytes = crypto.randomBytes(length);
-
-  for (let i = 0; i < length; i++) {
-    result += chars[bytes[i] % chars.length];
+export function generateAccessCode(length = 12): string {
+  if (length < 12) {
+    throw new Error("Length must be at least 12 to satisfy 6 letters and 6 numbers");
   }
 
-  return result;
+  const letters = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
+  const numbers = "0123456789";
+  const allChars = letters + numbers;
+
+  const getRandom = (chars: string, count: number) =>
+    Array.from({ length: count }, () => chars[crypto.randomBytes(1)[0] % chars.length]);
+
+  const letterPart = getRandom(letters, 6);
+  const numberPart = getRandom(numbers, 6);
+
+  const combined = [...letterPart, ...numberPart];
+  for (let i = combined.length - 1; i > 0; i--) {
+    const j = crypto.randomBytes(1)[0] % (i + 1);
+    [combined[i], combined[j]] = [combined[j], combined[i]];
+  }
+
+  while (combined.length < length) {
+    combined.push(allChars[crypto.randomBytes(1)[0] % allChars.length]);
+  }
+
+  return combined.join("");
 }

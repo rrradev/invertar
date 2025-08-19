@@ -14,5 +14,6 @@ export interface Admin {
   createdAt: string;
   oneTimeAccessCode: string;
   organizationName: string;
+  oneTimeAccessCodeExpiry: string | null;
   hasInitialPassword: boolean;
 }

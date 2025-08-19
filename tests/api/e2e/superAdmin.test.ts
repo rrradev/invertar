@@ -81,11 +81,11 @@ test('create admin', async () => {
 
     expect(loginErrorRes.message).toBe('Invalid or expired access code.');
 
-    // SET PASSWORD WITH WRONG CODE
+    // SET PASSWORD WITH WRONG CODE FORMAT
     const setPasswordWrongCodeInput: SetPasswordWithCodeInput = {
         userId: createAdminRes.userId,
         newPassword: password,
-        oneTimeAccessCode: 'wrongCode2345DF',
+        oneTimeAccessCode: 'QWERT12345',
     };
 
     const setPasswordWrongCodeRes = await req<ErrorResponse>(
@@ -93,7 +93,21 @@ test('create admin', async () => {
         'auth.setPasswordWithCode',
         setPasswordWrongCodeInput
     );
-    expect(setPasswordWrongCodeRes.message).toBe('Invalid or expired access code.');
+    expect(setPasswordWrongCodeRes.message).toBe('One-time access code must be at least 12 characters, Access code must have at least 6 letters and 6 numbers');
+
+    // SET PASSWORD WITH WRONG CODE
+    const setPasswordWrongCodeInput2: SetPasswordWithCodeInput = {
+        userId: createAdminRes.userId,
+        newPassword: password,
+        oneTimeAccessCode: 'QWERTY123456',
+    };
+
+    const setPasswordWrongCodeRes2 = await req<ErrorResponse>(
+        'POST',
+        'auth.setPasswordWithCode',
+        setPasswordWrongCodeInput2
+    );
+    expect(setPasswordWrongCodeRes2.message).toBe('Invalid or expired access code.');
 
     // SET INVALID PASSWORD
     const invalidPassInput: SetPasswordWithCodeInput = {
@@ -124,11 +138,11 @@ test('create admin', async () => {
         'auth.setPasswordWithCode',
         setPasswordInput
     );
-    
+
     console.log('Set Password Response:', setPasswordRes);
     expect(setPasswordRes.token).toBeDefined();
     expect(setPasswordRes.status).toBe('PASSWORD_SET');
-}, { retry: 2 });
+});
 
 test('create admin with invalid organization format', async () => {
     const createAdminInput: CreateAdminInput = {

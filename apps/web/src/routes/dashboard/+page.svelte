@@ -365,7 +365,7 @@
 										<td class="px-6 py-4 whitespace-nowrap">
 											<div class="text-sm text-gray-900">{admin.email}</div>
 										</td>
-                    										<td class="px-6 py-4 whitespace-nowrap">
+										<td class="px-6 py-4 whitespace-nowrap">
 											<div class="text-sm text-gray-900">{admin.organizationName}</div>
 										</td>
 										<td class="px-6 py-4 whitespace-nowrap">
@@ -375,11 +375,17 @@
 											<div class="text-sm text-gray-900">{admin.oneTimeAccessCode}</div>
 										</td>
 										<td class="px-6 py-4 whitespace-nowrap">
-											{#if admin.hasInitialPassword}
+											{#if admin.hasInitialPassword && new Date() < new Date(admin.oneTimeAccessCodeExpiry)}
 												<span
 													class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-yellow-100 text-yellow-800"
 												>
 													Pending Setup
+												</span>
+											{:else if admin.oneTimeAccessCodeExpiry && new Date() > new Date(admin.oneTimeAccessCodeExpiry)}
+												<span
+													class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-red-100 text-red-800"
+												>
+													OTAC Expired
 												</span>
 											{:else}
 												<span
