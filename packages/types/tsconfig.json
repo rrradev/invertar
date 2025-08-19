@@ -1,20 +1,11 @@
 {
   "extends": "../../tsconfig.json",
   "compilerOptions": {
-    "moduleResolution": "node",
-    "esModuleInterop": true,
-    "types": ["node"],
-    "composite": true,
-    "incremental": true,
-    "declaration": true,
-    "declarationMap": true,
-    "tsBuildInfoFile": "./node_modules/.cache/tsbuildinfo/types.tsbuildinfo",
-    "outDir": "dist",
-    "rootDir": "."
+    "noEmit": true,
+    "rootDir": ".",
+    "module": "ESNext",
+    "moduleResolution": "bundler"
+
   },
-  "include": ["**/*"],
-  "exclude": [
-    "node_modules",
-    "dist"
-  ]
+  "include": ["**/*.ts"],
 }

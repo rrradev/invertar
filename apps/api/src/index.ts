@@ -1,3 +1,4 @@
+import './load-env';
 import Fastify from 'fastify';
 import cors from '@fastify/cors';
 import { appRouter } from './appRouter';
@@ -33,17 +34,5 @@ export function buildServer() {
   return server;
 }
 
-if (require.main === module) {
-  (async () => {
-    const server = buildServer();
-    try {
-      await server.listen({ port: 3000 });
-      console.log('Server listening on port 3000');
-    } catch (err) {
-      server.log.error(err);
-      process.exit(1);
-    }
-  })();
-}
-
 export { TRPCError };
+export type AppRouter = typeof appRouter;

@@ -4,7 +4,6 @@ import { hashPassword, verifyPassword } from "@repo/auth/password";
 import { generateJwt } from "@repo/auth/jwt";
 import { prisma } from "@repo/db";
 import { loginInput, setPasswordWithCodeInput } from '@repo/types/schemas/auth';
-import { Success } from "@repo/types/trpc/response";
 
 export const authRouter = router({
   login: publicProcedure
@@ -31,15 +30,15 @@ export const authRouter = router({
         if (
           user.oneTimeAccessCode !== input.password
           || !user.oneTimeAccessCodeExpiry
-          || Date.now() - user.oneTimeAccessCodeExpiry.getTime() > 24 * 60 * 60 * 1000
+          || Date.now() > user.oneTimeAccessCodeExpiry.getTime()
         ) {
           throw new TRPCError({ code: "UNAUTHORIZED", message: "Invalid or expired access code." });
         }
 
-        return new Success({
+        return {
           status: 'VALID_ACCESS_CODE',
           userId: user.id
-        });
+        };
       }
 
       if (!user.hashedPassword) {
@@ -60,7 +59,7 @@ export const authRouter = router({
       });
 
 
-      return new Success({ status: 'SUCCESS', token })
+      return { status: 'SUCCESS', token };
     }),
 
   setPasswordWithCode: publicProcedure
@@ -90,13 +89,13 @@ export const authRouter = router({
         },
       });
 
-    const token = generateJwt({
+      const token = generateJwt({
         id: user.id,
         role: user.role,
         organizationId: user.organizationId,
       });
 
-      return new Success({ status: 'PASSWORD_SET', token });
+      return { status: 'PASSWORD_SET', token };
     }),
 
 });

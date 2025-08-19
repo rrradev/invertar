@@ -1,5 +1,5 @@
 import type { FastifyRequest } from 'fastify';
-import { verifyJwt } from '@repo/auth/jwt';
+import { verifyJwt } from '@repo/auth';
 
 export async function createContext({ req }: { req: FastifyRequest }) {
   const token = req.headers.authorization?.split(' ')[1];

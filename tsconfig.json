@@ -1,51 +1,20 @@
 {
   "compilerOptions": {
     "target": "ES2020",
-    "module": "CommonJS",
-    "strict": true,
-    "esModuleInterop": true,
-    "skipLibCheck": true,
-    "forceConsistentCasingInFileNames": true,
+    "module": "ESNext",
     "moduleResolution": "node",
-    "outDir": "dist",
+    "esModuleInterop": true,
+    "forceConsistentCasingInFileNames": true,
+    "strict": true,
+    "skipLibCheck": true,
     "baseUrl": ".",
     "paths": {
-      "@repo/db": [
-        "packages/db"
-      ],
-      "@repo/auth/*": [
-        "packages/auth/src/*"
-      ],
-      "@repo/auth": [
-        "packages/auth/src"
-      ],
-      "@repo/types/*": [
-        "packages/types/*"
-      ],
-      "@repo/types": [
-        "packages/types"
-      ],
-      "@repo/api": [
-        "apps/api"
-      ]
+      "@repo/types/*": ["packages/types/*"],
+      "@repo/db": ["packages/db/"],
+      "@repo/auth/*": ["packages/auth/src/*"],
+      "@repo/auth": ["packages/auth/src/"],
+      "@repo/api": ["apps/api/src/"]
     }
   },
-  "exclude": [
-    "node_modules",
-    "**/dist"
-  ],
-  "references": [
-    {
-      "path": "packages/db"
-    },
-    {
-      "path": "packages/auth"
-    },
-    {
-      "path": "packages/types"
-    },
-    {
-      "path": "apps/api"
-    }
-  ]
+  "exclude": ["apps/web"]
 }

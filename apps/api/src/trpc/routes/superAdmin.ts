@@ -2,11 +2,53 @@ import { router, superAdminProcedure } from "../../trpc";
 import { TRPCError } from "@trpc/server";
 import { prisma } from "@repo/db";
 import { createAdminInput } from '@repo/types/schemas/auth';
-import { Success } from "@repo/types/trpc/response";
 import { UserRole } from "@repo/types/users/roles";
 import { generateAccessCode } from "@repo/auth/password";
+import { Admin } from "@repo/types/users";
 
 export const superAdminRouter = router({
+  listAdmins: superAdminProcedure
+    .query(async ({ ctx }) => {
+      const admins = await prisma.user.findMany({
+        where: {
+          role: UserRole.ADMIN,
+        },
+        select: {
+          id: true,
+          username: true,
+          email: true,
+          createdAt: true,
+          oneTimeAccessCode: true,
+          oneTimeAccessCodeExpiry: true,
+          organization: {
+            select: {
+              name: true,
+            },
+          },
+        },
+        orderBy: {
+          createdAt: 'desc',
+        },
+      })
+
+
+      let formatted = admins.map(admin => ({
+        id: admin.id,
+        username: admin.username,
+        email: admin.email,
+        createdAt: admin.createdAt.toISOString(),
+        oneTimeAccessCode: admin.oneTimeAccessCode,
+        oneTimeAccessCodeExpiry: admin.oneTimeAccessCodeExpiry?.toISOString(),
+        organizationName: admin.organization?.name || 'N/A',
+        hasInitialPassword: Boolean(admin.oneTimeAccessCode),
+      })) as Admin[];
+
+      return {
+        status: 'SUCCESS',
+        admins: formatted  ,
+      };
+    }),
+
   createAdmin: superAdminProcedure
     .input(createAdminInput)
     .mutation(async ({ input }) => {
@@ -63,7 +105,7 @@ export const superAdminRouter = router({
         },
       });
 
-      return new Success({
+      return {
         status: 'ADMIN_CREATED',
         userId: newAdmin.id,
         username: newAdmin.username,
@@ -71,6 +113,7 @@ export const superAdminRouter = router({
         organizationName: input.organizationName,
         oneTimeAccessCode,
         expiresAt: oneTimeAccessCodeExpiry,
-      });
+      };
     }),
 });
+
