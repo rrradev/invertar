@@ -11,7 +11,7 @@ interface AuthState {
 const createAuthStore = () => {
   const { subscribe, set, update } = writable<AuthState>({
     user: null,
-    isLoading: false
+    isLoading: true
   });
 
   let refreshTimeoutId: NodeJS.Timeout | null = null;
