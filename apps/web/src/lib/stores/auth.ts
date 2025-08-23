@@ -44,13 +44,16 @@ const createAuthStore = () => {
       }
     },
     logout: async () => {
+      console.log('Auth: Logging out...');
       stopAutoRefresh();
       try {
         await trpc.auth.logout.mutate();
+        console.log('Auth: Logout API call successful');
       } catch (error) {
         // Ignore logout errors, clear state anyway
         console.warn('Logout error:', error);
       } finally {
+        console.log('Auth: Clearing user state');
         set({ user: null, isLoading: false });
       }
     },
@@ -77,7 +80,14 @@ const createAuthStore = () => {
       set({ user: null, isLoading: true });
       
       try {
-        await refreshUserFromToken();
+        // Add timeout to prevent infinite loading
+        await Promise.race([
+          refreshUserFromToken(),
+          new Promise<void>((_, reject) => 
+            setTimeout(() => reject(new Error('Auth initialization timeout')), 10000)
+          )
+        ]);
+        
         // Only start auto refresh if user is authenticated
         const newState = await new Promise<AuthState>((resolve) => {
           const unsubscribe = subscribe((state) => {
@@ -88,6 +98,10 @@ const createAuthStore = () => {
         if (newState.user) {
           startAutoRefresh();
         }
+      } catch (error) {
+        console.warn('Auth initialization failed:', error);
+        // Ensure we clear loading state even on error
+        set({ user: null, isLoading: false });
       } finally {
         isInitializing = false;
       }
@@ -114,10 +128,13 @@ const createAuthStore = () => {
   // Helper function to get user data from token (decode client-side or call API)
   async function refreshUserFromToken() {
     try {
+      console.log('Auth: Fetching current user...');
       const user = await trpc.auth.getCurrentUser.query();
+      console.log('Auth: User fetched successfully:', user?.username);
       set({ user, isLoading: false });
     } catch (error) {
       // User not authenticated or token expired
+      console.log('Auth: User not authenticated:', error);
       set({ user: null, isLoading: false });
     }
   }

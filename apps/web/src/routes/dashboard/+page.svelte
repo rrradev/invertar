@@ -32,10 +32,12 @@
 
 	onMount(() => {
 		const unsubscribe = auth.subscribe(({ user: authUser, isLoading }) => {
+			console.log('Dashboard: Auth state changed:', { user: authUser?.username, isLoading });
 			user = authUser;
 			isAuthLoading = isLoading;
 			if (!isLoading) {
 				if (!authUser) {
+					console.log('Dashboard: No user, redirecting to login');
 					goto('/login');
 				} else if (authUser.role !== UserRole.SUPER_ADMIN) {
 					error = 'Access denied. Super admin privileges required.';
@@ -232,7 +234,13 @@
 
 	async function logout() {
 		await auth.logout();
-		// Navigation will be handled by the auth subscription in onMount
+		// Add fallback navigation in case subscription doesn't fire
+		setTimeout(() => {
+			// Check if we're still on dashboard after logout
+			if (typeof window !== 'undefined' && window.location.pathname === '/dashboard') {
+				goto('/login');
+			}
+		}, 100);
 	}
 
 	function formatDate(dateString: string) {
