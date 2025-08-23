@@ -76,42 +76,33 @@ const createAuthStore = () => {
       isInitializing = true;
       set({ user: null, isLoading: true });
       
+      // Create a timeout that guarantees we clear the loading state
+      const timeoutId = setTimeout(() => {
+        console.warn('Auth initialization timeout - clearing loading state');
+        set({ user: null, isLoading: false });
+        isInitializing = false;
+      }, 5000);
+      
       try {
-        // Create timeout promise that will reject after 5 seconds
-        const timeoutPromise = new Promise<never>((_, reject) => {
-          setTimeout(() => reject(new Error('Auth initialization timeout')), 5000);
-        });
+        console.log('Starting auth initialization...');
+        const user = await trpc.auth.getCurrentUser.query();
         
-        // Create auth check promise that bypasses refreshUserFromToken's error handling
-        const authCheckPromise = new Promise<void>((resolve, reject) => {
-          trpc.auth.getCurrentUser.query()
-            .then(user => {
-              set({ user, isLoading: false });
-              resolve();
-            })
-            .catch(error => {
-              // User not authenticated or token expired
-              set({ user: null, isLoading: false });
-              resolve(); // Don't reject, this is expected for non-authenticated users
-            });
-        });
+        // Clear timeout since we got a response
+        clearTimeout(timeoutId);
         
-        // Race the auth check against timeout
-        await Promise.race([authCheckPromise, timeoutPromise]);
+        console.log('Auth initialization successful, user:', user ? user.username : 'none');
+        set({ user, isLoading: false });
         
-        // Only start auto refresh if user is authenticated
-        const newState = await new Promise<AuthState>((resolve) => {
-          const unsubscribe = subscribe((state) => {
-            unsubscribe();
-            resolve(state);
-          });
-        });
-        if (newState.user) {
+        // Start auto refresh if user is authenticated
+        if (user) {
           startAutoRefresh();
         }
       } catch (error) {
-        console.warn('Auth initialization failed:', error);
-        // Ensure we clear loading state even on error
+        // Clear timeout since we got a response (even if error)
+        clearTimeout(timeoutId);
+        
+        console.log('Auth initialization failed - user not authenticated:', error.message);
+        // User not authenticated or token expired - this is expected
         set({ user: null, isLoading: false });
       } finally {
         isInitializing = false;

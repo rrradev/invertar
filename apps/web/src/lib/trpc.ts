@@ -15,7 +15,12 @@ export const trpc = createTRPCProxyClient<AppRouter>({
       fetch(url, options) {
         // Add timeout to all requests to prevent hanging
         const controller = new AbortController();
-        const timeoutId = setTimeout(() => controller.abort(), 8000); // 8 second timeout
+        const timeoutId = setTimeout(() => {
+          console.warn('TRPC request timeout after 8 seconds:', url);
+          controller.abort();
+        }, 8000); // 8 second timeout
+        
+        console.log('TRPC request starting:', url);
         
         return fetch(url, {
           ...options,
@@ -23,6 +28,7 @@ export const trpc = createTRPCProxyClient<AppRouter>({
           signal: controller.signal,
         }).finally(() => {
           clearTimeout(timeoutId);
+          console.log('TRPC request completed:', url);
         });
       },
       headers() {

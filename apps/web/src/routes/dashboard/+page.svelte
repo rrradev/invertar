@@ -32,10 +32,12 @@
 
 	onMount(() => {
 		const unsubscribe = auth.subscribe(({ user: authUser, isLoading }) => {
+			console.log('Dashboard auth state change:', { user: authUser?.username || 'none', isLoading });
 			user = authUser;
 			isAuthLoading = isLoading;
 			if (!isLoading) {
 				if (!authUser) {
+					console.log('No user, redirecting to login');
 					goto('/login');
 				} else if (authUser.role !== UserRole.SUPER_ADMIN) {
 					error = 'Access denied. Super admin privileges required.';
