@@ -76,19 +76,21 @@ const createAuthStore = () => {
       isInitializing = true;
       set({ user: null, isLoading: true });
       
-      // Create a timeout that guarantees we clear the loading state
-      const timeoutId = setTimeout(() => {
-        console.warn('Auth initialization timeout - clearing loading state');
-        set({ user: null, isLoading: false });
-        isInitializing = false;
-      }, 5000);
+      console.log('Starting auth initialization...');
+      
+      // Create a promise that resolves after timeout
+      const timeoutPromise = new Promise<never>((_, reject) => {
+        setTimeout(() => {
+          reject(new Error('Auth initialization timeout after 5 seconds'));
+        }, 5000);
+      });
       
       try {
-        console.log('Starting auth initialization...');
-        const user = await trpc.auth.getCurrentUser.query();
-        
-        // Clear timeout since we got a response
-        clearTimeout(timeoutId);
+        // Race between the API call and timeout - whichever resolves first wins
+        const user = await Promise.race([
+          trpc.auth.getCurrentUser.query(),
+          timeoutPromise
+        ]);
         
         console.log('Auth initialization successful, user:', user ? user.username : 'none');
         set({ user, isLoading: false });
@@ -98,11 +100,10 @@ const createAuthStore = () => {
           startAutoRefresh();
         }
       } catch (error) {
-        // Clear timeout since we got a response (even if error)
-        clearTimeout(timeoutId);
+        const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+        console.log('Auth initialization failed:', errorMessage);
         
-        console.log('Auth initialization failed - user not authenticated:', error.message);
-        // User not authenticated or token expired - this is expected
+        // Clear user state - this handles both timeout and auth errors
         set({ user: null, isLoading: false });
       } finally {
         isInitializing = false;
