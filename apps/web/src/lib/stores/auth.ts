@@ -16,6 +16,7 @@ const createAuthStore = () => {
 
   let refreshTimeoutId: NodeJS.Timeout | null = null;
   let isInitializing = false;
+  let initialized = false;
 
   return {
     subscribe,
@@ -45,6 +46,7 @@ const createAuthStore = () => {
     },
     logout: async () => {
       stopAutoRefresh();
+      initialized = false; // Reset initialization flag
       try {
         await trpc.auth.logout.mutate();
       } catch (error) {
@@ -58,35 +60,37 @@ const createAuthStore = () => {
       update(state => ({ ...state, isLoading }));
     },
     initialize: async () => {
-      if (!browser || isInitializing) return;
+      if (!browser) {
+        console.log('Auth initialization skipped - not in browser');
+        return;
+      }
       
-      // Check if we already have a user loaded
-      const currentState = await new Promise<AuthState>((resolve) => {
-        const unsubscribe = subscribe((state) => {
-          unsubscribe();
-          resolve(state);
-        });
-      });
+      if (isInitializing) {
+        console.log('Auth initialization skipped - already initializing');
+        return;
+      }
       
-      // If user is already loaded and not loading, no need to reinitialize
-      if (currentState.user && !currentState.isLoading) {
+      if (initialized) {
+        console.log('Auth initialization skipped - already initialized');
         return;
       }
       
       isInitializing = true;
+      console.log('Auth initialization starting...');
+      
+      // Always set loading state when initializing
       set({ user: null, isLoading: true });
       
-      console.log('Starting auth initialization...');
-      
-      // Create a promise that resolves after timeout
-      const timeoutPromise = new Promise<never>((_, reject) => {
-        setTimeout(() => {
-          reject(new Error('Auth initialization timeout after 5 seconds'));
-        }, 5000);
-      });
-      
       try {
-        // Race between the API call and timeout - whichever resolves first wins
+        console.log('Making getCurrentUser API call...');
+        
+        // Add a timeout to prevent infinite loading
+        const timeoutPromise = new Promise<never>((_, reject) => {
+          setTimeout(() => {
+            reject(new Error('Auth request timeout after 10 seconds'));
+          }, 10000); // 10 second timeout for network requests
+        });
+        
         const user = await Promise.race([
           trpc.auth.getCurrentUser.query(),
           timeoutPromise
@@ -99,14 +103,17 @@ const createAuthStore = () => {
         if (user) {
           startAutoRefresh();
         }
+        
+        initialized = true;
       } catch (error) {
         const errorMessage = error instanceof Error ? error.message : 'Unknown error';
         console.log('Auth initialization failed:', errorMessage);
         
-        // Clear user state - this handles both timeout and auth errors
+        // Clear user state - this handles auth errors  
         set({ user: null, isLoading: false });
       } finally {
         isInitializing = false;
+        console.log('Auth initialization completed');
       }
     },
     refreshToken: async () => {

@@ -4,9 +4,14 @@
 	import { auth } from '$lib/stores/auth';
 
 	let { children } = $props();
+	let hasInitialized = false;
 
 	onMount(() => {
-		auth.initialize();
+		// Only initialize auth once per page load
+		if (!hasInitialized) {
+			hasInitialized = true;
+			auth.initialize();
+		}
 	});
 </script>
 
