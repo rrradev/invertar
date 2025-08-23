@@ -15,6 +15,7 @@ const createAuthStore = () => {
   });
 
   let refreshTimeoutId: NodeJS.Timeout | null = null;
+  let isInitializing = false;
 
   return {
     subscribe,
@@ -57,7 +58,12 @@ const createAuthStore = () => {
       update(state => ({ ...state, isLoading }));
     },
     initialize: async () => {
-      if (browser) {
+      if (!browser || isInitializing) return;
+      
+      isInitializing = true;
+      set({ user: null, isLoading: true });
+      
+      try {
         await refreshUserFromToken();
         // Only start auto refresh if user is authenticated
         const currentState = await new Promise<AuthState>((resolve) => {
@@ -69,6 +75,8 @@ const createAuthStore = () => {
         if (currentState.user) {
           startAutoRefresh();
         }
+      } finally {
+        isInitializing = false;
       }
     },
     refreshToken: async () => {

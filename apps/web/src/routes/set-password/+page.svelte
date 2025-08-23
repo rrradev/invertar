@@ -48,14 +48,9 @@
         newPassword
       });
 
-      if (result.status === 'PASSWORD_SET' && result.token) {
-        const payload = JSON.parse(atob(result.token.split('.')[1]));
-        auth.login(result.token, {
-          username: payload.username,
-          id: payload.id,
-          role: payload.role,
-          organizationId: payload.organizationId
-        });
+      if (result.status === 'PASSWORD_SET') {
+        // Cookies are already set by the server, just initialize auth
+        await auth.initialize();
         goto('/dashboard');
       }
     } catch (err: any) {

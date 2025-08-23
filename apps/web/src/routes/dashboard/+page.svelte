@@ -9,6 +9,7 @@
 	let user: User | null = null;
 	let admins: Admin[] = [];
 	let isLoading = true;
+	let isAuthLoading = true;
 	let isCreating = false;
 	let isDeleting = '';
 	let isRefreshing = '';
@@ -30,15 +31,17 @@
 	};
 
 	onMount(() => {
-		auth.initialize();
-		const unsubscribe = auth.subscribe(({ user: authUser }) => {
+		const unsubscribe = auth.subscribe(({ user: authUser, isLoading }) => {
 			user = authUser;
-			if (!authUser) {
-				goto('/login');
-			} else if (authUser.role !== UserRole.SUPER_ADMIN) {
-				error = 'Access denied. Super admin privileges required.';
-			} else {
-				loadAdmins();
+			isAuthLoading = isLoading;
+			if (!isLoading) {
+				if (!authUser) {
+					goto('/login');
+				} else if (authUser.role !== UserRole.SUPER_ADMIN) {
+					error = 'Access denied. Super admin privileges required.';
+				} else {
+					loadAdmins();
+				}
 			}
 		});
 		return unsubscribe;
@@ -265,7 +268,7 @@
 				</div>
 
 				<div class="flex items-center space-x-4">
-					{#if user}
+					{#if !isAuthLoading && user}
 						<div class="flex items-center space-x-3">
 							<span class="text-sm text-gray-700">Welcome, {user.username}</span>
 							<button
@@ -283,7 +286,26 @@
 
 	<!-- Main Content -->
 	<main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-		{#if user && user.role === UserRole.SUPER_ADMIN}
+		{#if isAuthLoading}
+			<div class="text-center py-12">
+				<svg class="animate-spin mx-auto h-8 w-8 text-gray-400" fill="none" viewBox="0 0 24 24">
+					<circle
+						class="opacity-25"
+						cx="12"
+						cy="12"
+						r="10"
+						stroke="currentColor"
+						stroke-width="4"
+					></circle>
+					<path
+						class="opacity-75"
+						fill="currentColor"
+						d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+					></path>
+				</svg>
+				<p class="mt-2 text-sm text-gray-500">Loading...</p>
+			</div>
+		{:else if user && user.role === UserRole.SUPER_ADMIN}
 			<!-- Page Header -->
 			<div class="mb-8">
 				<div class="sm:flex sm:items-center sm:justify-between">
