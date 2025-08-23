@@ -230,9 +230,9 @@
 		}
 	}
 
-	function logout() {
-		auth.logout();
-		goto('/login');
+	async function logout() {
+		await auth.logout();
+		// Navigation will be handled by the auth subscription in onMount
 	}
 
 	function formatDate(dateString: string) {
