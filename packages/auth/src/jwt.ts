@@ -3,19 +3,38 @@ import { JWTPayload } from "@repo/types/auth";
 import { UserRole } from "@repo/types/users";
 
 const JWT_SECRET = process.env.JWT_SECRET!;
-const JWT_EXPIRES_IN = "1d";
+const ACCESS_TOKEN_EXPIRES_IN = "15m"; // 15 minutes
+const REFRESH_TOKEN_EXPIRES_IN = "30d"; // 30 days
 
 if (!JWT_SECRET) {
   throw new Error("JWT_SECRET environment variable is required");
 }
 
 /**
- * Generates a JWT token for a user
+ * Generates an access JWT token for a user (15 minutes)
+ * @param payload - The user data to include in the token
+ * @returns A signed JWT token
+ */
+export function generateAccessToken(payload: JWTPayload): string {
+  return jwt.sign(payload, JWT_SECRET, { expiresIn: ACCESS_TOKEN_EXPIRES_IN });
+}
+
+/**
+ * Generates a refresh JWT token for a user (30 days)
+ * @param payload - The user data to include in the token
+ * @returns A signed JWT token
+ */
+export function generateRefreshToken(payload: JWTPayload): string {
+  return jwt.sign(payload, JWT_SECRET, { expiresIn: REFRESH_TOKEN_EXPIRES_IN });
+}
+
+/**
+ * Generates a JWT token for a user (backwards compatibility)
  * @param payload - The user data to include in the token
  * @returns A signed JWT token
  */
 export function generateJwt(payload: JWTPayload): string {
-  return jwt.sign(payload, JWT_SECRET, { expiresIn: JWT_EXPIRES_IN });
+  return generateAccessToken(payload);
 }
 
 /**
@@ -41,4 +60,22 @@ export function verifyJwt(token: string): JWTPayload | null {
   } catch (error) {
     return null;
   }
+}
+
+/**
+ * Verifies and decodes an access token
+ * @param token - The access JWT token to verify
+ * @returns The decoded payload if valid, null otherwise
+ */
+export function verifyAccessToken(token: string): JWTPayload | null {
+  return verifyJwt(token);
+}
+
+/**
+ * Verifies and decodes a refresh token
+ * @param token - The refresh JWT token to verify
+ * @returns The decoded payload if valid, null otherwise
+ */
+export function verifyRefreshToken(token: string): JWTPayload | null {
+  return verifyJwt(token);
 }

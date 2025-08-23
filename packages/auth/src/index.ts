@@ -3,5 +3,12 @@
  * Provides JWT token generation/verification and password hashing/verification
  */
 
-export { generateJwt, verifyJwt } from './jwt';
+export { 
+  generateJwt, 
+  verifyJwt, 
+  generateAccessToken, 
+  generateRefreshToken, 
+  verifyAccessToken, 
+  verifyRefreshToken 
+} from './jwt';
 export { hashPassword, verifyPassword } from './password';

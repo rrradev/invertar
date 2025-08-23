@@ -1,6 +1,7 @@
 import './load-env';
 import Fastify from 'fastify';
 import cors from '@fastify/cors';
+import cookie from '@fastify/cookie';
 import { appRouter } from './appRouter';
 import { fastifyTRPCPlugin, FastifyTRPCPluginOptions } from '@trpc/server/adapters/fastify';
 import { createContext } from './context';
@@ -12,7 +13,16 @@ export function buildServer() {
     logger: true,
   });
 
-  server.register(cors, { origin: true });
+  // Register CORS with credentials support
+  server.register(cors, { 
+    origin: ['http://localhost:5173', 'http://localhost:3000'], // Allow both dev and prod origins
+    credentials: true 
+  });
+
+  // Register cookie support
+  server.register(cookie, {
+    secret: process.env.JWT_SECRET, // Use same secret as JWT for consistency
+  });
 
   const trpcOptions: FastifyTRPCPluginOptions<typeof appRouter> = {
     prefix: '/trpc',

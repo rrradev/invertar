@@ -2,7 +2,6 @@
   import { onMount } from 'svelte';
   import { goto } from '$app/navigation';
   import { auth } from '$lib/stores/auth';
-  import { trpc } from '$lib/trpc';
 
   let username = '';
   let organizationName = '';
@@ -28,24 +27,11 @@
 
     isLoading = true;
     error = '';
-    auth.setLoading(true);
 
     try {
-      const result = await trpc.auth.login.mutate({
-        username: username.trim(),
-        organizationName: organizationName.trim(),
-        password
-      });
+      const result = await auth.login(username, organizationName, password);
 
-      if (result.status === 'SUCCESS' && result.token) {
-
-        const payload = JSON.parse(atob(result.token.split('.')[1]));
-        auth.login(result.token, {
-          username,
-          id: payload.id,
-          role: payload.role,
-          organizationId: payload.organizationId
-        });
+      if (result.status === 'SUCCESS') {
         goto('/dashboard');
       } else if (result.status === 'VALID_ACCESS_CODE') {
         // Redirect to set password page
@@ -55,7 +41,6 @@
       error = err.message || 'Login failed. Please check your credentials.';
     } finally {
       isLoading = false;
-      auth.setLoading(false);
     }
   }
 
