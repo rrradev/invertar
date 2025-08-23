@@ -1,7 +1,7 @@
 import { router, superAdminProcedure } from "../../trpc";
 import { TRPCError } from "@trpc/server";
 import { prisma } from "@repo/db";
-import { createAdminInput } from '@repo/types/schemas/auth';
+import { createAdminInput, deleteAdminInput, refreshOTACInput, resetAdminInput } from '@repo/types/schemas/auth';
 import { UserRole } from "@repo/types/users/roles";
 import { generateAccessCode } from "@repo/auth/password";
 import { Admin } from "@repo/types/users";
@@ -32,7 +32,7 @@ export const superAdminRouter = router({
       })
 
 
-      let formatted = admins.map(admin => ({
+      let formatted = admins.map((admin: any) => ({
         id: admin.id,
         username: admin.username,
         email: admin.email,
@@ -113,6 +113,129 @@ export const superAdminRouter = router({
         organizationName: input.organizationName,
         oneTimeAccessCode,
         expiresAt: oneTimeAccessCodeExpiry,
+      };
+    }),
+
+  deleteAdmin: superAdminProcedure
+    .input(deleteAdminInput)
+    .mutation(async ({ input }) => {
+      // First check if the admin exists and is actually an admin
+      const adminToDelete = await prisma.user.findUnique({
+        where: { id: input.adminId },
+        select: { role: true, username: true },
+      });
+
+      if (!adminToDelete) {
+        throw new TRPCError({
+          code: "NOT_FOUND",
+          message: "Admin not found."
+        });
+      }
+
+      if (adminToDelete.role !== UserRole.ADMIN) {
+        throw new TRPCError({
+          code: "BAD_REQUEST",
+          message: "User is not an admin."
+        });
+      }
+
+      // Delete the admin
+      await prisma.user.delete({
+        where: { id: input.adminId },
+      });
+
+      return {
+        status: 'ADMIN_DELETED',
+        message: `Admin ${adminToDelete.username} deleted successfully.`,
+      };
+    }),
+
+  refreshOTAC: superAdminProcedure
+    .input(refreshOTACInput)
+    .mutation(async ({ input }) => {
+      // First check if the admin exists and is actually an admin
+      const adminToRefresh = await prisma.user.findUnique({
+        where: { id: input.adminId },
+        select: { role: true, username: true },
+      });
+
+      if (!adminToRefresh) {
+        throw new TRPCError({
+          code: "NOT_FOUND",
+          message: "Admin not found."
+        });
+      }
+
+      if (adminToRefresh.role !== UserRole.ADMIN) {
+        throw new TRPCError({
+          code: "BAD_REQUEST",
+          message: "User is not an admin."
+        });
+      }
+
+      // Generate new OTAC and expiry
+      const oneTimeAccessCode = generateAccessCode();
+      const oneTimeAccessCodeExpiry = new Date(Date.now() + 24 * 60 * 60 * 1000);
+
+      // Update the admin with new OTAC
+      const updatedAdmin = await prisma.user.update({
+        where: { id: input.adminId },
+        data: {
+          oneTimeAccessCode,
+          oneTimeAccessCodeExpiry,
+        },
+      });
+
+      return {
+        status: 'OTAC_REFRESHED',
+        message: `OTAC refreshed for ${adminToRefresh.username}.`,
+        oneTimeAccessCode,
+        expiresAt: oneTimeAccessCodeExpiry.toISOString(),
+      };
+    }),
+
+  resetAdmin: superAdminProcedure
+    .input(resetAdminInput)
+    .mutation(async ({ input }) => {
+      // First check if the admin exists and is actually an admin
+      const adminToReset = await prisma.user.findUnique({
+        where: { id: input.adminId },
+        select: { role: true, username: true },
+      });
+
+      if (!adminToReset) {
+        throw new TRPCError({
+          code: "NOT_FOUND",
+          message: "Admin not found."
+        });
+      }
+
+      if (adminToReset.role !== UserRole.ADMIN) {
+        throw new TRPCError({
+          code: "BAD_REQUEST",
+          message: "User is not an admin."
+        });
+      }
+
+      // Generate new OTAC and expiry, clear password
+      const oneTimeAccessCode = generateAccessCode();
+      const oneTimeAccessCodeExpiry = new Date(Date.now() + 24 * 60 * 60 * 1000);
+
+      // Update the admin: clear password and set new OTAC
+      const updatedAdmin = await prisma.user.update({
+        where: { id: input.adminId },
+        data: {
+          hashedPassword: null, // Clear the password
+          oneTimeAccessCode,
+          oneTimeAccessCodeExpiry,
+        },
+      });
+
+      return {
+        status: 'ADMIN_RESET',
+        message: `Admin ${adminToReset.username} reset successfully. Password cleared and new OTAC generated.`,
+        oneTimeAccessCode,
+        expiresAt: oneTimeAccessCodeExpiry.toISOString(),
       };
     }),
 });

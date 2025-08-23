@@ -53,6 +53,7 @@ export const authRouter = router({
       if (!isValid) throw new TRPCError({ code: "UNAUTHORIZED", message: "Invalid credentials." });
 
       const token = generateJwt({
+        username: user.username,
         id: user.id,
         role: user.role,
         organizationId: org.id,
@@ -90,6 +91,7 @@ export const authRouter = router({
       });
 
       const token = generateJwt({
+        username: user.username,
         id: user.id,
         role: user.role,
         organizationId: user.organizationId,
