@@ -19,6 +19,7 @@
 	let adminToDelete: Admin | null = null;
 	let adminToReset: Admin | null = null;
 	let openDropdown: string | null = null;
+	let dropdownPosition = { top: 0, left: 0 };
 	let error = '';
 	let successMessage = '';
 
@@ -103,12 +104,55 @@
 		openDropdown = null;
 	}
 
-	function toggleDropdown(adminId: string) {
-		openDropdown = openDropdown === adminId ? null : adminId;
+	function toggleDropdown(adminId: string, event: MouseEvent) {
+		const buttonElement = event.currentTarget as HTMLElement;
+		
+		if (openDropdown === adminId) {
+			openDropdown = null;
+			return;
+		}
+
+		// Calculate dropdown position
+		const rect = buttonElement.getBoundingClientRect();
+		const viewportWidth = window.innerWidth;
+		const viewportHeight = window.innerHeight;
+		const dropdownWidth = 224; // w-56 = 14rem = 224px
+		const dropdownHeight = 150; // Approximate dropdown height
+
+		let top = rect.bottom + 8; // 8px gap
+		let left = rect.right - dropdownWidth; // Right align
+
+		// Adjust if dropdown would go off-screen
+		if (left < 8) {
+			left = 8; // Min 8px from left edge
+		}
+		if (left + dropdownWidth > viewportWidth - 8) {
+			left = viewportWidth - dropdownWidth - 8; // 8px from right edge
+		}
+		if (top + dropdownHeight > viewportHeight - 8) {
+			top = rect.top - dropdownHeight - 8; // Show above button if not enough space below
+		}
+
+		dropdownPosition = { top, left };
+		openDropdown = adminId;
 	}
 
 	function closeDropdown() {
 		openDropdown = null;
+	}
+
+	function handleWindowResize() {
+		if (openDropdown) {
+			// Close dropdown on resize to prevent positioning issues
+			openDropdown = null;
+		}
+	}
+
+	function handleWindowScroll() {
+		if (openDropdown) {
+			// Close dropdown on scroll to prevent positioning issues
+			openDropdown = null;
+		}
 	}
 
 	async function deleteAdmin() {
@@ -508,7 +552,7 @@
 										<td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium relative">
 											<div class="relative inline-block text-left">
 												<button
-													on:click|stopPropagation={() => toggleDropdown(admin.id)}
+													on:click|stopPropagation={(e) => toggleDropdown(admin.id, e)}
 													class="inline-flex items-center justify-center w-8 h-8 text-gray-400 hover:text-gray-600 rounded-full hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-indigo-500 transition-colors"
 													aria-expanded={openDropdown === admin.id}
 													aria-haspopup="true"
@@ -517,123 +561,6 @@
 														<path d="M10 6a2 2 0 110-4 2 2 0 010 4zM10 12a2 2 0 110-4 2 2 0 010 4zM10 18a2 2 0 110-4 2 2 0 010 4z" />
 													</svg>
 												</button>
-
-												{#if openDropdown === admin.id}
-													<div 
-														class="absolute right-0 z-10 mt-2 w-56 rounded-md shadow-lg bg-white ring-1 ring-black ring-opacity-5 focus:outline-none"
-														on:click|stopPropagation
-													>
-														<div class="py-1" role="menu" aria-orientation="vertical">
-															<!-- Delete Action -->
-															<button
-																on:click={() => confirmDeleteAdmin(admin)}
-																disabled={isDeleting === admin.id}
-																class="group flex items-center w-full px-4 py-2 text-sm text-red-700 hover:bg-red-50 hover:text-red-900 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
-																role="menuitem"
-															>
-																{#if isDeleting === admin.id}
-																	<svg
-																		class="animate-spin mr-3 h-4 w-4 text-red-700"
-																		fill="none"
-																		viewBox="0 0 24 24"
-																	>
-																		<circle
-																			class="opacity-25"
-																			cx="12"
-																			cy="12"
-																			r="10"
-																			stroke="currentColor"
-																			stroke-width="4"
-																		></circle>
-																		<path
-																			class="opacity-75"
-																			fill="currentColor"
-																			d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
-																		></path>
-																	</svg>
-																	Deleting...
-																{:else}
-																	<svg class="mr-3 h-4 w-4 text-red-400 group-hover:text-red-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-																		<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-																	</svg>
-																	Delete Admin
-																{/if}
-															</button>
-
-															<!-- Refresh OTAC Action -->
-															<button
-																on:click={() => refreshOTAC(admin)}
-																disabled={isRefreshing === admin.id || (admin.oneTimeAccessCodeExpiry && new Date() <= new Date(admin.oneTimeAccessCodeExpiry))}
-																class="group flex items-center w-full px-4 py-2 text-sm {admin.oneTimeAccessCodeExpiry && new Date() <= new Date(admin.oneTimeAccessCodeExpiry) ? 'text-gray-400 cursor-not-allowed' : 'text-blue-700 hover:bg-blue-50 hover:text-blue-900'} disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
-																role="menuitem"
-															>
-																{#if isRefreshing === admin.id}
-																	<svg
-																		class="animate-spin mr-3 h-4 w-4 text-blue-700"
-																		fill="none"
-																		viewBox="0 0 24 24"
-																	>
-																		<circle
-																			class="opacity-25"
-																			cx="12"
-																			cy="12"
-																			r="10"
-																			stroke="currentColor"
-																			stroke-width="4"
-																		></circle>
-																		<path
-																			class="opacity-75"
-																			fill="currentColor"
-																			d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
-																		></path>
-																	</svg>
-																	Refreshing...
-																{:else}
-																	<svg class="mr-3 h-4 w-4 {admin.oneTimeAccessCodeExpiry && new Date() <= new Date(admin.oneTimeAccessCodeExpiry) ? 'text-gray-300' : 'text-blue-400 group-hover:text-blue-500'}" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-																		<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
-																	</svg>
-																	Refresh OTAC
-																{/if}
-															</button>
-
-															<!-- Reset Admin Action -->
-															<button
-																on:click={() => confirmResetAdmin(admin)}
-																disabled={isResetting === admin.id}
-																class="group flex items-center w-full px-4 py-2 text-sm text-orange-700 hover:bg-orange-50 hover:text-orange-900 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
-																role="menuitem"
-															>
-																{#if isResetting === admin.id}
-																	<svg
-																		class="animate-spin mr-3 h-4 w-4 text-orange-700"
-																		fill="none"
-																		viewBox="0 0 24 24"
-																	>
-																		<circle
-																			class="opacity-25"
-																			cx="12"
-																			cy="12"
-																			r="10"
-																			stroke="currentColor"
-																			stroke-width="4"
-																		></circle>
-																		<path
-																			class="opacity-75"
-																			fill="currentColor"
-																			d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
-																		></path>
-																	</svg>
-																	Resetting...
-																{:else}
-																	<svg class="mr-3 h-4 w-4 text-orange-400 group-hover:text-orange-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-																		<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
-																	</svg>
-																	Reset Admin
-																{/if}
-															</button>
-														</div>
-													</div>
-												{/if}
 											</div>
 										</td>
 									</tr>
@@ -666,6 +593,128 @@
 		{/if}
 	</main>
 </div>
+
+<!-- Teleported Dropdown Menu -->
+{#if openDropdown}
+	{@const currentAdmin = admins.find(admin => admin.id === openDropdown)}
+	{#if currentAdmin}
+		<div 
+			class="fixed z-50 w-56 rounded-md shadow-lg bg-white ring-1 ring-black ring-opacity-5 focus:outline-none"
+			style="top: {dropdownPosition.top}px; left: {dropdownPosition.left}px;"
+			on:click|stopPropagation
+		>
+			<div class="py-1" role="menu" aria-orientation="vertical">
+				<!-- Delete Action -->
+				<button
+					on:click={() => confirmDeleteAdmin(currentAdmin)}
+					disabled={isDeleting === currentAdmin.id}
+					class="group flex items-center w-full px-4 py-2 text-sm text-red-700 hover:bg-red-50 hover:text-red-900 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+					role="menuitem"
+				>
+					{#if isDeleting === currentAdmin.id}
+						<svg
+							class="animate-spin mr-3 h-4 w-4 text-red-700"
+							fill="none"
+							viewBox="0 0 24 24"
+						>
+							<circle
+								class="opacity-25"
+								cx="12"
+								cy="12"
+								r="10"
+								stroke="currentColor"
+								stroke-width="4"
+							></circle>
+							<path
+								class="opacity-75"
+								fill="currentColor"
+								d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+							></path>
+						</svg>
+						Deleting...
+					{:else}
+						<svg class="mr-3 h-4 w-4 text-red-400 group-hover:text-red-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+							<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+						</svg>
+						Delete Admin
+					{/if}
+				</button>
+
+				<!-- Refresh OTAC Action -->
+				<button
+					on:click={() => refreshOTAC(currentAdmin)}
+					disabled={isRefreshing === currentAdmin.id || (currentAdmin.oneTimeAccessCodeExpiry && new Date() <= new Date(currentAdmin.oneTimeAccessCodeExpiry))}
+					class="group flex items-center w-full px-4 py-2 text-sm {currentAdmin.oneTimeAccessCodeExpiry && new Date() <= new Date(currentAdmin.oneTimeAccessCodeExpiry) ? 'text-gray-400 cursor-not-allowed' : 'text-blue-700 hover:bg-blue-50 hover:text-blue-900'} disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+					role="menuitem"
+				>
+					{#if isRefreshing === currentAdmin.id}
+						<svg
+							class="animate-spin mr-3 h-4 w-4 text-blue-700"
+							fill="none"
+							viewBox="0 0 24 24"
+						>
+							<circle
+								class="opacity-25"
+								cx="12"
+								cy="12"
+								r="10"
+								stroke="currentColor"
+								stroke-width="4"
+							></circle>
+							<path
+								class="opacity-75"
+								fill="currentColor"
+								d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+							></path>
+						</svg>
+						Refreshing...
+					{:else}
+						<svg class="mr-3 h-4 w-4 {currentAdmin.oneTimeAccessCodeExpiry && new Date() <= new Date(currentAdmin.oneTimeAccessCodeExpiry) ? 'text-gray-300' : 'text-blue-400 group-hover:text-blue-500'}" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+							<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+						</svg>
+						Refresh OTAC
+					{/if}
+				</button>
+
+				<!-- Reset Admin Action -->
+				<button
+					on:click={() => confirmResetAdmin(currentAdmin)}
+					disabled={isResetting === currentAdmin.id}
+					class="group flex items-center w-full px-4 py-2 text-sm text-orange-700 hover:bg-orange-50 hover:text-orange-900 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+					role="menuitem"
+				>
+					{#if isResetting === currentAdmin.id}
+						<svg
+							class="animate-spin mr-3 h-4 w-4 text-orange-700"
+							fill="none"
+							viewBox="0 0 24 24"
+						>
+							<circle
+								class="opacity-25"
+								cx="12"
+								cy="12"
+								r="10"
+								stroke="currentColor"
+								stroke-width="4"
+							></circle>
+							<path
+								class="opacity-75"
+								fill="currentColor"
+								d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+							></path>
+						</svg>
+						Resetting...
+					{:else}
+						<svg class="mr-3 h-4 w-4 text-orange-400 group-hover:text-orange-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+							<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+						</svg>
+						Reset Admin
+					{/if}
+				</button>
+			</div>
+		</div>
+	{/if}
+{/if}
 
 <!-- Delete Confirmation Modal -->
 {#if showDeleteModal && adminToDelete}
@@ -813,5 +862,5 @@
 	</div>
 {/if}
 
-<!-- Click outside to close dropdown -->
-<svelte:window on:click={closeDropdown} />
+<!-- Event listeners -->
+<svelte:window on:click={closeDropdown} on:resize={handleWindowResize} on:scroll={handleWindowScroll} />
