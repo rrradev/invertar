@@ -77,13 +77,27 @@ const createAuthStore = () => {
       set({ user: null, isLoading: true });
       
       try {
-        // Add timeout to prevent infinite loading
-        await Promise.race([
-          refreshUserFromToken(),
-          new Promise<void>((_, reject) => 
-            setTimeout(() => reject(new Error('Auth initialization timeout')), 10000)
-          )
-        ]);
+        // Create timeout promise that will reject after 5 seconds
+        const timeoutPromise = new Promise<never>((_, reject) => {
+          setTimeout(() => reject(new Error('Auth initialization timeout')), 5000);
+        });
+        
+        // Create auth check promise that bypasses refreshUserFromToken's error handling
+        const authCheckPromise = new Promise<void>((resolve, reject) => {
+          trpc.auth.getCurrentUser.query()
+            .then(user => {
+              set({ user, isLoading: false });
+              resolve();
+            })
+            .catch(error => {
+              // User not authenticated or token expired
+              set({ user: null, isLoading: false });
+              resolve(); // Don't reject, this is expected for non-authenticated users
+            });
+        });
+        
+        // Race the auth check against timeout
+        await Promise.race([authCheckPromise, timeoutPromise]);
         
         // Only start auto refresh if user is authenticated
         const newState = await new Promise<AuthState>((resolve) => {
@@ -129,6 +143,7 @@ const createAuthStore = () => {
       set({ user, isLoading: false });
     } catch (error) {
       // User not authenticated or token expired
+      console.debug('User not authenticated:', error);
       set({ user: null, isLoading: false });
     }
   }
@@ -140,8 +155,13 @@ const createAuthStore = () => {
     if (browser) {
       // Refresh token every 12 minutes (3 minutes before expiry)
       refreshTimeoutId = setInterval(async () => {
-        const success = await trpc.auth.refreshToken.mutate({}).then(() => true).catch(() => false);
-        if (!success) {
+        try {
+          const result = await trpc.auth.refreshToken.mutate({});
+          if (result.status !== 'TOKEN_REFRESHED') {
+            throw new Error('Token refresh failed');
+          }
+        } catch (error) {
+          console.warn('Auto refresh failed:', error);
           stopAutoRefresh();
           set({ user: null, isLoading: false });
         }

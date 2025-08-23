@@ -13,9 +13,16 @@ export const trpc = createTRPCProxyClient<AppRouter>({
     httpBatchLink({
       url: `${getBaseUrl()}/trpc`,
       fetch(url, options) {
+        // Add timeout to all requests to prevent hanging
+        const controller = new AbortController();
+        const timeoutId = setTimeout(() => controller.abort(), 8000); // 8 second timeout
+        
         return fetch(url, {
           ...options,
           credentials: 'include', // Include cookies in requests
+          signal: controller.signal,
+        }).finally(() => {
+          clearTimeout(timeoutId);
         });
       },
       headers() {
