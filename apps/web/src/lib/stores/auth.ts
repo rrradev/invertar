@@ -60,19 +60,32 @@ const createAuthStore = () => {
     initialize: async () => {
       if (!browser || isInitializing) return;
       
+      // Check if we already have a user loaded
+      const currentState = await new Promise<AuthState>((resolve) => {
+        const unsubscribe = subscribe((state) => {
+          unsubscribe();
+          resolve(state);
+        });
+      });
+      
+      // If user is already loaded and not loading, no need to reinitialize
+      if (currentState.user && !currentState.isLoading) {
+        return;
+      }
+      
       isInitializing = true;
       set({ user: null, isLoading: true });
       
       try {
         await refreshUserFromToken();
         // Only start auto refresh if user is authenticated
-        const currentState = await new Promise<AuthState>((resolve) => {
+        const newState = await new Promise<AuthState>((resolve) => {
           const unsubscribe = subscribe((state) => {
             unsubscribe();
             resolve(state);
           });
         });
-        if (currentState.user) {
+        if (newState.user) {
           startAutoRefresh();
         }
       } finally {
