@@ -228,6 +228,7 @@ export const superAdminRouter = router({
           hashedPassword: null, // Clear the password
           oneTimeAccessCode,
           oneTimeAccessCodeExpiry,
+          refreshToken: null, // clear the refresh token
         },
       });
 

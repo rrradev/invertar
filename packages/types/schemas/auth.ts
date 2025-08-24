@@ -6,10 +6,6 @@ export const loginInput = z.object({
   password: z.string().min(1, "Password is required"),
 });
 
-export const refreshTokenInput = z.object({
-  // No input needed for refresh - token comes from cookie
-});
-
 export const setPasswordWithCodeInput = z.object({
   userId: z.string().min(8, "Invalid user ID"),
   newPassword: z.string()

@@ -1,13 +1,18 @@
-// See https://svelte.dev/docs/kit/types#app.d.ts
-// for information about these interfaces
+import type { JWTPayload } from "@repo/types/auth/jwt";
+
 declare global {
-	namespace App {
-		// interface Error {}
-		// interface Locals {}
-		// interface PageData {}
-		// interface PageState {}
-		// interface Platform {}
-	}
+  namespace App {
+
+    interface Locals {
+      user: JWTPayload | null;
+      shouldRequestNewTokens: boolean;
+    }
+
+    interface PageData {
+      user: Locals['user'];
+      hasRefreshToken: Locals['shouldRequestNewTokens'];
+    }
+  }
 }
 
 export {};

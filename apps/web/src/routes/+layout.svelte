@@ -1,18 +1,28 @@
 <script lang="ts">
-	import '../app.css';
-	import { onMount } from 'svelte';
+	export let data;
 	import { auth } from '$lib/stores/auth';
+	import '../app.css';
+	import { trpc } from '$lib/trpc';
+	import { onDestroy, onMount } from 'svelte';
+	import { page } from '$app/state';
+	import { jwtDecode } from 'jwt-decode';
+	import type { JWTPayload } from '@repo/types/auth';
 
-	let { children } = $props();
-	let hasInitialized = false;
+	$: auth.set({ user: data.user, isLoading: false });
 
-	onMount(() => {
-		// Only initialize auth once per page load
-		if (!hasInitialized) {
-			hasInitialized = true;
-			auth.initialize();
+	onMount(async () => {
+		if (!data.user && page.url.pathname !== '/login') {
+			const result = await trpc.auth.refreshToken.mutate();
+			if (result.status === 'TOKEN_REFRESHED') {
+				const user = jwtDecode<JWTPayload>(result.accessToken);
+				auth.set({ user, isLoading: false });
+			} else {
+				auth.reset();
+			}
 		}
 	});
+
+	onDestroy(() => {});
 </script>
 
-{@render children()}
+<slot />

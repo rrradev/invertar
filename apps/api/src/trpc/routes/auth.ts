@@ -3,16 +3,14 @@ import { TRPCError } from "@trpc/server";
 import { hashPassword, verifyPassword } from "@repo/auth/password";
 import { generateAccessToken, generateRefreshToken, verifyRefreshToken } from "@repo/auth/jwt";
 import { prisma } from "@repo/db";
-import { loginInput, setPasswordWithCodeInput, refreshTokenInput } from '@repo/types/schemas/auth';
+import { loginInput, setPasswordWithCodeInput } from '@repo/types/schemas/auth';
 import type { FastifyReply } from 'fastify';
 import type { JWTPayload } from '@repo/types/auth';
 
-// Helper function to set auth cookies
 function setAuthCookies(reply: FastifyReply, payload: JWTPayload) {
   const accessToken = generateAccessToken(payload);
   const refreshToken = generateRefreshToken(payload);
 
-  // Set access token cookie (15 minutes, HTTP-only, secure)
   reply.setCookie('accessToken', accessToken, {
     httpOnly: true,
     secure: process.env.NODE_ENV === 'production',
@@ -21,19 +19,17 @@ function setAuthCookies(reply: FastifyReply, payload: JWTPayload) {
     path: '/',
   });
 
-  // Set refresh token cookie (30 days, HTTP-only, secure)
   reply.setCookie('refreshToken', refreshToken, {
     httpOnly: true,
     secure: process.env.NODE_ENV === 'production',
-    sameSite: 'lax',
+    sameSite: 'strict',
     maxAge: 30 * 24 * 60 * 60, // 30 days in seconds
-    path: '/',
+    path: '/trpc/auth.refreshToken',
   });
 
   return { accessToken, refreshToken };
 }
 
-// Helper function to clear auth cookies
 function clearAuthCookies(reply: FastifyReply) {
   reply.clearCookie('accessToken', { path: '/' });
   reply.clearCookie('refreshToken', { path: '/' });
@@ -93,10 +89,17 @@ export const authRouter = router({
         organizationId: org.id,
       };
 
-      // Set cookies through reply object
-      setAuthCookies(ctx.res, payload);
+      const { accessToken, refreshToken } = setAuthCookies(ctx.res, payload);
+      const hashedRefreshToken = await hashPassword(refreshToken);
 
-      return { status: 'SUCCESS' };
+      await prisma.user.update({
+        where: { id: user.id },
+        data: {
+          refreshToken: hashedRefreshToken,
+        },
+      });
+
+      return { status: 'SUCCESS', accessToken };
     }),
 
   setPasswordWithCode: publicProcedure
@@ -115,17 +118,6 @@ export const authRouter = router({
       )
         throw new TRPCError({ code: "UNAUTHORIZED", message: "Invalid or expired access code." });
 
-      const hashed = await hashPassword(input.newPassword);
-
-      await prisma.user.update({
-        where: { id: input.userId },
-        data: {
-          hashedPassword: hashed,
-          oneTimeAccessCode: null,
-          oneTimeAccessCodeExpiry: null,
-        },
-      });
-
       const payload = {
         username: user.username,
         id: user.id,
@@ -134,38 +126,51 @@ export const authRouter = router({
       };
 
       // Set cookies through reply object
-      setAuthCookies(ctx.res, payload);
+      const { refreshToken } = setAuthCookies(ctx.res, payload);
+
+      const hashedRefreshToken = await hashPassword(refreshToken);
+      const hashedPassword = await hashPassword(input.newPassword);
+
+      await prisma.user.update({
+        where: { id: input.userId },
+        data: {
+          hashedPassword: hashedPassword,
+          oneTimeAccessCode: null,
+          oneTimeAccessCodeExpiry: null,
+          refreshToken: hashedRefreshToken,
+        },
+      });
 
       return { status: 'PASSWORD_SET' };
     }),
 
   refreshToken: publicProcedure
-    .input(refreshTokenInput)
     .mutation(async ({ ctx }) => {
-      // Get refresh token from cookie
       const refreshToken = ctx.req.cookies?.refreshToken;
-      
+
       if (!refreshToken) {
         throw new TRPCError({ code: "UNAUTHORIZED", message: "No refresh token found." });
       }
 
-      // Verify refresh token
       const payload = verifyRefreshToken(refreshToken);
       if (!payload) {
         throw new TRPCError({ code: "UNAUTHORIZED", message: "Invalid refresh token." });
       }
 
-      // Check if user still exists and is active
       const user = await prisma.user.findUnique({
         where: { id: payload.id },
-        select: { id: true, username: true, role: true, organizationId: true }
+        select: { id: true, username: true, role: true, organizationId: true, hashedPassword: true, refreshToken: true },
       });
 
       if (!user) {
-        throw new TRPCError({ code: "UNAUTHORIZED", message: "User no longer exists." });
+        throw new TRPCError({ code: "UNAUTHORIZED", message: "User no longer exists or is disabled." });
       }
 
-      // Generate new tokens and set cookies
+      const isValid = await verifyPassword(refreshToken, user.refreshToken || "");
+      if (!isValid) {
+        throw new TRPCError({ code: "UNAUTHORIZED", message: "Invalid token." });
+      }
+
       const newPayload = {
         username: user.username,
         id: user.id,
@@ -173,46 +178,16 @@ export const authRouter = router({
         organizationId: user.organizationId,
       };
 
-      setAuthCookies(ctx.res, newPayload);
+      const { accessToken } = setAuthCookies(ctx.res, newPayload);
 
-      return { status: 'TOKEN_REFRESHED' };
+      return { status: 'TOKEN_REFRESHED', accessToken };
     }),
 
   logout: publicProcedure
     .mutation(async ({ ctx }) => {
       clearAuthCookies(ctx.res);
-      
+
       return { status: 'LOGGED_OUT' };
-    }),
-
-  getCurrentUser: protectedProcedure
-    .query(async ({ ctx }) => {
-      // If we get here, the user is authenticated (middleware checked)
-      if (!ctx.user) {
-        throw new TRPCError({ code: "UNAUTHORIZED", message: "Not authenticated." });
-      }
-
-      // Get full user data from database
-      const user = await prisma.user.findUnique({
-        where: { id: ctx.user.id },
-        select: {
-          id: true,
-          username: true,
-          role: true,
-          organizationId: true,
-        }
-      });
-
-      if (!user) {
-        throw new TRPCError({ code: "NOT_FOUND", message: "User not found." });
-      }
-
-      return {
-        id: user.id,
-        username: user.username,
-        role: user.role,
-        organizationId: user.organizationId,
-      };
     }),
 
 });

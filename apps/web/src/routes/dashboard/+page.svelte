@@ -32,21 +32,19 @@
 
 	onMount(() => {
 		const unsubscribe = auth.subscribe(({ user: authUser, isLoading }) => {
-			console.log('Dashboard auth state change:', { user: authUser?.username || 'none', isLoading });
 			user = authUser;
 			isAuthLoading = isLoading;
-			if (!isLoading) {
-				if (!authUser) {
-					console.log('No user, redirecting to login');
-					goto('/login');
-				} else if (authUser.role !== UserRole.SUPER_ADMIN) {
+
+			if (!isLoading && user) {
+				if (authUser?.role !== UserRole.SUPER_ADMIN) {
 					error = 'Access denied. Super admin privileges required.';
 				} else {
 					loadAdmins();
 				}
 			}
 		});
-		return unsubscribe;
+
+		return () => unsubscribe();
 	});
 
 	async function loadAdmins() {
@@ -111,7 +109,7 @@
 
 	function toggleDropdown(adminId: string, event: MouseEvent) {
 		const buttonElement = event.currentTarget as HTMLElement;
-		
+
 		if (openDropdown === adminId) {
 			openDropdown = null;
 			return;
@@ -233,14 +231,9 @@
 	}
 
 	async function logout() {
-		await auth.logout();
-		// Add fallback navigation in case subscription doesn't fire
-		setTimeout(() => {
-			// Check if we're still on dashboard after logout
-			if (typeof window !== 'undefined' && window.location.pathname === '/dashboard') {
-				goto('/login');
-			}
-		}, 100);
+		await trpc.auth.logout.mutate();
+		auth.reset();
+		goto('/login');
 	}
 
 	function formatDate(dateString: string) {
@@ -278,7 +271,9 @@
 				<div class="flex items-center space-x-4">
 					{#if !isAuthLoading && user}
 						<div class="flex items-center space-x-3">
-							<span class="text-sm text-gray-700">Welcome, {user.username}</span>
+							<span id="welcome-message" class="text-sm text-gray-700"
+								>Welcome, {user.username}</span
+							>
 							<button
 								on:click={logout}
 								class="px-3 py-2 text-sm font-medium text-gray-700 hover:text-gray-900 hover:bg-gray-100 rounded-md transition-colors"
@@ -297,13 +292,7 @@
 		{#if isAuthLoading}
 			<div class="text-center py-12">
 				<svg class="animate-spin mx-auto h-8 w-8 text-gray-400" fill="none" viewBox="0 0 24 24">
-					<circle
-						class="opacity-25"
-						cx="12"
-						cy="12"
-						r="10"
-						stroke="currentColor"
-						stroke-width="4"
+					<circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"
 					></circle>
 					<path
 						class="opacity-75"
@@ -588,7 +577,9 @@
 													aria-haspopup="true"
 												>
 													<svg class="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
-														<path d="M10 6a2 2 0 110-4 2 2 0 010 4zM10 12a2 2 0 110-4 2 2 0 010 4zM10 18a2 2 0 110-4 2 2 0 010 4z" />
+														<path
+															d="M10 6a2 2 0 110-4 2 2 0 010 4zM10 12a2 2 0 110-4 2 2 0 010 4zM10 18a2 2 0 110-4 2 2 0 010 4z"
+														/>
 													</svg>
 												</button>
 											</div>
@@ -626,9 +617,9 @@
 
 <!-- Teleported Dropdown Menu -->
 {#if openDropdown}
-	{@const currentAdmin = admins.find(admin => admin.id === openDropdown)}
+	{@const currentAdmin = admins.find((admin) => admin.id === openDropdown)}
 	{#if currentAdmin}
-		<div 
+		<div
 			class="fixed z-50 w-56 rounded-md shadow-lg bg-white ring-1 ring-black ring-opacity-5 focus:outline-none"
 			style="top: {dropdownPosition.top}px; left: {dropdownPosition.left}px;"
 			on:click|stopPropagation
@@ -642,11 +633,7 @@
 					role="menuitem"
 				>
 					{#if isDeleting === currentAdmin.id}
-						<svg
-							class="animate-spin mr-3 h-4 w-4 text-red-700"
-							fill="none"
-							viewBox="0 0 24 24"
-						>
+						<svg class="animate-spin mr-3 h-4 w-4 text-red-700" fill="none" viewBox="0 0 24 24">
 							<circle
 								class="opacity-25"
 								cx="12"
@@ -663,8 +650,18 @@
 						</svg>
 						Deleting...
 					{:else}
-						<svg class="mr-3 h-4 w-4 text-red-400 group-hover:text-red-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-							<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+						<svg
+							class="mr-3 h-4 w-4 text-red-400 group-hover:text-red-500"
+							fill="none"
+							stroke="currentColor"
+							viewBox="0 0 24 24"
+						>
+							<path
+								stroke-linecap="round"
+								stroke-linejoin="round"
+								stroke-width="2"
+								d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"
+							/>
 						</svg>
 						Delete Admin
 					{/if}
@@ -673,16 +670,18 @@
 				<!-- Refresh OTAC Action -->
 				<button
 					on:click={() => refreshOTAC(currentAdmin)}
-					disabled={isRefreshing === currentAdmin.id || (currentAdmin.oneTimeAccessCodeExpiry && new Date() <= new Date(currentAdmin.oneTimeAccessCodeExpiry)|| !currentAdmin.hasInitialPassword)}
-					class="group flex items-center w-full px-4 py-2 text-sm {currentAdmin.oneTimeAccessCodeExpiry && new Date() <= new Date(currentAdmin.oneTimeAccessCodeExpiry) ? 'text-gray-400 cursor-not-allowed' : 'text-blue-700 hover:bg-blue-50 hover:text-blue-900'} disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+					disabled={isRefreshing === currentAdmin.id ||
+						(currentAdmin.oneTimeAccessCodeExpiry &&
+							new Date() <= new Date(currentAdmin.oneTimeAccessCodeExpiry)) ||
+						!currentAdmin.hasInitialPassword}
+					class="group flex items-center w-full px-4 py-2 text-sm {currentAdmin.oneTimeAccessCodeExpiry &&
+					new Date() <= new Date(currentAdmin.oneTimeAccessCodeExpiry)
+						? 'text-gray-400 cursor-not-allowed'
+						: 'text-blue-700 hover:bg-blue-50 hover:text-blue-900'} disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
 					role="menuitem"
 				>
 					{#if isRefreshing === currentAdmin.id}
-						<svg
-							class="animate-spin mr-3 h-4 w-4 text-blue-700"
-							fill="none"
-							viewBox="0 0 24 24"
-						>
+						<svg class="animate-spin mr-3 h-4 w-4 text-blue-700" fill="none" viewBox="0 0 24 24">
 							<circle
 								class="opacity-25"
 								cx="12"
@@ -699,8 +698,21 @@
 						</svg>
 						Refreshing...
 					{:else}
-						<svg class="mr-3 h-4 w-4 {currentAdmin.oneTimeAccessCodeExpiry && new Date() <= new Date(currentAdmin.oneTimeAccessCodeExpiry) ? 'text-gray-300' : 'text-blue-400 group-hover:text-blue-500'}" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-							<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+						<svg
+							class="mr-3 h-4 w-4 {currentAdmin.oneTimeAccessCodeExpiry &&
+							new Date() <= new Date(currentAdmin.oneTimeAccessCodeExpiry)
+								? 'text-gray-300'
+								: 'text-blue-400 group-hover:text-blue-500'}"
+							fill="none"
+							stroke="currentColor"
+							viewBox="0 0 24 24"
+						>
+							<path
+								stroke-linecap="round"
+								stroke-linejoin="round"
+								stroke-width="2"
+								d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"
+							/>
 						</svg>
 						Refresh OTAC
 					{/if}
@@ -714,11 +726,7 @@
 					role="menuitem"
 				>
 					{#if isResetting === currentAdmin.id}
-						<svg
-							class="animate-spin mr-3 h-4 w-4 text-orange-700"
-							fill="none"
-							viewBox="0 0 24 24"
-						>
+						<svg class="animate-spin mr-3 h-4 w-4 text-orange-700" fill="none" viewBox="0 0 24 24">
 							<circle
 								class="opacity-25"
 								cx="12"
@@ -735,8 +743,18 @@
 						</svg>
 						Resetting...
 					{:else}
-						<svg class="mr-3 h-4 w-4 text-orange-400 group-hover:text-orange-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-							<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+						<svg
+							class="mr-3 h-4 w-4 text-orange-400 group-hover:text-orange-500"
+							fill="none"
+							stroke="currentColor"
+							viewBox="0 0 24 24"
+						>
+							<path
+								stroke-linecap="round"
+								stroke-linejoin="round"
+								stroke-width="2"
+								d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"
+							/>
 						</svg>
 						Reset Admin
 					{/if}
@@ -752,12 +770,7 @@
 		<div class="relative top-20 mx-auto p-5 border w-96 shadow-lg rounded-md bg-white">
 			<div class="mt-3">
 				<div class="mx-auto flex items-center justify-center h-12 w-12 rounded-full bg-red-100">
-					<svg
-						class="h-6 w-6 text-red-600"
-						fill="none"
-						stroke="currentColor"
-						viewBox="0 0 24 24"
-					>
+					<svg class="h-6 w-6 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
 						<path
 							stroke-linecap="round"
 							stroke-linejoin="round"
@@ -769,7 +782,8 @@
 				<div class="mt-2 px-7 py-3">
 					<h3 class="text-lg font-medium text-center">Delete Administrator</h3>
 					<p class="text-sm text-gray-500 text-center mt-2">
-						Are you sure you want to delete <strong>{adminToDelete.username}</strong>? This action cannot be undone.
+						Are you sure you want to delete <strong>{adminToDelete.username}</strong>? This action
+						cannot be undone.
 					</p>
 				</div>
 				<div class="flex justify-center space-x-3 mt-4">
@@ -842,7 +856,9 @@
 				<div class="mt-2 px-7 py-3">
 					<h3 class="text-lg font-medium text-center">Reset Administrator</h3>
 					<p class="text-sm text-gray-500 text-center mt-2">
-						Are you sure you want to reset <strong>{adminToReset.username}</strong>? This will clear their password and generate a new OTAC.
+						Are you sure you want to reset <strong>{adminToReset.username}</strong>? This will clear
+						their password and generate a new OTAC. It will take up to 15 mins for the user to be
+						reset
 					</p>
 				</div>
 				<div class="flex justify-center space-x-3 mt-4">
@@ -893,4 +909,8 @@
 {/if}
 
 <!-- Event listeners -->
-<svelte:window on:click={closeDropdown} on:resize={handleWindowResize} on:scroll={handleWindowScroll} />
+<svelte:window
+	on:click={closeDropdown}
+	on:resize={handleWindowResize}
+	on:scroll={handleWindowScroll}
+/>

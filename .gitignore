@@ -12,3 +12,5 @@ dist
 
 .svelte-kit
 **/.svelte-kit
+
+test-results

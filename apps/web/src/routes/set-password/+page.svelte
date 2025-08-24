@@ -1,8 +1,6 @@
 <script lang="ts">
   import { onMount } from 'svelte';
-  import { page } from '$app/stores';
   import { goto } from '$app/navigation';
-  import { auth } from '$lib/stores/auth';
   import { trpc } from '$lib/trpc';
 
   let userId = '';
@@ -49,8 +47,6 @@
       });
 
       if (result.status === 'PASSWORD_SET') {
-        // Cookies are already set by the server, just initialize auth
-        await auth.initialize();
         goto('/dashboard');
       }
     } catch (err: any) {
