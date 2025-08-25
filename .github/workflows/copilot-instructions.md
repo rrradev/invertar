@@ -25,7 +25,9 @@ ADMIN_ORGANIZATION="new_org"
 ADMIN_EMAIL="admin@example.com"
 ```
 
-Now, I cannot give you the actual .env even for the test env so you need to think of workarounds, especially for the DATABASE_URL - you will need an actual postgresql database running, you might try using a docker container for testing.
+I cannot give you the actual .env even for the test env so you need to think of workarounds, especially for the DATABASE_URL - you will need an actual postgresql database running, you might try using a docker container for testing.
+
+When .env values are missing, ALWAYS use placeholders, NEVER invent credentials, NEVER hardcode values into source files.
 
 ### Database Setup
 - Install PostgreSQL: `sudo apt-get update && sudo apt-get install -y postgresql postgresql-contrib`
@@ -38,9 +40,16 @@ Now, I cannot give you the actual .env even for the test env so you need to thin
 
 #### Web Application (SvelteKit)
 - **Run development server**: `pnpm dev:web` -- starts in 2 seconds on http://localhost:5173
-- **Build for production**: `cd apps/web && pnpm build` -- takes 18 seconds. NEVER CANCEL. Set timeout to 30+ minutes.
+- **Build for production**: `cd apps/web && pnpm build` -- takes 18 seconds. NEVER CANCEL. Set timeout to 2+ minutes.
 - **Lint code**: `cd apps/web && pnpm lint` -- takes 2 seconds
 - **Format code**: `cd apps/web && pnpm format` -- takes 1.4 seconds
+
+#### Web Application (SvelteKit) UI GUIDELINES
+- Follow the established design system and component library.
+- Ensure accessibility best practices are followed.
+- Maintain consistent spacing, typography, and color usage.
+- The UI needs to be beautiful :))) 
+- Color palettes, gradients, and overall aesthetics should be considered in all components (see `apps/web/src/routes/dashboard/+page.svelte` for examples).
 
 #### API Application (Fastify + tRPC)
 - **LIMITATION**: `pnpm dev:api` fails without Prisma client generation
@@ -59,7 +68,6 @@ Now, I cannot give you the actual .env even for the test env so you need to thin
 - **Run UI tests**: `pnpm test:web`
 - Tests are located in `tests/web/` directory
 - Tests require database setup and environment variables
-
 
 ## Validation Scenarios
 
@@ -110,7 +118,8 @@ Now, I cannot give you the actual .env even for the test env so you need to thin
 - API E2E tests in `tests/api/e2e/` test authentication and admin creation flows
 - UI E2E tests in `tests/web/` test user interactions and visual elements
 
-note: we are using Playwright for UI testing and Vitest for API testing.
+NOTE: we are using Playwright for UI testing and Vitest for API testing.
+Invertar does not use Jest. NEVER suggest Jest.
 
 ## Project Structure
 
@@ -126,6 +135,7 @@ note: we are using Playwright for UI testing and Vitest for API testing.
 ├── tests/            # Application tests
 └── .env              # Environment variables (create manually)
 ```
+NEVER move, rename, or restructure folders unless I explicitly instruct.
 
 ### Key Technologies
 - **Frontend**: SvelteKit + TypeScript + TailwindCSS
@@ -135,6 +145,8 @@ note: we are using Playwright for UI testing and Vitest for API testing.
 - **Testing: API**: Vitest
 - **Testing: Web**: Playwright
 - **Build**: Vite
+
+Copilot, do not propose technologies outside: Fastify, tRPC, Prisma, PostgreSQL, SvelteKit, Tailwind, Playwright, Vitest, pnpm. Never substitute alternatives unless I explicitly request.
 
 ### Database Schema
 - **Organizations**: Multi-tenant organization support
@@ -166,14 +178,16 @@ note: we are using Playwright for UI testing and Vitest for API testing.
 
 ### Users, flows, Business Logic, etc
 - The Super admin is the master of the app, his main jobs is to create/manage Admins, organizations, and settings -  he does not have an email - he doesn't need one - he will be seeded into the DB once the app is live. He will not create/ manage items and folders and inventory - he just gives initial access to Admins.
-- The Admin can manage users and their permissions within their organization. They need an email to which the Super Admin will communicate in case of any problems. The rest of capabilities are the same as the Users.
+- The Admin can manage users and their permissions within the organization. They need an email to which the Super Admin will communicate in case of any problems. The rest of capabilities are the same as the Users.
 - The User can manage their own profile and data. Can create and manage folders and inventory items (based on their permissions) within their organization. 
-- The User doesn't need an email, since the Admin of the organization will manage him. They will use other means of communications that are already established withing their organizations and it is not a concern for Invertar.
+- The User doesn't need an email, since the Admin of the organization will manage him. They will use other means of communications that are already established withing their organization and it is not a concern for Invertar.
 - The Business logic is more or less defined in the db schema - packages\db\schema.prisma, but it is not set in stone and will evolve as the application grows.
 
-### FINAL NOTES
-- Be sure that I (rrradev the human owner of the project) will test all changes thoroughly before merging.
-- I will be responsible for any code refactors, that might need to be done to the tasks, since initial context might be missing or change entirely, or is not possible to be done by the AI.
-- I will give you further instruction during development.
+### FINAL NOTES 
+- I (rrradev, the human owner) will test all changes thoroughly before merging.
+- I (rrradev) will provide further instructions during development. Always wait for explicit instructions before making structural or architectural changes.
+- There is a CI workflow at `.github/workflows/ci.yml` with mandatory checks on all PRs.
+
+Never modify `.github/workflows/ci.yml` unless explicitly requested.
 
 **NEVER CANCEL** any build or test commands. Builds may take longer in different environments.
