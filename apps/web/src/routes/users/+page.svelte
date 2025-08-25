@@ -400,17 +400,17 @@
 									<th
 										class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
 									>
-										Status
-									</th>
-									<th
-										class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
-									>
 										Created
 									</th>
 									<th
 										class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
 									>
 										OTAC
+									</th>
+									<th
+										class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
+									>
+										Status
 									</th>
 									<th
 										class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
@@ -437,21 +437,6 @@
 											</div>
 										</td>
 										<td class="px-6 py-4 whitespace-nowrap">
-											{#if userData.hasInitialPassword}
-												<span
-													class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-yellow-100 text-yellow-800"
-												>
-													Needs Setup
-												</span>
-											{:else}
-												<span
-													class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800"
-												>
-													Active
-												</span>
-											{/if}
-										</td>
-										<td class="px-6 py-4 whitespace-nowrap">
 											<div class="text-sm text-gray-900">{formatDate(userData.createdAt)}</div>
 										</td>
 										<td class="px-6 py-4 whitespace-nowrap">
@@ -464,6 +449,27 @@
 												{/if}
 											{:else}
 												<span class="text-xs text-gray-400">-</span>
+											{/if}
+										</td>
+										<td class="px-6 py-4 whitespace-nowrap">
+											{#if userData.hasInitialPassword && userData.oneTimeAccessCodeExpiry && new Date() < new Date(userData.oneTimeAccessCodeExpiry)}
+												<span
+													class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-yellow-100 text-yellow-800"
+												>
+													Pending Setup
+												</span>
+											{:else if userData.oneTimeAccessCodeExpiry && new Date() > new Date(userData.oneTimeAccessCodeExpiry)}
+												<span
+													class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-red-100 text-red-800"
+												>
+													OTAC Expired
+												</span>
+											{:else}
+												<span
+													class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800"
+												>
+													Active
+												</span>
 											{/if}
 										</td>
 										<td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium relative">
@@ -523,48 +529,6 @@
 			on:click|stopPropagation
 		>
 			<div class="py-1" role="menu" aria-orientation="vertical">
-				<!-- Reset User Action -->
-				<button
-					on:click={() => confirmResetUser(currentUser)}
-					disabled={isResetting === currentUser.id}
-					class="group flex items-center w-full px-4 py-2 text-sm text-orange-700 hover:bg-orange-50 hover:text-orange-900 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
-					role="menuitem"
-				>
-					{#if isResetting === currentUser.id}
-						<svg class="animate-spin mr-3 h-4 w-4 text-orange-700" fill="none" viewBox="0 0 24 24">
-							<circle
-								class="opacity-25"
-								cx="12"
-								cy="12"
-								r="10"
-								stroke="currentColor"
-								stroke-width="4"
-							></circle>
-							<path
-								class="opacity-75"
-								fill="currentColor"
-								d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
-							></path>
-						</svg>
-						Resetting...
-					{:else}
-						<svg
-							class="mr-3 h-4 w-4 text-orange-400 group-hover:text-orange-500"
-							fill="none"
-							stroke="currentColor"
-							viewBox="0 0 24 24"
-						>
-							<path
-								stroke-linecap="round"
-								stroke-linejoin="round"
-								stroke-width="2"
-								d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"
-							/>
-						</svg>
-						Reset OTAC
-					{/if}
-				</button>
-
 				<!-- Delete Action -->
 				<button
 					on:click={() => confirmDeleteUser(currentUser)}
@@ -604,6 +568,48 @@
 							/>
 						</svg>
 						Delete User
+					{/if}
+				</button>
+
+				<!-- Reset User Action -->
+				<button
+					on:click={() => confirmResetUser(currentUser)}
+					disabled={isResetting === currentUser.id}
+					class="group flex items-center w-full px-4 py-2 text-sm text-orange-700 hover:bg-orange-50 hover:text-orange-900 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+					role="menuitem"
+				>
+					{#if isResetting === currentUser.id}
+						<svg class="animate-spin mr-3 h-4 w-4 text-orange-700" fill="none" viewBox="0 0 24 24">
+							<circle
+								class="opacity-25"
+								cx="12"
+								cy="12"
+								r="10"
+								stroke="currentColor"
+								stroke-width="4"
+							></circle>
+							<path
+								class="opacity-75"
+								fill="currentColor"
+								d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+							></path>
+						</svg>
+						Resetting...
+					{:else}
+						<svg
+							class="mr-3 h-4 w-4 text-orange-400 group-hover:text-orange-500"
+							fill="none"
+							stroke="currentColor"
+							viewBox="0 0 24 24"
+						>
+							<path
+								stroke-linecap="round"
+								stroke-linejoin="round"
+								stroke-width="2"
+								d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"
+							/>
+						</svg>
+						Reset User
 					{/if}
 				</button>
 			</div>
@@ -701,9 +707,9 @@
 					</svg>
 				</div>
 				<div class="mt-2 px-7 py-3">
-					<h3 class="text-lg font-medium text-center">Reset User OTAC</h3>
+					<h3 class="text-lg font-medium text-center">Reset User</h3>
 					<p class="text-sm text-gray-500 text-center mt-2">
-						Are you sure you want to reset the OTAC for <strong>{userToReset.username}</strong>? This will generate a new one-time access code.
+						Are you sure you want to reset <strong>{userToReset.username}</strong>? This will generate a new one-time access code.
 					</p>
 				</div>
 				<div class="flex justify-center space-x-3 mt-4">
@@ -744,7 +750,7 @@
 							</svg>
 							Resetting...
 						{:else}
-							Reset OTAC
+							Reset User
 						{/if}
 					</button>
 				</div>
