@@ -39,7 +39,7 @@ export const publicProcedure = t.procedure;
 
 export const protectedProcedure = t.procedure.use(
   t.middleware(({ ctx, next }) => {
-    const allowedRoles: UserRoleType[] = ["ADMIN", "USER"];
+    const allowedRoles: UserRoleType[] = ["ADMIN", "USER", "SUPER_ADMIN"];
     if (!ctx.user || !allowedRoles.includes(ctx.user.role)) {
       throw new TRPCError({ code: "UNAUTHORIZED" });
     }

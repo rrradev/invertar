@@ -1,56 +1,23 @@
 import { writable } from 'svelte/store';
-import { browser } from '$app/environment';
-import type { User } from '@repo/types/users';
+import type { JWTPayload } from '@repo/types/auth/jwt';
 
-interface AuthState {
-  user: User | null;
-  token: string | null;
+export interface AuthState {
+  user: JWTPayload | null;
   isLoading: boolean;
 }
 
-const createAuthStore = () => {
+function createAuthStore() {
   const { subscribe, set, update } = writable<AuthState>({
     user: null,
-    token: null,
-    isLoading: false
+    isLoading: true
   });
 
   return {
     subscribe,
-    login: (token: string, user: User) => {
-      if (browser) {
-        localStorage.setItem('auth-token', token);
-        localStorage.setItem('auth-user', JSON.stringify(user));
-      }
-      set({ user, token, isLoading: false });
-    },
-    logout: () => {
-      if (browser) {
-        localStorage.removeItem('auth-token');
-        localStorage.removeItem('auth-user');
-      }
-      set({ user: null, token: null, isLoading: false });
-    },
-    setLoading: (isLoading: boolean) => {
-      update(state => ({ ...state, isLoading }));
-    },
-    initialize: () => {
-      if (browser) {
-        const token = localStorage.getItem('auth-token');
-        const userStr = localStorage.getItem('auth-user');
-        if (token && userStr) {
-          try {
-            const user = JSON.parse(userStr);
-            set({ user, token, isLoading: false });
-          } catch {
-            // Invalid user data, clear storage
-            localStorage.removeItem('auth-token');
-            localStorage.removeItem('auth-user');
-          }
-        }
-      }
-    }
+    set,
+    update,
+    reset: () => set({ user: null, isLoading: false })
   };
-};
+}
 
 export const auth = createAuthStore();

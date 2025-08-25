@@ -2,6 +2,7 @@ import { test, expect } from 'vitest';
 import { req } from './config/config';
 import { LoginInput } from '@repo/types/schemas/auth';
 import { ErrorResponse, SuccessResponse } from '@repo/types/trpc/response';
+import { SuccessStatus } from '@repo/types/trpc/successStatus';
 
 const username = process.env.SUPERADMIN_USERNAME!;
 const password = process.env.SUPERADMIN_PASSWORD!;
@@ -16,14 +17,14 @@ test('login with valid SUPER_ADMIN cred', async () => {
         organizationName,
     };
 
-    const res = await req<SuccessResponse<{ token: string }>>(
+    const res = await req<SuccessResponse<{ accessToken: string }>>(
         'POST',
         AUTH_LOGIN,
         loginInput
     );
 
-    expect(res.token).toBeDefined();
-    expect(res.status).toBe('SUCCESS');
+    expect(res.accessToken).toBeDefined();
+    expect(res.status).toBe(SuccessStatus.SUCCESS);
 });
 
 

@@ -9,7 +9,8 @@ export default {
 		adapter: adapter(),
 		alias: {
 			'@repo/types/*': '../../packages/types/*',
-			'@repo/api': '../../apps/api/src/'
+			'@repo/api': '../../apps/api/src/',
+			'@repo/auth': '../../packages/auth/src/',
 		}
 	}
 };

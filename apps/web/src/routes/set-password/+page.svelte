@@ -1,9 +1,8 @@
 <script lang="ts">
   import { onMount } from 'svelte';
-  import { page } from '$app/stores';
   import { goto } from '$app/navigation';
-  import { auth } from '$lib/stores/auth';
   import { trpc } from '$lib/trpc';
+	import { SuccessStatus } from '@repo/types/trpc/successStatus';
 
   let userId = '';
   let oneTimeAccessCode = '';
@@ -48,14 +47,7 @@
         newPassword
       });
 
-      if (result.status === 'PASSWORD_SET' && result.token) {
-        const payload = JSON.parse(atob(result.token.split('.')[1]));
-        auth.login(result.token, {
-          username: payload.username,
-          id: payload.id,
-          role: payload.role,
-          organizationId: payload.organizationId
-        });
+      if (result.status === SuccessStatus.PASSWORD_SET) {
         goto('/dashboard');
       }
     } catch (err: any) {

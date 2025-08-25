@@ -12,3 +12,6 @@ dist
 
 .svelte-kit
 **/.svelte-kit
+
+test-results
+playwright-report
