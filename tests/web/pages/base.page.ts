@@ -1,11 +1,14 @@
 import { Page } from "@playwright/test";
 
-export default class BasePage {
+export default abstract class BasePage {
     page: Page;
 
     constructor(page: Page) {
         this.page = page;
     }
+
+    abstract open(): Promise<void>;
+    abstract shouldBeVisible(): Promise<void>;
 
     async waitForRequest(url: string) {
         return this.page.waitForRequest(url);
@@ -35,17 +38,23 @@ export default class BasePage {
         });
     }
 
-    async deleteCookie(cookie: string) {
+    async expireCookie(cookieName: string) {
         const context = this.page.context();
         const cookies = await context.cookies();
+        const target = cookies.find(c => c.name === cookieName);
 
-        // Find the cookie you want to delete
-        const cookieToDelete = cookies.find(c => c.name === cookie);
-
-        if (cookieToDelete) {
-            await context.clearCookies();
-            // Re-set all cookies except the one you want to remove
-            await context.addCookies(cookies.filter(c => c.name !== cookie));
+        if (target) {
+            await context.addCookies([{
+                name: target.name,
+                value: '',
+                domain: target.domain,
+                path: target.path,
+                expires: 0,
+                httpOnly: target.httpOnly,
+                secure: target.secure,
+                sameSite: target.sameSite,
+            }]);
         }
     }
+
 }

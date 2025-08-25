@@ -5,6 +5,7 @@ import { createAdminInput, deleteAdminInput, refreshOTACInput, resetAdminInput }
 import { UserRole } from "@repo/types/users/roles";
 import { generateAccessCode } from "@repo/auth/password";
 import { Admin } from "@repo/types/users";
+import { SuccessStatus } from '@repo/types/trpc';
 
 export const superAdminRouter = router({
   listAdmins: superAdminProcedure
@@ -44,8 +45,8 @@ export const superAdminRouter = router({
       })) as Admin[];
 
       return {
-        status: 'SUCCESS',
-        admins: formatted  ,
+        status: SuccessStatus.SUCCESS,
+        admins: formatted,
       };
     }),
 
@@ -106,7 +107,7 @@ export const superAdminRouter = router({
       });
 
       return {
-        status: 'ADMIN_CREATED',
+        status: SuccessStatus.ADMIN_CREATED,
         userId: newAdmin.id,
         username: newAdmin.username,
         email: newAdmin.email,
@@ -145,7 +146,7 @@ export const superAdminRouter = router({
       });
 
       return {
-        status: 'ADMIN_DELETED',
+        status: SuccessStatus.ADMIN_DELETED,
         message: `Admin ${adminToDelete.username} deleted successfully.`,
       };
     }),
@@ -187,7 +188,7 @@ export const superAdminRouter = router({
       });
 
       return {
-        status: 'OTAC_REFRESHED',
+        status: SuccessStatus.OTAC_REFRESHED,
         message: `OTAC refreshed for ${adminToRefresh.username}.`,
         oneTimeAccessCode,
         expiresAt: oneTimeAccessCodeExpiry.toISOString(),
@@ -233,7 +234,7 @@ export const superAdminRouter = router({
       });
 
       return {
-        status: 'ADMIN_RESET',
+        status: SuccessStatus.ADMIN_RESET,
         message: `Admin ${adminToReset.username} reset successfully. Password cleared and new OTAC generated.`,
         oneTimeAccessCode,
         expiresAt: oneTimeAccessCodeExpiry.toISOString(),

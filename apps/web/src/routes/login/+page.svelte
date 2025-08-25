@@ -3,6 +3,7 @@
 	import { goto } from '$app/navigation';
 	import { auth } from '$lib/stores/auth';
 	import { trpc } from '$lib/trpc';
+	import { SuccessStatus } from '@repo/types/trpc/successStatus';
 
 	let username = '';
 	let organizationName = '';
@@ -33,9 +34,9 @@
 		try {
 			const result = await trpc.auth.login.mutate({ username, organizationName, password });
 
-			if (result.status === 'SUCCESS') {
+			if (result.status === SuccessStatus.SUCCESS) {
 				goto('/dashboard');
-			} else if (result.status === 'VALID_ACCESS_CODE') {
+			} else if (result.status === SuccessStatus.VALID_ACCESS_CODE) {
 				goto(`/set-password?userId=${result.userId}&code=${password}`);
 			}
 		} catch (err: any) {

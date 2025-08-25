@@ -7,13 +7,14 @@
 	import { page } from '$app/state';
 	import { jwtDecode } from 'jwt-decode';
 	import type { JWTPayload } from '@repo/types/auth';
+	import { SuccessStatus } from '@repo/types/trpc/successStatus';
 
 	$: auth.set({ user: data.user, isLoading: false });
 
 	onMount(async () => {
 		if (!data.user && page.url.pathname !== '/login') {
 			const result = await trpc.auth.refreshToken.mutate();
-			if (result.status === 'TOKEN_REFRESHED') {
+			if (result.status === SuccessStatus.TOKEN_REFRESHED) {
 				const user = jwtDecode<JWTPayload>(result.accessToken);
 				auth.set({ user, isLoading: false });
 			} else {

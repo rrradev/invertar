@@ -6,6 +6,8 @@ import { prisma } from "@repo/db";
 import { loginInput, setPasswordWithCodeInput } from '@repo/types/schemas/auth';
 import type { FastifyReply } from 'fastify';
 import type { JWTPayload } from '@repo/types/auth';
+import { SuccessStatus } from '@repo/types/trpc';
+
 
 function setAuthCookies(reply: FastifyReply, payload: JWTPayload) {
   const accessToken = generateAccessToken(payload);
@@ -66,7 +68,7 @@ export const authRouter = router({
         }
 
         return {
-          status: 'VALID_ACCESS_CODE',
+          status: SuccessStatus.VALID_ACCESS_CODE,
           userId: user.id
         };
       }
@@ -99,7 +101,7 @@ export const authRouter = router({
         },
       });
 
-      return { status: 'SUCCESS', accessToken };
+      return { status: SuccessStatus.SUCCESS, accessToken };
     }),
 
   setPasswordWithCode: publicProcedure
@@ -141,7 +143,7 @@ export const authRouter = router({
         },
       });
 
-      return { status: 'PASSWORD_SET' };
+      return { status: SuccessStatus.PASSWORD_SET };
     }),
 
   refreshToken: publicProcedure
@@ -180,14 +182,14 @@ export const authRouter = router({
 
       const { accessToken } = setAuthCookies(ctx.res, newPayload);
 
-      return { status: 'TOKEN_REFRESHED', accessToken };
+      return { status: SuccessStatus.TOKEN_REFRESHED, accessToken };
     }),
 
   logout: publicProcedure
     .mutation(async ({ ctx }) => {
       clearAuthCookies(ctx.res);
 
-      return { status: 'LOGGED_OUT' };
+      return { status: SuccessStatus.LOGGED_OUT };
     }),
 
 });

@@ -38,7 +38,6 @@ export const resetAdminInput = z.object({
 });
 
 export type LoginInput = z.infer<typeof loginInput>;
-export type RefreshTokenInput = z.infer<typeof refreshTokenInput>;
 export type SetPasswordWithCodeInput = z.infer<typeof setPasswordWithCodeInput>;
 export type CreateAdminInput = z.infer<typeof createAdminInput>;
 export type DeleteAdminInput = z.infer<typeof deleteAdminInput>;

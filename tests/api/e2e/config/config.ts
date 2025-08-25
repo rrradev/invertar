@@ -24,7 +24,7 @@ export async function req<T extends ErrorResponse | SuccessResponse>(
   }
 
   if (token) {
-    headers['Authorization'] = `Bearer ${token}`;
+    headers['cookie'] = `accessToken=${token}`;
   }
 
   const options: Omit<Dispatcher.RequestOptions, 'origin' | 'path' | 'method'> &
@@ -56,7 +56,7 @@ export async function getToken(userRole: UserRole) {
   }
 
   async function getSuperAdminToken() {
-    const res = await req<SuccessResponse<{ token: string }>>(
+    const res = await req<SuccessResponse<{ accessToken: string }>>(
       'POST',
       'auth.login',
       {
@@ -66,9 +66,9 @@ export async function getToken(userRole: UserRole) {
       }
     );
 
-    if (!res.token) {
+    if (!res.accessToken) {
       throw new Error('Failed to retrieve Super Admin Token');
     }
-    return res.token;
+    return res.accessToken;
   }
 }

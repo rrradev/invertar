@@ -3,6 +3,7 @@ import { getToken, req } from './config/config';
 import { CreateAdminInput, LoginInput, SetPasswordWithCodeInput } from '@repo/types/schemas/auth';
 import { SuccessResponse, ErrorResponse } from '@repo/types/trpc/response';
 import { UserRole } from '@repo/types/users/roles';
+import { SuccessStatus } from '@repo/types/trpc';
 
 const SUPER_ADMIN_CREATE_ADMIN = 'superAdmin.createAdmin';
 const username = process.env.ADMIN_USERNAME!;
@@ -44,7 +45,7 @@ test('create admin', async () => {
     expect(createAdminRes.oneTimeAccessCode).toBeDefined();
     expect(createAdminRes.userId).toBeDefined();
     expect(createAdminRes.expiresAt).toBeDefined();
-    expect(createAdminRes.status).toBe('ADMIN_CREATED');
+    expect(createAdminRes.status).toBe(SuccessStatus.ADMIN_CREATED);
 
     const expiresAtDate = new Date(createAdminRes.expiresAt);
     const now = Date.now();
@@ -64,7 +65,7 @@ test('create admin', async () => {
         loginInput
     );
 
-    expect(loginRes.status).toBe('VALID_ACCESS_CODE');
+    expect(loginRes.status).toBe(SuccessStatus.VALID_ACCESS_CODE);
 
     // LOGIN WITH WRONG CODE
     const loginWrongCodeInput: LoginInput = {
@@ -133,15 +134,13 @@ test('create admin', async () => {
         oneTimeAccessCode: createAdminRes.oneTimeAccessCode,
     };
 
-    const setPasswordRes = await req<SuccessResponse<{ token: string }>>(
+    const setPasswordRes = await req<SuccessResponse<{ accessToken: string }>>(
         'POST',
         'auth.setPasswordWithCode',
         setPasswordInput
     );
-
-    console.log('Set Password Response:', setPasswordRes);
-    expect(setPasswordRes.token).toBeDefined();
-    expect(setPasswordRes.status).toBe('PASSWORD_SET');
+   
+    expect(setPasswordRes.status).toBe(SuccessStatus.PASSWORD_SET);
 });
 
 test('create admin with invalid organization format', async () => {

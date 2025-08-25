@@ -2,6 +2,7 @@
   import { onMount } from 'svelte';
   import { goto } from '$app/navigation';
   import { trpc } from '$lib/trpc';
+	import { SuccessStatus } from '@repo/types/trpc/successStatus';
 
   let userId = '';
   let oneTimeAccessCode = '';
@@ -46,7 +47,7 @@
         newPassword
       });
 
-      if (result.status === 'PASSWORD_SET') {
+      if (result.status === SuccessStatus.PASSWORD_SET) {
         goto('/dashboard');
       }
     } catch (err: any) {

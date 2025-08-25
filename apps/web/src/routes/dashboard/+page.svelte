@@ -5,6 +5,7 @@
 	import { trpc } from '$lib/trpc';
 	import { UserRole } from '@repo/types/users';
 	import type { Admin, User } from '@repo/types/users';
+	import { SuccessStatus } from '@repo/types/trpc/successStatus';
 
 	let user: User | null = null;
 	let admins: Admin[] = [];
@@ -55,7 +56,7 @@
 			error = '';
 			const result = await trpc.superAdmin.listAdmins.query();
 
-			if (result.status === 'SUCCESS') {
+			if (result.status === SuccessStatus.SUCCESS) {
 				admins = result.admins as Admin[];
 			}
 		} catch (err: any) {
@@ -82,7 +83,7 @@
 				organizationName: newAdmin.organizationName.trim()
 			});
 
-			if (result.status === 'ADMIN_CREATED') {
+			if (result.status === SuccessStatus.ADMIN_CREATED) {
 				successMessage = `Admin ${result.username} created successfully! Access code: ${result.oneTimeAccessCode}`;
 				newAdmin = { username: '', email: '', organizationName: '' };
 				showCreateForm = false;

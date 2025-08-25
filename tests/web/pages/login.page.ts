@@ -1,9 +1,10 @@
 import { Locator, Page } from "@playwright/test";
 import BasePage from "./base.page";
-import DashboardPage from "./dashboard.page";
-import { time } from "console";
+import Dashboard from "./dashboard.page";
+import { expect } from '@playwright/test';
 
-export default class LoginPage extends BasePage {
+
+export default class Login extends BasePage {
     orgInput: Locator;
     usernameInput: Locator;
     passwordInput: Locator;
@@ -27,6 +28,13 @@ export default class LoginPage extends BasePage {
         await this.passwordInput.fill(password);
         await this.submitButton.click();
 
-        return new DashboardPage(this.page);
+        return new Dashboard(this.page);
+    }
+
+    async shouldBeVisible() {
+        await expect(this.orgInput).toBeVisible();
+        await expect(this.usernameInput).toBeVisible();
+        await expect(this.passwordInput).toBeVisible();
+        await expect(this.submitButton).toBeVisible();
     }
 }

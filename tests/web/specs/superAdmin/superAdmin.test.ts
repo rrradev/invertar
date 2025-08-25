@@ -1,42 +1,33 @@
-import { test, expect } from '@playwright/test';
-import LoginPage from '../../pages/login.page';
-import { da } from 'zod/v4/locales/index.cjs';
+import { test } from '../../fixtures/superAdmin.fixture';
+import Login from '../../pages/login.page';
 
-const org = process.env.SUPERADMIN_ORGANIZATION!;
-const username = process.env.SUPERADMIN_USERNAME!;
-const password = process.env.SUPERADMIN_PASSWORD!;
+test('login and reload dashboard', async ({ dashboard }) => {
+  await dashboard.page.reload();
+  await dashboard.page.waitForTimeout(1000);
 
-test('login and reload dashboard', async ({ page }) => {
-  const loginPage = new LoginPage(page);
-  await loginPage.open();
-  const dashboardPage = await loginPage.login(org, username, password);
-
-  await expect(dashboardPage.welcomeMessage).toHaveText(`Welcome, ${username}`);
-  await page.reload();
-  await page.waitForTimeout(1000);
-
-  await expect(dashboardPage.welcomeMessage).toHaveText(`Welcome, ${username}`);
+  await dashboard.shouldBeVisible();
 });
 
-test('signout flow', async ({ page }) => {
-  const loginPage = new LoginPage(page);
-  await loginPage.open();
-  const dashboardPage = await loginPage.login(org, username, password);
+test('signout flow', async ({ dashboard }) => {
+  const login = await dashboard.signOut();
 
-  await expect(dashboardPage.welcomeMessage).toHaveText(`Welcome, ${username}`);
-  await dashboardPage.signOutButton.click();
-  
-  await expect(loginPage.orgInput).toBeVisible();
-  await expect(loginPage.usernameInput).toBeVisible();
-  await expect(loginPage.passwordInput).toBeVisible();
-  await expect(loginPage.submitButton).toBeVisible();
+  await login.shouldBeVisible();
 });
 
-test('access token is refreshed', async ({ page }) => {
-  const loginPage = new LoginPage(page);
-  await loginPage.open();
-  const dashboardPage = await loginPage.login(org, username, password);
+test('access token is refreshed automatically', async ({ dashboard }) => {
+  await dashboard.expireCookie('accessToken');
+  await dashboard.page.reload();
+  await dashboard.page.waitForTimeout(1000);
 
-  await expect(dashboardPage.welcomeMessage).toHaveText(`Welcome, ${username}`);
-  await dashboardPage.deleteCookie('accessToken');
+  await dashboard.shouldBeVisible();
+});
+
+test('user is redirected to /login after refresh token expires', async ({ dashboard }) => {
+  await dashboard.expireCookie('accessToken');
+  await dashboard.expireCookie('refreshToken');
+
+  await dashboard.page.reload();
+  await dashboard.page.waitForTimeout(1000);
+
+  await new Login(dashboard.page).shouldBeVisible();
 });
