@@ -25,7 +25,7 @@ ADMIN_ORGANIZATION="new_org"
 ADMIN_EMAIL="admin@example.com"
 ```
 
-Now I cannot give you the actual .env even for the test env so you need to think of workarounds, especially for the DATABASE_URL - you will need an actual postgresql database running, you might try using a docker container for testing or creating a mysql in-memory db during the implementation/ tests. 
+Now, I cannot give you the actual .env even for the test env so you need to think of workarounds, especially for the DATABASE_URL - you will need an actual postgresql database running, you might try using a docker container for testing.
 
 ### Database Setup
 - Install PostgreSQL: `sudo apt-get update && sudo apt-get install -y postgresql postgresql-contrib`
@@ -106,8 +106,11 @@ Now I cannot give you the actual .env even for the test env so you need to think
 
 ### Testing
 - All tests fail due to missing Prisma client
-- Test setup in `tests/setup-global.ts` requires database connection
-- E2E tests in `tests/api/e2e/` test authentication and admin creation flows
+- API Test setup in `tests/setup-global.ts` requires database connection
+- API E2E tests in `tests/api/e2e/` test authentication and admin creation flows
+- UI E2E tests in `tests/web/` test user interactions and visual elements
+
+note: we are using Playwright for UI testing and Vitest for API testing.
 
 ## Project Structure
 
@@ -129,7 +132,8 @@ Now I cannot give you the actual .env even for the test env so you need to think
 - **Backend**: Fastify + tRPC + TypeScript
 - **Database**: PostgreSQL + Prisma ORM
 - **Package Manager**: pnpm with workspaces
-- **Testing**: Vitest
+- **Testing: API**: Vitest
+- **Testing: Web**: Playwright
 - **Build**: Vite
 
 ### Database Schema
@@ -160,9 +164,16 @@ Now I cannot give you the actual .env even for the test env so you need to think
 - **TypeScript check**: 4 seconds
 - **Code formatting**: 1-2 seconds
 
-### FINAL NOTE
+### Users, flows, Business Logic, etc
+- The Super admin is the master of the app, his main jobs is to create/manage Admins, organizations, and settings -  he does not have an email - he doesn't need one - he will be seeded into the DB once the app is live. He will not create/ manage items and folders and inventory - he just gives initial access to Admins.
+- The Admin can manage users and their permissions within their organization. They need an email to which the Super Admin will communicate in case of any problems. The rest of capabilities are the same as the Users.
+- The User can manage their own profile and data. Can create and manage folders and inventory items (based on their permissions) within their organization. 
+- The User doesn't need an email, since the Admin of the organization will manage him. They will use other means of communications that are already established withing their organizations and it is not a concern for Invertar.
+- The Business logic is more or less defined in the db schema - packages\db\schema.prisma, but it is not set in stone and will evolve as the application grows.
+
+### FINAL NOTES
 - Be sure that I (rrradev the human owner of the project) will test all changes thoroughly before merging.
-- I will be responsible for any code refactors, that might need to be done since initial context might be missing or change entirely.
+- I will be responsible for any code refactors, that might need to be done to the tasks, since initial context might be missing or change entirely, or is not possible to be done by the AI.
 - I will give you further instruction during development.
 
 **NEVER CANCEL** any build or test commands. Builds may take longer in different environments.
