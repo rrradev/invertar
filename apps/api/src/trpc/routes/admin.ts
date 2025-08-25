@@ -17,7 +17,6 @@ export const adminRouter = router({
         select: {
           id: true,
           username: true,
-          email: true,
           createdAt: true,
           oneTimeAccessCode: true,
           oneTimeAccessCodeExpiry: true,
@@ -30,7 +29,6 @@ export const adminRouter = router({
       let formatted = users.map((user: any) => ({
         id: user.id,
         username: user.username,
-        email: user.email || null,
         createdAt: user.createdAt.toISOString(),
         oneTimeAccessCode: user.oneTimeAccessCode,
         oneTimeAccessCodeExpiry: user.oneTimeAccessCodeExpiry?.toISOString(),
@@ -62,29 +60,12 @@ export const adminRouter = router({
         });
       }
 
-      // Check if email already exists in the organization (if provided)
-      if (input.email) {
-        const existingUserByEmail = await prisma.user.findFirst({
-          where: {
-            organizationId: ctx.user!.organizationId,
-            email: input.email,
-          },
-        });
-        if (existingUserByEmail) {
-          throw new TRPCError({
-            code: "CONFLICT",
-            message: "Email already exists in this organization."
-          });
-        }
-      }
-
       const oneTimeAccessCode = generateAccessCode();
       const oneTimeAccessCodeExpiry = new Date(Date.now() + 24 * 60 * 60 * 1000);
 
       const newUser = await prisma.user.create({
         data: {
           username: input.username,
-          email: input.email,
           role: UserRole.USER,
           organizationId: ctx.user!.organizationId,
           oneTimeAccessCode,
@@ -96,7 +77,6 @@ export const adminRouter = router({
         status: SuccessStatus.USER_CREATED,
         userId: newUser.id,
         username: newUser.username,
-        email: newUser.email,
         oneTimeAccessCode,
         expiresAt: oneTimeAccessCodeExpiry,
       };
@@ -149,7 +129,7 @@ export const adminRouter = router({
       // First check if the user exists and is in the same organization
       const userToReset = await prisma.user.findUnique({
         where: { id: input.userId },
-        select: { role: true, username: true, organizationId: true, email: true },
+        select: { role: true, username: true, organizationId: true },
       });
 
       if (!userToReset) {
@@ -190,7 +170,6 @@ export const adminRouter = router({
       return {
         status: SuccessStatus.USER_RESET,
         username: userToReset.username,
-        email: userToReset.email,
         oneTimeAccessCode,
         expiresAt: oneTimeAccessCodeExpiry,
       };

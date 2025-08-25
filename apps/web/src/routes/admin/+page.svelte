@@ -1,6 +1,5 @@
 <script lang="ts">
 	import { onMount } from 'svelte';
-	import { goto } from '$app/navigation';
 	import { auth } from '$lib/stores/auth';
 	import { trpc } from '$lib/trpc';
 	import { UserRole } from '@repo/types/users';
@@ -10,7 +9,6 @@
 	interface UserListItem {
 		id: string;
 		username: string;
-		email: string | null;
 		createdAt: string;
 		oneTimeAccessCode: string | null;
 		oneTimeAccessCodeExpiry: string | null;
@@ -35,8 +33,7 @@
 	let successMessage = '';
 
 	let newUser = {
-		username: '',
-		email: ''
+		username: ''
 	};
 
 	onMount(() => {
@@ -86,13 +83,12 @@
 			successMessage = '';
 
 			const result = await trpc.admin.createUser.mutate({
-				username: newUser.username.trim(),
-				email: newUser.email.trim() || undefined
+				username: newUser.username.trim()
 			});
 
 			if (result.status === SuccessStatus.USER_CREATED) {
 				successMessage = `User ${result.username} created successfully! Access code: ${result.oneTimeAccessCode}`;
-				newUser = { username: '', email: '' };
+				newUser = { username: '' };
 				showCreateForm = false;
 				await loadUsers();
 			}
@@ -196,19 +192,13 @@
 		{:else if user && user.role === UserRole.ADMIN}
 			<div class="mb-8">
 				<h1 class="text-2xl font-bold text-gray-900">User Management</h1>
-				<p class="mt-1 text-sm text-gray-600">
-					Manage users in your organization
-				</p>
+				<p class="mt-1 text-sm text-gray-600">Manage users in your organization</p>
 			</div>
 
 			{#if error}
 				<div class="mb-4 p-4 bg-red-50 border border-red-200 rounded-md">
 					<div class="flex">
-						<svg
-							class="flex-shrink-0 h-5 w-5 text-red-400"
-							viewBox="0 0 20 20"
-							fill="currentColor"
-						>
+						<svg class="flex-shrink-0 h-5 w-5 text-red-400" viewBox="0 0 20 20" fill="currentColor">
 							<path
 								fill-rule="evenodd"
 								d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z"
@@ -258,7 +248,7 @@
 					{#if showCreateForm}
 						<div class="mb-6 p-4 bg-gray-50 rounded-lg border">
 							<h3 class="text-lg font-medium text-gray-900 mb-4">Create New User</h3>
-							<div class="grid grid-cols-1 gap-4 sm:grid-cols-2">
+							<div class="grid grid-cols-1 gap-4">
 								<div>
 									<label for="username" class="block text-sm font-medium text-gray-700">
 										Username *
@@ -270,18 +260,6 @@
 										class="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
 										placeholder="Enter username"
 										required
-									/>
-								</div>
-								<div>
-									<label for="email" class="block text-sm font-medium text-gray-700">
-										Email
-									</label>
-									<input
-										type="email"
-										id="email"
-										bind:value={newUser.email}
-										class="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
-										placeholder="Enter email (optional)"
 									/>
 								</div>
 							</div>
@@ -330,13 +308,19 @@
 							<table class="min-w-full divide-y divide-gray-300">
 								<thead class="bg-gray-50">
 									<tr>
-										<th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+										<th
+											class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
+										>
 											User
 										</th>
-										<th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+										<th
+											class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
+										>
 											Status
 										</th>
-										<th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+										<th
+											class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
+										>
 											Created
 										</th>
 										<th class="relative px-6 py-3">
@@ -352,18 +336,19 @@
 													<div class="text-sm font-medium text-gray-900">
 														{userData.username}
 													</div>
-													{#if userData.email}
-														<div class="text-sm text-gray-500">{userData.email}</div>
-													{/if}
 												</div>
 											</td>
 											<td class="px-6 py-4 whitespace-nowrap">
 												{#if userData.hasInitialPassword}
-													<span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-yellow-100 text-yellow-800">
+													<span
+														class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-yellow-100 text-yellow-800"
+													>
 														Needs Setup
 													</span>
 												{:else}
-													<span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
+													<span
+														class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800"
+													>
 														Active
 													</span>
 												{/if}
@@ -377,7 +362,9 @@
 													class="text-gray-400 hover:text-gray-600 focus:outline-none"
 												>
 													<svg class="h-5 w-5" fill="currentColor" viewBox="0 0 20 20">
-														<path d="M10 6a2 2 0 110-4 2 2 0 010 4zM10 12a2 2 0 110-4 2 2 0 010 4zM10 18a2 2 0 110-4 2 2 0 010 4z" />
+														<path
+															d="M10 6a2 2 0 110-4 2 2 0 010 4zM10 12a2 2 0 110-4 2 2 0 010 4zM10 18a2 2 0 110-4 2 2 0 010 4z"
+														/>
 													</svg>
 												</button>
 											</td>
@@ -405,9 +392,7 @@
 					/>
 				</svg>
 				<h3 class="mt-2 text-sm font-medium text-gray-900">Access Denied</h3>
-				<p class="mt-1 text-sm text-gray-500">
-					You need admin privileges to access this page.
-				</p>
+				<p class="mt-1 text-sm text-gray-500">You need admin privileges to access this page.</p>
 			</div>
 		{/if}
 	</main>
@@ -446,19 +431,34 @@
 	<div class="fixed inset-0 z-50 overflow-y-auto">
 		<div class="flex items-center justify-center min-h-screen pt-4 px-4 pb-20 text-center">
 			<div class="fixed inset-0 bg-gray-500 bg-opacity-75 transition-opacity"></div>
-			<div class="inline-block align-bottom bg-white rounded-lg text-left overflow-hidden shadow-xl transform transition-all sm:my-8 sm:align-middle sm:max-w-lg sm:w-full">
+			<div
+				class="inline-block align-bottom bg-white rounded-lg text-left overflow-hidden shadow-xl transform transition-all sm:my-8 sm:align-middle sm:max-w-lg sm:w-full"
+			>
 				<div class="bg-white px-4 pt-5 pb-4 sm:p-6 sm:pb-4">
 					<div class="sm:flex sm:items-start">
-						<div class="mx-auto flex-shrink-0 flex items-center justify-center h-12 w-12 rounded-full bg-red-100 sm:mx-0 sm:h-10 sm:w-10">
-							<svg class="h-6 w-6 text-red-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-								<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L3.732 16.5c-.77.833.192 2.5 1.732 2.5z" />
+						<div
+							class="mx-auto flex-shrink-0 flex items-center justify-center h-12 w-12 rounded-full bg-red-100 sm:mx-0 sm:h-10 sm:w-10"
+						>
+							<svg
+								class="h-6 w-6 text-red-600"
+								fill="none"
+								viewBox="0 0 24 24"
+								stroke="currentColor"
+							>
+								<path
+									stroke-linecap="round"
+									stroke-linejoin="round"
+									stroke-width="2"
+									d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L3.732 16.5c-.77.833.192 2.5 1.732 2.5z"
+								/>
 							</svg>
 						</div>
 						<div class="mt-3 text-center sm:mt-0 sm:ml-4 sm:text-left">
 							<h3 class="text-lg leading-6 font-medium text-gray-900">Delete User</h3>
 							<div class="mt-2">
 								<p class="text-sm text-gray-500">
-									Are you sure you want to delete user "{userToDelete.username}"? This action cannot be undone.
+									Are you sure you want to delete user "{userToDelete.username}"? This action cannot
+									be undone.
 								</p>
 							</div>
 						</div>
@@ -489,19 +489,34 @@
 	<div class="fixed inset-0 z-50 overflow-y-auto">
 		<div class="flex items-center justify-center min-h-screen pt-4 px-4 pb-20 text-center">
 			<div class="fixed inset-0 bg-gray-500 bg-opacity-75 transition-opacity"></div>
-			<div class="inline-block align-bottom bg-white rounded-lg text-left overflow-hidden shadow-xl transform transition-all sm:my-8 sm:align-middle sm:max-w-lg sm:w-full">
+			<div
+				class="inline-block align-bottom bg-white rounded-lg text-left overflow-hidden shadow-xl transform transition-all sm:my-8 sm:align-middle sm:max-w-lg sm:w-full"
+			>
 				<div class="bg-white px-4 pt-5 pb-4 sm:p-6 sm:pb-4">
 					<div class="sm:flex sm:items-start">
-						<div class="mx-auto flex-shrink-0 flex items-center justify-center h-12 w-12 rounded-full bg-blue-100 sm:mx-0 sm:h-10 sm:w-10">
-							<svg class="h-6 w-6 text-blue-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-								<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+						<div
+							class="mx-auto flex-shrink-0 flex items-center justify-center h-12 w-12 rounded-full bg-blue-100 sm:mx-0 sm:h-10 sm:w-10"
+						>
+							<svg
+								class="h-6 w-6 text-blue-600"
+								fill="none"
+								viewBox="0 0 24 24"
+								stroke="currentColor"
+							>
+								<path
+									stroke-linecap="round"
+									stroke-linejoin="round"
+									stroke-width="2"
+									d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"
+								/>
 							</svg>
 						</div>
 						<div class="mt-3 text-center sm:mt-0 sm:ml-4 sm:text-left">
 							<h3 class="text-lg leading-6 font-medium text-gray-900">Reset User Password</h3>
 							<div class="mt-2">
 								<p class="text-sm text-gray-500">
-									Are you sure you want to reset the password for user "{userToReset.username}"? This will generate a new one-time access code.
+									Are you sure you want to reset the password for user "{userToReset.username}"?
+									This will generate a new one-time access code.
 								</p>
 							</div>
 						</div>

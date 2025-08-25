@@ -39,7 +39,6 @@ export const resetAdminInput = z.object({
 
 export const createUserInput = z.object({
   username: z.string().min(3, "Username must be at least 3 characters"),
-  email: z.string().email("Invalid email address").optional(),
 });
 
 export const deleteUserInput = z.object({

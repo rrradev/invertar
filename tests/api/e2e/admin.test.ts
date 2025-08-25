@@ -64,14 +64,12 @@ describe('Admin Router', () => {
         data: [
           {
             username: 'testuser1',
-            email: 'testuser1@test.com',
             role: UserRole.USER,
             organizationId,
             oneTimeAccessCode: 'TESTCODE123456',
           },
           {
             username: 'testuser2',
-            email: 'testuser2@test.com',
             role: UserRole.USER,
             organizationId,
             hashedPassword: await hashPassword('password123'),
@@ -87,7 +85,6 @@ describe('Admin Router', () => {
       expect(response.body.result.data.status).toBe('SUCCESS');
       expect(response.body.result.data.users).toHaveLength(2);
       expect(response.body.result.data.users[0]).toHaveProperty('username');
-      expect(response.body.result.data.users[0]).toHaveProperty('email');
       expect(response.body.result.data.users[0]).toHaveProperty('hasInitialPassword');
     });
 
@@ -134,7 +131,6 @@ describe('Admin Router', () => {
     it('should create a user successfully', async () => {
       const userData = {
         username: 'newuser',
-        email: 'newuser@test.com',
       };
 
       const response = await request('http://localhost:3000')
@@ -145,7 +141,6 @@ describe('Admin Router', () => {
       expect(response.status).toBe(200);
       expect(response.body.result.data.status).toBe('USER_CREATED');
       expect(response.body.result.data.username).toBe(userData.username);
-      expect(response.body.result.data.email).toBe(userData.email);
       expect(response.body.result.data.oneTimeAccessCode).toBeDefined();
 
       // Verify user was created in database
@@ -175,7 +170,6 @@ describe('Admin Router', () => {
 
       expect(response.status).toBe(200);
       expect(response.body.result.data.status).toBe('USER_CREATED');
-      expect(response.body.result.data.email).toBeNull();
     });
 
     it('should reject duplicate username in same organization', async () => {
@@ -190,7 +184,6 @@ describe('Admin Router', () => {
 
       const userData = {
         username: 'existinguser',
-        email: 'different@test.com',
       };
 
       const response = await request('http://localhost:3000')
@@ -200,31 +193,6 @@ describe('Admin Router', () => {
 
       expect(response.status).toBe(409);
       expect(response.body.error.message).toContain('Username already exists');
-    });
-
-    it('should reject duplicate email in same organization', async () => {
-      // Create initial user
-      await prisma.user.create({
-        data: {
-          username: 'existinguser',
-          email: 'existing@test.com',
-          role: UserRole.USER,
-          organizationId,
-        },
-      });
-
-      const userData = {
-        username: 'newuser',
-        email: 'existing@test.com',
-      };
-
-      const response = await request('http://localhost:3000')
-        .post('/trpc/admin.createUser')
-        .set('Authorization', `Bearer ${adminAccessToken}`)
-        .send(userData);
-
-      expect(response.status).toBe(409);
-      expect(response.body.error.message).toContain('Email already exists');
     });
   });
 
@@ -307,7 +275,6 @@ describe('Admin Router', () => {
       const testUser = await prisma.user.create({
         data: {
           username: 'usertoreset',
-          email: 'reset@test.com',
           role: UserRole.USER,
           organizationId,
           hashedPassword: await hashPassword('oldpassword'),
