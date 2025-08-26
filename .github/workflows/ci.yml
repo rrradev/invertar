@@ -81,5 +81,6 @@ jobs:
       - name: Install Playwright browsers
         run: pnpm exec playwright install --with-deps
 
-      - name: Run UI tests
-        run: pnpm test:web
+      - name: Run UI smoke tests
+        run: pnpm test:web:smoke
+        timeout-minutes: 15

@@ -13,7 +13,7 @@
 
 	onMount(() => {
 		const unsubscribe = auth.subscribe(({ user }) => {
-			if (user && user.role === 'SUPER_ADMIN') {
+			if (user.role === 'SUPER_ADMIN') {
 				goto('/dashboard');
 			} else {
 				goto('/users');

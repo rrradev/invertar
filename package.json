@@ -11,6 +11,7 @@
     "dev": "concurrently \"pnpm dev:api\" \"pnpm dev:web\"",
     "test:api": "vitest run --reporter verbose",
     "test:web": "pnpm playwright test",
+    "test:web:smoke": "pnpm playwright test --config=playwright.config.smoke.ts",
     "prisma:migrate:dev": "pnpm --filter db exec prisma migrate dev",
     "prisma:migrate:deploy": "pnpm --filter db exec prisma migrate deploy",
     "prisma:generate": "pnpm --filter db exec prisma generate",

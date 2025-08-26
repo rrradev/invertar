@@ -9,8 +9,10 @@
 		const unsubscribe = auth.subscribe(($auth) => {
 			loading = false;
 
-			if ($auth.user) {
+			if ($auth.user && $auth.user.role === 'SUPER_ADMIN') {
 				goto('/dashboard');
+			} else if ($auth.user && $auth.user.role === 'ADMIN') {
+				goto('/users');
 			}
 		});
 

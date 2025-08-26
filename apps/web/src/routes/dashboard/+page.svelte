@@ -232,12 +232,6 @@
 		}
 	}
 
-	async function logout() {
-		await trpc.auth.logout.mutate();
-		auth.reset();
-		goto('/login');
-	}
-
 	function formatDate(dateString: string) {
 		return new Date(dateString).toLocaleDateString('en-US', {
 			year: 'numeric',
