@@ -127,6 +127,8 @@ Focus on E2E testing.
    - New users can be created if necessary for validating user creation scenarios, but when a user actor is needed in a test, use the existing users from the .env.
    - When creating new users create them with unique usernames and emails (to avoid conflicts) and on behalf of the provided ADMIN , SUPER ADMIN users and their organizations (since those can be purged from the db with a script) and via the trpc procedures - there is a getToken utility in `tests/api/e2e/config/config.ts` for obtaining the necessary tokens with user roles.
    - Created users & organizations can be deleted after the tests are done to maintain a clean database (when using a persistent database on the TEST environment) with `pnpm db:purge:test-users`.
+   - To save test run time, DO NOT add clean up for the created users and organizations in beforeAll/ afterAll hooks, assume they will be purged from the database before the test are started or after they have finished.
+   - When generating test data, use the `faker` library to create unique usernames, emails and so on.
    - Use existing config from `tests/api/e2e/config/config.ts`
    - Do NOT add any additional libraries like `supertest` or `axios` or `fetch`, the `req` function in `tests/api/e2e/config/config.ts` should be used for making requests.
    - Create hooks and fixtures when needed and reuse them - DRY!
@@ -139,7 +141,13 @@ Focus on E2E testing.
    - New users can be created if necessary for validating user creation scenarios, but when a user actor is needed in a test, use the existing users from the .env.
    - When creating new users, create them with unique usernames and emails (to avoid conflicts) and on behalf of the provided ADMIN/ SUPER ADMIN users and their organizations and via the UI or the trpc procedures.
    - Created users & organizations can be deleted after the tests are done, to maintain a clean database (when using a persistent database on the TEST environment) with `pnpm db:purge:test-users`.
+   - To save test run time, DO NOT add clean up for the created users and organizations in beforeAll/ afterAll hooks, assume they will be purged from the database before the test are started or after they have finished.
+   - When generating test data, use the `faker` library to create unique usernames, emails and so on.
    - Reuse existing fixtures from `tests/web/fixtures` or create new ones - DRY!
+   - Never invent or hallucinate web element locators in playwright, instead make sure locator strategies exist first and if not, create the locators directly in the svelte files. Use id, name, or data attributes.
+   - Never use the svelte class names as locator strategies - since they can change frequently and are not reliable.
+   - Use meaningful and descriptive names for locators to improve readability and maintainability.
+   - Never invent success/ error messages, toasts, etc. - check the actual strings from the html and use them in your tests.
 
 Create unit and integration tests when appropriate.
 

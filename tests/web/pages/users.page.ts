@@ -1,12 +1,15 @@
 import { Locator, Page, expect } from "@playwright/test";
 import BasePage from "./base.page";
+import { th } from "@faker-js/faker/.";
 
 export default class Users extends BasePage {
+    title: Locator
     welcomeMessage: Locator;
     signOutButton: Locator;
     createUserButton: Locator;
+    createUserForm: Locator;
     usernameInput: Locator;
-    createButton: Locator;
+    createUserFormButton: Locator;
     cancelButton: Locator;
     usersTable: Locator;
     successAlert: Locator;
@@ -14,15 +17,17 @@ export default class Users extends BasePage {
 
     constructor(page: Page) {
         super(page);
+        this.title = page.locator('h2').first();
         this.welcomeMessage = page.locator('text=/Welcome,/');
         this.signOutButton = page.locator('button:has-text("Sign out")');
         this.createUserButton = page.locator('button:has-text("Create User")');
-        this.usernameInput = page.locator('input[name="username"]');
-        this.createButton = page.locator('button:has-text("Create")');
-        this.cancelButton = page.locator('button:has-text("Cancel")');
+        this.createUserForm = page.locator('#create-user-form');
+        this.usernameInput = this.createUserForm.locator('input[id="username"]');
+        this.createUserFormButton = this.createUserForm.locator('button:has-text("Create User")');
+        this.cancelButton = this.createUserForm.locator('button:has-text("Cancel")');
         this.usersTable = page.locator('table');
-        this.successAlert = page.locator('.alert-success, .text-green-600');
-        this.errorAlert = page.locator('.alert-error, .text-red-600');
+        this.successAlert = page.locator('#success-message');
+        this.errorAlert = page.locator('#error-message');
     }
 
     async open() {
@@ -38,7 +43,7 @@ export default class Users extends BasePage {
     async createUser(username: string) {
         await this.createUserButton.click();
         await this.usernameInput.fill(username);
-        await this.createButton.click();
+        await this.createUserFormButton.click();
     }
 
     async cancelCreateUser() {
@@ -89,6 +94,7 @@ export default class Users extends BasePage {
 
     async getUsersTableRowCount() {
         // Get table rows excluding header
+        this.waitForUsersTableToLoad();
         const rows = this.usersTable.locator('tbody tr');
         return await rows.count();
     }
@@ -96,5 +102,10 @@ export default class Users extends BasePage {
     async isUserInTable(username: string) {
         const userRow = this.page.locator(`tr:has-text("${username}")`);
         return await userRow.count() > 0;
+    }
+
+    async getFirstUsernameInTable() {
+        const firstRow = this.usersTable.locator('tbody tr').first();
+        return (await firstRow.locator('td').nth(0).textContent())?.split(' ')[1] || '';
     }
 }

@@ -17,14 +17,15 @@ export const test = base.extend<MyFixtures>({
         
         // Login as admin
         await loginPage.login(org, username, password);
-        
+
         // Navigate to users page
+        await page.waitForTimeout(2000);
         await page.goto('/users');
         const usersPage = new Users(page);
         
         // Verify admin is logged in and on users page
         await expect(usersPage.welcomeMessage).toHaveText(`Welcome, ${username}`);
-        await expect(page).toHaveTitle(/User Management/);
+        await expect(usersPage.title).toHaveText(/User Management/);
 
         await use(usersPage);
     },

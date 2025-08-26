@@ -11,7 +11,7 @@ const SUPER_ADMIN_CREATE_ADMIN = 'superAdmin.createAdmin';
 const username = faker.internet.username().toLowerCase();
 const password = "Test_admin_password123@";
 const organizationName = parsedEnv.SUPERADMIN_ORGANIZATION;
-const email = faker.internet.email({allowSpecialCharacters: true}).toLowerCase();
+const email = faker.internet.email().toLowerCase();
 
 let token: string;
 

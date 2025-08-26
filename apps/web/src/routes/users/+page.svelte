@@ -271,20 +271,20 @@
 
 			<!-- Messages -->
 			{#if error}
-				<div class="mb-6 bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg">
+				<div  id="error-message" class="mb-6 bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg">
 					{error}
 				</div>
 			{/if}
 
 			{#if successMessage}
-				<div class="mb-6 bg-green-50 border border-green-200 text-green-700 px-4 py-3 rounded-lg">
+				<div id="success-message" class="mb-6 bg-green-50 border border-green-200 text-green-700 px-4 py-3 rounded-lg">
 					{successMessage}
 				</div>
 			{/if}
 
 			<!-- Create User Form -->
 			{#if showCreateForm}
-				<div class="mb-8 bg-white rounded-lg shadow-sm border border-gray-200 p-6">
+				<div class="mb-8 bg-white rounded-lg shadow-sm border border-gray-200 p-6" id="create-user-form">
 					<h3 class="text-lg font-medium text-gray-900 mb-4">Create New User</h3>
 					<div class="grid grid-cols-1 gap-4">
 						<div>

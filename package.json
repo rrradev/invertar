@@ -14,7 +14,7 @@
     "prisma:migrate:dev": "pnpm --filter db exec prisma migrate dev",
     "prisma:migrate:deploy": "pnpm --filter db exec prisma migrate deploy",
     "prisma:generate": "pnpm --filter db exec prisma generate",
-    "db:seed:test-users": "tsx tests/utils/seedTestUsers.ts purgeAllTestUsers",
+    "db:seed:test-users": "tsx tests/utils/seedTestUsers.ts",
     "db:purge:test-users": "tsx tests/utils/purgeTestUsers.ts"
   },
   "keywords": [],

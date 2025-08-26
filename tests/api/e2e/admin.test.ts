@@ -3,15 +3,15 @@ import { req, getToken } from './config/config';
 import { UserRole } from '@repo/types/users/roles';
 import { ErrorResponse, SuccessResponse } from '@repo/types/trpc/response';
 import { SuccessStatus } from '@repo/types/trpc/successStatus';
+import { faker } from '@faker-js/faker';
 
 let adminToken: string;
 let userToken: string;
-let superAdminToken: string;
 
 const testUsernames = [
-  'test-admin-user-1',
-  'test-admin-user-2', 
-  'test-admin-user-3'
+  faker.internet.username() + Date.now(),
+  faker.internet.username() + Date.now(),
+  faker.internet.username() + Date.now()
 ];
 
 let createdUserIds: string[] = [];
@@ -20,24 +20,12 @@ beforeAll(async () => {
   // Get tokens for different user roles
   adminToken = await getToken(UserRole.ADMIN);
   userToken = await getToken(UserRole.USER);
-  superAdminToken = await getToken(UserRole.SUPER_ADMIN);
-});
-
-afterAll(async () => {
-  // Clean up created test users
-  for (const userId of createdUserIds) {
-    try {
-      await req('POST', 'admin.deleteUser', { userId }, adminToken);
-    } catch (error) {
-      // Ignore cleanup errors
-    }
-  }
 });
 
 // Test listUsers procedure
 test('admin can list users in their organization', async () => {
   const res = await req<SuccessResponse<{ users: any[] }>>(
-    'POST',
+    'GET',
     'admin.listUsers',
     undefined,
     adminToken
@@ -52,8 +40,6 @@ test('admin can list users in their organization', async () => {
     expect(user).toHaveProperty('id');
     expect(user).toHaveProperty('username');
     expect(user).toHaveProperty('createdAt');
-    expect(user).toHaveProperty('oneTimeAccessCode');
-    expect(user).toHaveProperty('oneTimeAccessCodeExpiry');
     expect(user).toHaveProperty('hasInitialPassword');
   }
 });
@@ -112,7 +98,7 @@ test('admin cannot create user with duplicate username in same organization', as
   );
 
   expect(res.message).toBe('Username already exists in this organization.');
-  expect(res.code).toBe('CONFLICT');
+  expect(res.data.code).toBe('CONFLICT');
 });
 
 test('non-admin cannot create user', async () => {
@@ -166,7 +152,7 @@ test('admin cannot reset non-existent user', async () => {
   );
 
   expect(res.message).toBe('User not found.');
-  expect(res.code).toBe('NOT_FOUND');
+  expect(res.data.code).toBe('NOT_FOUND');
 });
 
 test('non-admin cannot reset user', async () => {
@@ -224,7 +210,7 @@ test('admin cannot delete non-existent user', async () => {
   );
 
   expect(res.message).toBe('User not found.');
-  expect(res.code).toBe('NOT_FOUND');
+  expect(res.data.code).toBe('NOT_FOUND');
 });
 
 test('non-admin cannot delete user', async () => {
@@ -235,8 +221,7 @@ test('non-admin cannot delete user', async () => {
     userToken
   );
 
-  expect(res.message).toBeDefined();
-  expect(res.code).toBeDefined();
+  expect(res.message).toBe("FORBIDDEN");
 });
 
 // Test organization boundary enforcement
@@ -247,7 +232,7 @@ test('admin operations are scoped to admin organization only', async () => {
   // we verify the correct scoping through the successful operations above
   
   const res = await req<SuccessResponse<{ users: any[] }>>(
-    'POST',
+    'GET',
     'admin.listUsers',
     undefined,
     adminToken

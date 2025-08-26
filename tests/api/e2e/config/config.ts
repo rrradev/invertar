@@ -17,11 +17,8 @@ export async function req<T extends ErrorResponse | SuccessResponse>(
   const url = `${parsedEnv.BASE_URL}/trpc/${procedure}`;
 
   const headers: Record<string, string> = {};
-
-  if (method !== 'GET' && input !== undefined) {
-    headers['Content-Type'] = 'application/json';
-  }
-
+  headers['Content-Type'] = 'application/json';
+  
   if (token) {
     headers['cookie'] = `accessToken=${token}`;
   }
@@ -40,9 +37,11 @@ export async function req<T extends ErrorResponse | SuccessResponse>(
   const json = (await res.body.json()) as { result?: { data: T }; error?: any };
 
   if (json.error) {
+    console.log('Error:', json.error);
     return json.error;
   }
 
+  console.log('Success:', json.result!.data);
   return json.result!.data;
 }
 

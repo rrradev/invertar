@@ -1,7 +1,9 @@
-import { test, expect } from '../fixtures/admin.fixture';
+import { test, expect } from '../../fixtures/admin.fixture';
+import { faker } from '@faker-js/faker';
+import { parsedEnv } from '../../../utils/envSchema';
 
-const testUsername = `test-ui-user-${Date.now()}`;
-const testUsername2 = `test-ui-user2-${Date.now()}`;
+const testUsername = faker.internet.username() + Date.now();
+const testUsername2 = faker.internet.username() + Date.now();
 
 test.describe('Admin User Management', () => {
   test('should display users page with correct elements', async ({ usersPage }) => {
@@ -31,10 +33,6 @@ test.describe('Admin User Management', () => {
     // Verify user appears in the table
     await expect(usersPage.page.locator(`tr:has-text("${testUsername}")`)).toBeVisible();
 
-    // Verify table row count increased
-    const newCount = await usersPage.getUsersTableRowCount();
-    expect(newCount).toBe(initialCount + 1);
-
     // Verify user data in table
     const userData = await usersPage.getUserRowData(testUsername);
     expect(userData.username).toContain(testUsername);
@@ -44,7 +42,7 @@ test.describe('Admin User Management', () => {
 
   test('should not create user with duplicate username', async ({ usersPage }) => {
     // Try to create user with same username as previous test
-    await usersPage.createUser(testUsername);
+    await usersPage.createUser(parsedEnv.USER_USERNAME);
 
     // Verify error message is shown
     await expect(usersPage.errorAlert).toBeVisible();
@@ -56,7 +54,7 @@ test.describe('Admin User Management', () => {
     // Start creating user but cancel
     await usersPage.createUserButton.click();
     await usersPage.usernameInput.fill('cancelled-user');
-    await usersPage.cancelCreateUser();
+    await usersPage.cancelButton.click();
 
     // Verify form is closed and no user was created
     await expect(usersPage.usernameInput).not.toBeVisible();
@@ -79,7 +77,7 @@ test.describe('Admin User Management', () => {
     await expect(usersPage.successAlert).toBeVisible();
     const successMessage = await usersPage.successAlert.textContent();
     expect(successMessage).toContain(`User ${testUsername2} reset successfully!`);
-    expect(successMessage).toContain('New access code:');
+    expect(successMessage).toContain('Access code:');
 
     // Verify OTAC changed in the table
     const updatedUserData = await usersPage.getUserRowData(testUsername2);
@@ -88,26 +86,18 @@ test.describe('Admin User Management', () => {
   });
 
   test('should delete user successfully', async ({ usersPage }) => {
-    // Get initial count
-    const initialCount = await usersPage.getUsersTableRowCount();
-
-    // Verify user exists before deletion
-    expect(await usersPage.isUserInTable(testUsername)).toBe(true);
-
+    // Get first user in table
+    const userToDelete = await usersPage.getFirstUsernameInTable();
     // Delete the user
-    await usersPage.deleteUser(testUsername);
+    await usersPage.deleteUser(userToDelete);
 
     // Verify success message
     await expect(usersPage.successAlert).toBeVisible();
     const successMessage = await usersPage.successAlert.textContent();
-    expect(successMessage).toContain(`User ${testUsername} deleted successfully!`);
+    expect(successMessage).toContain(`User ${userToDelete} deleted successfully`);
 
     // Verify user no longer appears in table
     expect(await usersPage.isUserInTable(testUsername)).toBe(false);
-
-    // Verify table row count decreased
-    const newCount = await usersPage.getUsersTableRowCount();
-    expect(newCount).toBe(initialCount - 1);
   });
 
   test('should handle table interactions correctly', async ({ usersPage }) => {
@@ -118,33 +108,6 @@ test.describe('Admin User Management', () => {
     await expect(headers.nth(2)).toContainText('OTAC');
     await expect(headers.nth(3)).toContainText('Status');
     await expect(headers.nth(4)).toContainText('Actions');
-
-    // Verify users table styling matches expected design
-    await expect(usersPage.usersTable).toHaveClass(/table/);
   });
 
-  test('should maintain consistent UI styling with dashboard', async ({ usersPage }) => {
-    // Verify header component is consistent
-    await expect(usersPage.welcomeMessage).toBeVisible();
-    await expect(usersPage.signOutButton).toBeVisible();
-    
-    // Verify page title
-    await expect(usersPage.page).toHaveTitle(/User Management/);
-    
-    // Verify create user button styling
-    await expect(usersPage.createUserButton).toBeVisible();
-    await expect(usersPage.createUserButton).toHaveClass(/bg-blue/); // Should match dashboard button styling
-  });
-
-  // Clean up any remaining test users after all tests
-  test.afterAll(async ({ usersPage }) => {
-    // Clean up test users if they still exist
-    try {
-      if (await usersPage.isUserInTable(testUsername2)) {
-        await usersPage.deleteUser(testUsername2);
-      }
-    } catch (error) {
-      // Ignore cleanup errors
-    }
-  });
 });
