@@ -17,6 +17,7 @@ jobs:
     env:
       JWT_SECRET: ${{ secrets.JWT_SECRET }}
       DATABASE_URL: ${{ secrets.DATABASE_URL }}
+      BASE_URL: ${{ secrets.BASE_URL }}
       SUPERADMIN_USERNAME: ${{ secrets.SUPERADMIN_USERNAME }}
       SUPERADMIN_PASSWORD: ${{ secrets.SUPERADMIN_PASSWORD }}
       SUPERADMIN_ORGANIZATION: ${{ secrets.SUPERADMIN_ORGANIZATION }}
@@ -24,6 +25,9 @@ jobs:
       ADMIN_PASSWORD: ${{ secrets.ADMIN_PASSWORD }}
       ADMIN_ORGANIZATION: ${{ secrets.ADMIN_ORGANIZATION }}
       ADMIN_EMAIL: ${{ secrets.ADMIN_EMAIL }}
+      USER_USERNAME : ${{ secrets.USER_USERNAME }}
+      USER_PASSWORD : ${{ secrets.USER_PASSWORD }}
+      USER_ORGANIZATION : ${{ secrets.USER_ORGANIZATION }}
 
     steps:
       - name: Checkout code
@@ -57,6 +61,12 @@ jobs:
       - name: TS typecheck
         run: pnpm typecheck
 
+      - name: Purge test users from DB
+        run: pnpm db:purge:test-users
+      
+      - name: Seed test users in DB
+        run: pnpm db:seed:test-users
+
       - name: Run API tests
         run: pnpm test:api
 
@@ -71,5 +81,6 @@ jobs:
       - name: Install Playwright browsers
         run: pnpm exec playwright install --with-deps
 
-      - name: Run UI tests
-        run: pnpm test:web
+      - name: Run UI smoke tests
+        run: pnpm test:web:smoke
+        timeout-minutes: 15

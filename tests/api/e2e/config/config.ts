@@ -1,8 +1,7 @@
 import { Dispatcher, request } from 'undici';
 import { UserRole } from '@repo/types/users/roles';
 import { ErrorResponse, SuccessResponse } from '@repo/types/trpc/response';
-
-export const baseUrl = process.env.BASE_USER ?? 'http://localhost:3000';
+import { parsedEnv } from '../../../utils/envSchema';
 
 export async function req<T extends ErrorResponse | SuccessResponse>(
   method: 'GET' | 'POST' = 'POST',
@@ -15,14 +14,11 @@ export async function req<T extends ErrorResponse | SuccessResponse>(
     procedure = procedure.slice(1);
   }
 
-  const url = `${baseUrl}/trpc/${procedure}`;
+  const url = `${parsedEnv.BASE_URL}/trpc/${procedure}`;
 
   const headers: Record<string, string> = {};
-
-  if (method !== 'GET' && input !== undefined) {
-    headers['Content-Type'] = 'application/json';
-  }
-
+  headers['Content-Type'] = 'application/json';
+  
   if (token) {
     headers['cookie'] = `accessToken=${token}`;
   }
@@ -41,9 +37,11 @@ export async function req<T extends ErrorResponse | SuccessResponse>(
   const json = (await res.body.json()) as { result?: { data: T }; error?: any };
 
   if (json.error) {
+    console.log('Error:', json.error);
     return json.error;
   }
 
+  console.log('Success:', json.result!.data);
   return json.result!.data;
 }
 
@@ -51,6 +49,10 @@ export async function getToken(userRole: UserRole) {
   switch (userRole) {
     case UserRole.SUPER_ADMIN:
       return getSuperAdminToken();
+    case UserRole.ADMIN:
+      return getAdminToken();
+    case UserRole.USER:
+      return getUserToken();
     default:
       throw new Error('Not implemented!');
   }
@@ -60,14 +62,48 @@ export async function getToken(userRole: UserRole) {
       'POST',
       'auth.login',
       {
-        username: process.env.SUPERADMIN_USERNAME,
-        password: process.env.SUPERADMIN_PASSWORD,
-        organizationName: process.env.SUPERADMIN_ORGANIZATION,
+        username: parsedEnv.SUPERADMIN_USERNAME,
+        password: parsedEnv.SUPERADMIN_PASSWORD,
+        organizationName: parsedEnv.SUPERADMIN_ORGANIZATION,
       }
     );
 
     if (!res.accessToken) {
       throw new Error('Failed to retrieve Super Admin Token');
+    }
+    return res.accessToken;
+  }
+
+  async function getAdminToken() {
+    const res = await req<SuccessResponse<{ accessToken: string }>>(
+      'POST',
+      'auth.login',
+      {
+        username: parsedEnv.ADMIN_USERNAME,
+        password: parsedEnv.ADMIN_PASSWORD,
+        organizationName: parsedEnv.ADMIN_ORGANIZATION,
+      }
+    );
+
+    if (!res.accessToken) {
+      throw new Error('Failed to retrieve Admin Token');
+    }
+    return res.accessToken;
+  }
+
+  async function getUserToken() {
+    const res = await req<SuccessResponse<{ accessToken: string }>>(
+      'POST',
+      'auth.login',
+      {
+        username: parsedEnv.USER_USERNAME,
+        password: parsedEnv.USER_PASSWORD,
+        organizationName: parsedEnv.USER_ORGANIZATION,
+      }
+    );
+
+    if (!res.accessToken) {
+      throw new Error('Failed to retrieve User Token');
     }
     return res.accessToken;
   }

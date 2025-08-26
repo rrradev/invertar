@@ -4,12 +4,14 @@ import { CreateAdminInput, LoginInput, SetPasswordWithCodeInput } from '@repo/ty
 import { SuccessResponse, ErrorResponse } from '@repo/types/trpc/response';
 import { UserRole } from '@repo/types/users/roles';
 import { SuccessStatus } from '@repo/types/trpc';
+import { faker } from '@faker-js/faker';
+import { parsedEnv } from 'tests/utils/envSchema';
 
 const SUPER_ADMIN_CREATE_ADMIN = 'superAdmin.createAdmin';
-const username = process.env.ADMIN_USERNAME!;
-const password = process.env.ADMIN_PASSWORD!;
-const organizationName = process.env.ADMIN_ORGANIZATION!;
-const email = process.env.ADMIN_EMAIL!;
+const username = faker.internet.username().toLowerCase();
+const password = "Test_admin_password123@";
+const organizationName = parsedEnv.ADMIN_ORGANIZATION;
+const email = faker.internet.email().toLowerCase();
 
 let token: string;
 

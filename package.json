@@ -11,10 +11,12 @@
     "dev": "concurrently \"pnpm dev:api\" \"pnpm dev:web\"",
     "test:api": "vitest run --reporter verbose",
     "test:web": "pnpm playwright test",
+    "test:web:smoke": "pnpm playwright test --config=playwright.config.smoke.ts",
     "prisma:migrate:dev": "pnpm --filter db exec prisma migrate dev",
     "prisma:migrate:deploy": "pnpm --filter db exec prisma migrate deploy",
     "prisma:generate": "pnpm --filter db exec prisma generate",
-    "db:seed": "pnpm exec ts-node -r tsconfig-paths/register packages/db/seed.ts"
+    "db:seed:test-users": "tsx tests/utils/seedTestUsers.ts",
+    "db:purge:test-users": "tsx tests/utils/purgeTestUsers.ts"
   },
   "keywords": [],
   "author": "",
@@ -27,13 +29,17 @@
     "zod": "^4.0.13"
   },
   "devDependencies": {
+    "@faker-js/faker": "^10.0.0",
     "@playwright/test": "^1.55.0",
     "@types/jsonwebtoken": "^9.0.10",
     "@types/node": "^24.1.0",
+    "@types/supertest": "^6.0.3",
     "concurrently": "^9.2.0",
     "cross-env": "^10.0.0",
     "playwright": "^1.55.0",
+    "supertest": "^7.1.4",
     "ts-node": "^10.9.2",
+    "tsx": "^4.20.5",
     "typescript": "^5.8.3",
     "undici": "^7.13.0",
     "vite-node": "^3.2.4",

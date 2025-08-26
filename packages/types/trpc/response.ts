@@ -20,4 +20,10 @@ export type ErrorResponse = {
   status: string;
   message: string;
   code: string;
+  data: {
+    code: string;
+    httpStatus: number;
+    path: string;
+    [key: string]: any;
+  };
 };

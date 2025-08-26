@@ -37,9 +37,24 @@ export const resetAdminInput = z.object({
   adminId: z.string().min(1, "Admin ID is required"),
 });
 
+export const createUserInput = z.object({
+  username: z.string().min(3, "Username must be at least 3 characters"),
+});
+
+export const deleteUserInput = z.object({
+  userId: z.string().min(1, "User ID is required"),
+});
+
+export const resetUserInput = z.object({
+  userId: z.string().min(1, "User ID is required"),
+});
+
 export type LoginInput = z.infer<typeof loginInput>;
 export type SetPasswordWithCodeInput = z.infer<typeof setPasswordWithCodeInput>;
 export type CreateAdminInput = z.infer<typeof createAdminInput>;
 export type DeleteAdminInput = z.infer<typeof deleteAdminInput>;
 export type RefreshOTACInput = z.infer<typeof refreshOTACInput>;
 export type ResetAdminInput = z.infer<typeof resetAdminInput>;
+export type CreateUserInput = z.infer<typeof createUserInput>;
+export type DeleteUserInput = z.infer<typeof deleteUserInput>;
+export type ResetUserInput = z.infer<typeof resetUserInput>;

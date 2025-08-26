@@ -7,7 +7,10 @@ dotenv.config({ path: '.env' });
 export default defineConfig({
   plugins: [tsconfigPaths()],
   test: {
-    globalSetup: './tests/setup-global.ts',
+    globalSetup: './tests/api/setup-global.ts',
     include: ['tests/api/**/*.test.ts'],
+    env: {
+      BASE_URL: process.env.BASE_URL,
+    },
   },
 });

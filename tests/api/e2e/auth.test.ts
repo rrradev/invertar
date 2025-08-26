@@ -3,10 +3,11 @@ import { req } from './config/config';
 import { LoginInput } from '@repo/types/schemas/auth';
 import { ErrorResponse, SuccessResponse } from '@repo/types/trpc/response';
 import { SuccessStatus } from '@repo/types/trpc/successStatus';
+import { parsedEnv } from '../../utils/envSchema';
 
-const username = process.env.SUPERADMIN_USERNAME!;
-const password = process.env.SUPERADMIN_PASSWORD!;
-const organizationName = process.env.SUPERADMIN_ORGANIZATION!;
+const username = parsedEnv.SUPERADMIN_USERNAME;
+const password = parsedEnv.SUPERADMIN_PASSWORD;
+const organizationName = parsedEnv.SUPERADMIN_ORGANIZATION;
 
 const AUTH_LOGIN = 'auth.login';
 

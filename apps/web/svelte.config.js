@@ -10,7 +10,7 @@ export default {
 		alias: {
 			'@repo/types/*': '../../packages/types/*',
 			'@repo/api': '../../apps/api/src/',
-			'@repo/auth': '../../packages/auth/src/',
+			'@repo/auth': '../../packages/auth/src/'
 		}
 	}
 };
