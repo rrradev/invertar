@@ -97,7 +97,7 @@ test.describe('Admin User Management', () => {
     expect(successMessage).toContain(`User ${userToDelete} deleted successfully`);
 
     // Verify user no longer appears in table
-    expect(await usersPage.isUserInTable(testUsername)).toBe(false);
+    expect(await usersPage.isUserInTable(userToDelete)).toBe(false);
   });
 
   test('should handle table interactions correctly', async ({ usersPage }) => {

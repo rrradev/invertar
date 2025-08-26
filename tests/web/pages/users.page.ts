@@ -1,6 +1,5 @@
 import { Locator, Page, expect } from "@playwright/test";
 import BasePage from "./base.page";
-import { th } from "@faker-js/faker/.";
 
 export default class Users extends BasePage {
     title: Locator
@@ -94,7 +93,7 @@ export default class Users extends BasePage {
 
     async getUsersTableRowCount() {
         // Get table rows excluding header
-        this.waitForUsersTableToLoad();
+        await this.waitForUsersTableToLoad();
         const rows = this.usersTable.locator('tbody tr');
         return await rows.count();
     }
