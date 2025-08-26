@@ -51,13 +51,17 @@ The users can be seeded into the database using the provided seed scripts - `pnp
 
 ### Building and Development
 
-#### Web Application (SvelteKit)
+#### TypeScript Validation
+- **Run typecheck**: `pnpm typecheck` -- takes 4 seconds but fails due to Prisma client issues
+- Expect Prisma-related TypeScript errors in packages/db/ until client is generated
+- 
+#### Buildng and Running Web Application (SvelteKit)
 - **Run development server**: `pnpm dev:web` -- starts in 2 seconds on http://localhost:5173
 - **Build for production**: `cd apps/web && pnpm build` -- takes 18 seconds. NEVER CANCEL. Set timeout to 2+ minutes.
 - **Lint code**: `cd apps/web && pnpm lint` -- takes 2 seconds
 - **Format code**: `cd apps/web && pnpm format` -- takes 1.4 seconds
 
-#### Web Application (SvelteKit) UI GUIDELINES
+#### Web Application (SvelteKit) - Development Guideline
 - Follow the established design system and component library.
 - Ensure accessibility best practices are followed.
 - Maintain consistent spacing, typography, and color usage (for buttons, labels, and other UI elements).
@@ -65,17 +69,13 @@ The users can be seeded into the database using the provided seed scripts - `pnp
 - Color palettes, gradients, and overall aesthetics should be considered in all components (see `apps/web/src/routes/dashboard/+page.svelte` for examples).
 - Reuse existing components and patterns (or create new ones) to maintain consistency. - DRY!
 
-#### API Application (Fastify + tRPC)
+#### Building and Running API Application (Fastify + tRPC)
 - **LIMITATION**: `pnpm dev:api` fails without Prisma client generation
 - **Run development server**: `pnpm dev:api` -- requires working Prisma client
 - API runs on port 3000 when functional
 
-#### API Application (Fastify + tRPC)
+#### API Application (Fastify + tRPC) - Development Guideline
 - Reuse existing components and patterns (or create new ones) to maintain consistency. - DRY!
-
-#### TypeScript Validation
-- **Run typecheck**: `pnpm typecheck` -- takes 4 seconds but fails due to Prisma client issues
-- Expect Prisma-related TypeScript errors in packages/db/ until client is generated
 
 ### Testing
 - **Run API tests**: `pnpm test:api` -- FAILS without Prisma client generation
