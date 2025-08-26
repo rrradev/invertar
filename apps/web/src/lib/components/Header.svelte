@@ -4,7 +4,10 @@
 	import { auth } from '$lib/stores/auth';
 	import type { User } from '@repo/types/users';
 
-	export let user: User | null = null;
+	let user: User | null = null;
+
+	// Subscribe directly to auth store to ensure real-time updates
+	$: ({ user } = $auth);
 
 	async function logout() {
 		await trpc.auth.logout.mutate();
