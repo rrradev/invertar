@@ -1,8 +1,7 @@
 import { Dispatcher, request } from 'undici';
 import { UserRole } from '@repo/types/users/roles';
 import { ErrorResponse, SuccessResponse } from '@repo/types/trpc/response';
-
-export const baseUrl = process.env.BASE_USER ?? 'http://localhost:3000';
+import { parsedEnv } from '../../../utils/envSchema';
 
 export async function req<T extends ErrorResponse | SuccessResponse>(
   method: 'GET' | 'POST' = 'POST',
@@ -15,7 +14,7 @@ export async function req<T extends ErrorResponse | SuccessResponse>(
     procedure = procedure.slice(1);
   }
 
-  const url = `${baseUrl}/trpc/${procedure}`;
+  const url = `${parsedEnv.BASE_URL}/trpc/${procedure}`;
 
   const headers: Record<string, string> = {};
 
@@ -60,9 +59,9 @@ export async function getToken(userRole: UserRole) {
       'POST',
       'auth.login',
       {
-        username: process.env.SUPERADMIN_USERNAME,
-        password: process.env.SUPERADMIN_PASSWORD,
-        organizationName: process.env.SUPERADMIN_ORGANIZATION,
+        username: parsedEnv.SUPERADMIN_USERNAME,
+        password: parsedEnv.SUPERADMIN_PASSWORD,
+        organizationName: parsedEnv.SUPERADMIN_ORGANIZATION,
       }
     );
 

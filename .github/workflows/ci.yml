@@ -57,6 +57,12 @@ jobs:
       - name: TS typecheck
         run: pnpm typecheck
 
+      - name: Purge test users from DB
+        run: pnpm db:purge:test-users
+      
+      - name: Seed test users in DB
+        run: pnpm db:seed:test-users
+
       - name: Run API tests
         run: pnpm test:api
 
