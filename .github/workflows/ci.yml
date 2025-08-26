@@ -42,6 +42,7 @@ jobs:
         uses: pnpm/action-setup@v4
         with:
           version: 10.13.1
+          standalone: true
 
       - name: Restore pnpm cache
         uses: actions/cache@v3
