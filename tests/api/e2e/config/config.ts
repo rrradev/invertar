@@ -50,6 +50,10 @@ export async function getToken(userRole: UserRole) {
   switch (userRole) {
     case UserRole.SUPER_ADMIN:
       return getSuperAdminToken();
+    case UserRole.ADMIN:
+      return getAdminToken();
+    case UserRole.USER:
+      return getUserToken();
     default:
       throw new Error('Not implemented!');
   }
@@ -67,6 +71,40 @@ export async function getToken(userRole: UserRole) {
 
     if (!res.accessToken) {
       throw new Error('Failed to retrieve Super Admin Token');
+    }
+    return res.accessToken;
+  }
+
+  async function getAdminToken() {
+    const res = await req<SuccessResponse<{ accessToken: string }>>(
+      'POST',
+      'auth.login',
+      {
+        username: parsedEnv.ADMIN_USERNAME,
+        password: parsedEnv.ADMIN_PASSWORD,
+        organizationName: parsedEnv.ADMIN_ORGANIZATION,
+      }
+    );
+
+    if (!res.accessToken) {
+      throw new Error('Failed to retrieve Admin Token');
+    }
+    return res.accessToken;
+  }
+
+  async function getUserToken() {
+    const res = await req<SuccessResponse<{ accessToken: string }>>(
+      'POST',
+      'auth.login',
+      {
+        username: parsedEnv.USER_USERNAME,
+        password: parsedEnv.USER_PASSWORD,
+        organizationName: parsedEnv.USER_ORGANIZATION,
+      }
+    );
+
+    if (!res.accessToken) {
+      throw new Error('Failed to retrieve User Token');
     }
     return res.accessToken;
   }
