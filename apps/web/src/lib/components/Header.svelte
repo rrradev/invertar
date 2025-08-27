@@ -2,6 +2,7 @@
 	import { goto } from '$app/navigation';
 	import { trpc } from '$lib/trpc';
 	import { auth } from '$lib/stores/auth';
+	import { UserRole } from '@repo/types/users';
 	import type { User } from '@repo/types/users';
 
 	let user: User | null = null;
@@ -13,6 +14,17 @@
 		await trpc.auth.logout.mutate();
 		auth.reset();
 		goto('/login');
+	}
+
+	function handleSilhouetteClick() {
+		if (!user) return;
+		
+		if (user.role === UserRole.SUPER_ADMIN) {
+			goto('/admins');
+		} else if (user.role === UserRole.ADMIN) {
+			goto('/users');
+		}
+		// USER role doesn't show the button, so this shouldn't happen
 	}
 </script>
 
@@ -39,6 +51,23 @@
 			<div class="flex items-center space-x-4">
 				{#if user}
 					<div class="flex items-center space-x-3">
+						<!-- Role-based Silhouette Button -->
+						{#if user.role === UserRole.SUPER_ADMIN || user.role === UserRole.ADMIN}
+							<button
+								on:click={handleSilhouetteClick}
+								class="p-2 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-full transition-colors"
+								title={user.role === UserRole.SUPER_ADMIN ? 'Admin Management' : 'User Management'}
+							>
+								<svg class="h-6 w-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+									<path
+										stroke-linecap="round"
+										stroke-linejoin="round"
+										stroke-width="2"
+										d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"
+									/>
+								</svg>
+							</button>
+						{/if}
 						<span id="welcome-message" class="text-sm text-gray-700"
 							>Welcome, {user.username}</span
 						>
