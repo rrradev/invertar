@@ -18,7 +18,7 @@
 
 	function handleSilhouetteClick() {
 		if (!user) return;
-		
+
 		if (user.role === UserRole.SUPER_ADMIN) {
 			goto('/admins');
 		} else if (user.role === UserRole.ADMIN) {
@@ -68,9 +68,7 @@
 								</svg>
 							</button>
 						{/if}
-						<span id="welcome-message" class="text-sm text-gray-700"
-							>Welcome, {user.username}</span
-						>
+						<span id="welcome-message" class="text-sm text-gray-700">Welcome, {user.username}</span>
 						<button
 							on:click={logout}
 							class="px-3 py-2 text-sm font-medium text-gray-700 hover:text-gray-900 hover:bg-gray-100 rounded-md transition-colors"

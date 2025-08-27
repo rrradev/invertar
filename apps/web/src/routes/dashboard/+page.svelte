@@ -2,7 +2,6 @@
 	import { onMount } from 'svelte';
 	import { auth } from '$lib/stores/auth';
 	import { trpc } from '$lib/trpc';
-	import { UserRole } from '@repo/types/users';
 	import type { User } from '@repo/types/users';
 	import { SuccessStatus } from '@repo/types/trpc/successStatus';
 	import Header from '$lib/components/Header.svelte';
@@ -35,7 +34,7 @@
 	let isCreatingItem = false;
 	let showCreateFolderForm = false;
 	let showCreateItemForm = false;
-	let selectedFolderId = '';
+	let showAdvancedItemFields = false;
 	let error = '';
 	let successMessage = '';
 
@@ -47,7 +46,7 @@
 		name: '',
 		description: '',
 		price: 0,
-		quantity: 1,
+		quantity: 0,
 		folderId: ''
 	};
 
@@ -116,11 +115,6 @@
 			return;
 		}
 
-		if (newItem.price < 0 || newItem.quantity < 0) {
-			error = 'Price and quantity cannot be negative';
-			return;
-		}
-
 		try {
 			isCreatingItem = true;
 			error = '';
@@ -129,14 +123,14 @@
 			const result = await trpc.dashboard.createItem.mutate({
 				name: newItem.name.trim(),
 				description: newItem.description.trim() || undefined,
-				price: newItem.price,
-				quantity: newItem.quantity,
+				price: newItem.price || undefined,
+				quantity: newItem.quantity || undefined,
 				folderId: newItem.folderId
 			});
 
 			if (result.status === SuccessStatus.SUCCESS) {
 				successMessage = result.message;
-				newItem = { name: '', description: '', price: 0, quantity: 1, folderId: '' };
+				newItem = { name: '', description: '', price: 0, quantity: 0, folderId: '' };
 				showCreateItemForm = false;
 				await loadFoldersAndItems();
 			}
@@ -165,7 +159,7 @@
 	}
 
 	function getTotalValue(items: Item[]) {
-		return items.reduce((sum, item) => sum + (item.price * item.quantity), 0);
+		return items.reduce((sum, item) => sum + item.price * item.quantity, 0);
 	}
 
 	function getTotalItems(items: Item[]) {
@@ -251,7 +245,9 @@
 					<h3 class="text-lg font-medium text-gray-900 mb-4">Create New Folder</h3>
 					<div class="flex items-end space-x-4">
 						<div class="flex-1">
-							<label for="folderName" class="block text-sm font-medium text-gray-700 mb-2">Folder Name</label>
+							<label for="folderName" class="block text-sm font-medium text-gray-700 mb-2"
+								>Folder Name</label
+							>
 							<input
 								id="folderName"
 								type="text"
@@ -308,9 +304,13 @@
 			{#if showCreateItemForm}
 				<div class="mb-8 bg-white rounded-lg shadow-sm border border-gray-200 p-6">
 					<h3 class="text-lg font-medium text-gray-900 mb-4">Create New Item</h3>
-					<div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
+
+					<!-- Essential Fields -->
+					<div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
 						<div>
-							<label for="itemName" class="block text-sm font-medium text-gray-700 mb-2">Item Name</label>
+							<label for="itemName" class="block text-sm font-medium text-gray-700 mb-2"
+								>Item Name <span class="text-red-500">*</span></label
+							>
 							<input
 								id="itemName"
 								type="text"
@@ -321,43 +321,9 @@
 							/>
 						</div>
 						<div>
-							<label for="itemDescription" class="block text-sm font-medium text-gray-700 mb-2">Description</label>
-							<input
-								id="itemDescription"
-								type="text"
-								bind:value={newItem.description}
-								placeholder="Enter description (optional)"
-								class="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-colors"
-								disabled={isCreatingItem}
-							/>
-						</div>
-						<div>
-							<label for="itemPrice" class="block text-sm font-medium text-gray-700 mb-2">Price</label>
-							<input
-								id="itemPrice"
-								type="number"
-								min="0"
-								step="0.01"
-								bind:value={newItem.price}
-								placeholder="0.00"
-								class="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-colors"
-								disabled={isCreatingItem}
-							/>
-						</div>
-						<div>
-							<label for="itemQuantity" class="block text-sm font-medium text-gray-700 mb-2">Quantity</label>
-							<input
-								id="itemQuantity"
-								type="number"
-								min="0"
-								bind:value={newItem.quantity}
-								placeholder="1"
-								class="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-colors"
-								disabled={isCreatingItem}
-							/>
-						</div>
-						<div>
-							<label for="itemFolder" class="block text-sm font-medium text-gray-700 mb-2">Folder</label>
+							<label for="itemFolder" class="block text-sm font-medium text-gray-700 mb-2"
+								>Folder <span class="text-red-500">*</span></label
+							>
 							<select
 								id="itemFolder"
 								bind:value={newItem.folderId}
@@ -371,9 +337,89 @@
 							</select>
 						</div>
 					</div>
-					<div class="mt-4 flex justify-end space-x-3">
+
+					<!-- Optional Advanced Fields Toggle -->
+					<div class="mb-4">
 						<button
-							on:click={() => (showCreateItemForm = false)}
+							type="button"
+							on:click={() => (showAdvancedItemFields = !showAdvancedItemFields)}
+							class="flex items-center text-sm text-indigo-600 hover:text-indigo-700 focus:outline-none focus:underline transition-colors"
+							disabled={isCreatingItem}
+						>
+							<svg
+								class="w-4 h-4 mr-1 transform transition-transform {showAdvancedItemFields
+									? 'rotate-90'
+									: ''}"
+								fill="none"
+								stroke="currentColor"
+								viewBox="0 0 24 24"
+							>
+								<path
+									stroke-linecap="round"
+									stroke-linejoin="round"
+									stroke-width="2"
+									d="M9 5l7 7-7 7"
+								></path>
+							</svg>
+							{showAdvancedItemFields ? 'Hide' : 'Show'} additional details (optional)
+						</button>
+					</div>
+
+					<!-- Advanced Fields (Collapsible) -->
+					{#if showAdvancedItemFields}
+						<div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4 p-4 bg-gray-50 rounded-lg">
+							<div>
+								<label for="itemDescription" class="block text-sm font-medium text-gray-700 mb-2"
+									>Description</label
+								>
+								<input
+									id="itemDescription"
+									type="text"
+									bind:value={newItem.description}
+									placeholder="Enter description (optional)"
+									class="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-colors"
+									disabled={isCreatingItem}
+								/>
+							</div>
+							<div>
+								<label for="itemPrice" class="block text-sm font-medium text-gray-700 mb-2"
+									>Price</label
+								>
+								<input
+									id="itemPrice"
+									type="number"
+									min="0"
+									step="0.01"
+									bind:value={newItem.price}
+									placeholder="0.00"
+									class="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-colors"
+									disabled={isCreatingItem}
+								/>
+							</div>
+							<div>
+								<label for="itemQuantity" class="block text-sm font-medium text-gray-700 mb-2"
+									>Quantity</label
+								>
+								<input
+									id="itemQuantity"
+									type="number"
+									min="0"
+									bind:value={newItem.quantity}
+									placeholder="0"
+									class="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-colors"
+									disabled={isCreatingItem}
+								/>
+							</div>
+						</div>
+					{/if}
+
+					<div class="flex justify-end space-x-3">
+						<button
+							on:click={() => {
+								showCreateItemForm = false;
+								showAdvancedItemFields = false;
+								newItem = { name: '', description: '', price: 0, quantity: 0, folderId: '' };
+							}}
 							class="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 transition-colors"
 							disabled={isCreatingItem}
 						>
@@ -417,13 +463,7 @@
 			{#if isLoading}
 				<div class="bg-white rounded-lg shadow-sm border border-gray-200 p-8 text-center">
 					<svg class="animate-spin mx-auto h-8 w-8 text-gray-400" fill="none" viewBox="0 0 24 24">
-						<circle
-							class="opacity-25"
-							cx="12"
-							cy="12"
-							r="10"
-							stroke="currentColor"
-							stroke-width="4"
+						<circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"
 						></circle>
 						<path
 							class="opacity-75"
@@ -475,7 +515,12 @@
 							<div class="px-6 py-4 bg-gray-50 border-b border-gray-200">
 								<div class="flex items-center justify-between">
 									<div class="flex items-center">
-										<svg class="h-6 w-6 text-yellow-500 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+										<svg
+											class="h-6 w-6 text-yellow-500 mr-3"
+											fill="none"
+											stroke="currentColor"
+											viewBox="0 0 24 24"
+										>
 											<path
 												stroke-linecap="round"
 												stroke-linejoin="round"
@@ -524,22 +569,34 @@
 									<table class="min-w-full divide-y divide-gray-200">
 										<thead class="bg-gray-50">
 											<tr>
-												<th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+												<th
+													class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
+												>
 													Item
 												</th>
-												<th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+												<th
+													class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
+												>
 													Description
 												</th>
-												<th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+												<th
+													class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
+												>
 													Price
 												</th>
-												<th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+												<th
+													class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
+												>
 													Quantity
 												</th>
-												<th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+												<th
+													class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
+												>
 													Total Value
 												</th>
-												<th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+												<th
+													class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
+												>
 													Last Modified
 												</th>
 											</tr>

@@ -143,8 +143,8 @@ export const dashboardRouter = router({
         data: {
           name: input.name,
           description: input.description,
-          price: input.price,
-          quantity: input.quantity,
+          price: input.price ?? 0,
+          quantity: input.quantity ?? 0,
           folderId: input.folderId,
           lastModifiedById: ctx.user!.id,
         },
@@ -282,8 +282,8 @@ export const dashboardRouter = router({
         data: {
           name: input.name,
           description: input.description,
-          price: input.price,
-          quantity: input.quantity,
+          price: input.price ?? 0,
+          quantity: input.quantity ?? 0,
           folderId: input.folderId,
           lastModifiedById: ctx.user!.id,
         },

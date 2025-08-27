@@ -7,8 +7,8 @@ export const createFolderInput = z.object({
 export const createItemInput = z.object({
   name: z.string().trim().min(1, "Item name is required").max(100, "Item name too long"),
   description: z.string().trim().optional(),
-  price: z.number().min(0, "Price cannot be negative"),
-  quantity: z.number().int().min(0, "Quantity cannot be negative"),
+  price: z.number().min(0, "Price cannot be negative").optional().default(0),
+  quantity: z.number().int().min(0, "Quantity cannot be negative").optional().default(0),
   folderId: z.string().min(1, "Folder ID is required"),
 });
 
@@ -21,8 +21,8 @@ export const updateItemInput = z.object({
   itemId: z.string().min(1, "Item ID is required"),
   name: z.string().trim().min(1, "Item name is required").max(100, "Item name too long"),
   description: z.string().trim().optional(),
-  price: z.number().min(0, "Price cannot be negative"),
-  quantity: z.number().int().min(0, "Quantity cannot be negative"),
+  price: z.number().min(0, "Price cannot be negative").optional().default(0),
+  quantity: z.number().int().min(0, "Quantity cannot be negative").optional().default(0),
   folderId: z.string().min(1, "Folder ID is required"),
 });
 

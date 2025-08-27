@@ -271,20 +271,29 @@
 
 			<!-- Messages -->
 			{#if error}
-				<div  id="error-message" class="mb-6 bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg">
+				<div
+					id="error-message"
+					class="mb-6 bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg"
+				>
 					{error}
 				</div>
 			{/if}
 
 			{#if successMessage}
-				<div id="success-message" class="mb-6 bg-green-50 border border-green-200 text-green-700 px-4 py-3 rounded-lg">
+				<div
+					id="success-message"
+					class="mb-6 bg-green-50 border border-green-200 text-green-700 px-4 py-3 rounded-lg"
+				>
 					{successMessage}
 				</div>
 			{/if}
 
 			<!-- Create User Form -->
 			{#if showCreateForm}
-				<div class="mb-8 bg-white rounded-lg shadow-sm border border-gray-200 p-6" id="create-user-form">
+				<div
+					class="mb-8 bg-white rounded-lg shadow-sm border border-gray-200 p-6"
+					id="create-user-form"
+				>
 					<h3 class="text-lg font-medium text-gray-900 mb-4">Create New User</h3>
 					<div class="grid grid-cols-1 gap-4">
 						<div>
@@ -441,7 +450,9 @@
 										</td>
 										<td class="px-6 py-4 whitespace-nowrap">
 											{#if userData.oneTimeAccessCode}
-												<div class="text-sm text-gray-900 font-mono">{userData.oneTimeAccessCode}</div>
+												<div class="text-sm text-gray-900 font-mono">
+													{userData.oneTimeAccessCode}
+												</div>
 												{#if userData.oneTimeAccessCodeExpiry}
 													<div class="text-xs text-gray-500 mt-1">
 														Expires: {formatDate(userData.oneTimeAccessCodeExpiry)}
@@ -511,9 +522,7 @@
 					/>
 				</svg>
 				<h3 class="mt-2 text-sm font-medium text-gray-900">Access Denied</h3>
-				<p class="mt-1 text-sm text-gray-500">
-					You need admin privileges to access this page.
-				</p>
+				<p class="mt-1 text-sm text-gray-500">You need admin privileges to access this page.</p>
 			</div>
 		{/if}
 	</main>
@@ -709,7 +718,8 @@
 				<div class="mt-2 px-7 py-3">
 					<h3 class="text-lg font-medium text-center">Reset User</h3>
 					<p class="text-sm text-gray-500 text-center mt-2">
-						Are you sure you want to reset <strong>{userToReset.username}</strong>? This will generate a new one-time access code.
+						Are you sure you want to reset <strong>{userToReset.username}</strong>? This will
+						generate a new one-time access code.
 					</p>
 				</div>
 				<div class="flex justify-center space-x-3 mt-4">
