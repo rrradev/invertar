@@ -1,6 +1,6 @@
 import { Locator, Page } from "@playwright/test";
 import BasePage from "./base.page";
-import Dashboard from "./dashboard.page";
+import Admins from "./admins.page";
 import { expect } from '@playwright/test';
 
 
@@ -30,7 +30,7 @@ export default class Login extends BasePage {
         expect(this.submitButton).toBeDisabled();
         expect(this.submitButton).not.toHaveText('Signing in...');
 
-        return new Dashboard(this.page);
+        return new Admins(this.page);
     }
 
     async shouldBeVisible() {

@@ -1,33 +1,33 @@
 import { test } from '../../fixtures/superAdmin.fixture';
 import Login from '../../pages/login.page';
 
-test('login and reload dashboard @smoke', async ({ dashboard }) => {
-  await dashboard.page.reload();
-  await dashboard.page.waitForTimeout(1000);
+test('login and reload admins page @smoke', async ({ admins }) => {
+  await admins.page.reload();
+  await admins.page.waitForTimeout(1000);
 
-  await dashboard.shouldBeVisible();
+  await admins.shouldBeVisible();
 });
 
-test('signout flow @smoke', async ({ dashboard }) => {
-  const login = await dashboard.signOut();
+test('signout flow @smoke', async ({ admins }) => {
+  const login = await admins.signOut();
 
   await login.shouldBeVisible();
 });
 
-test('access token is refreshed automatically @smoke', async ({ dashboard }) => {
-  await dashboard.expireCookie('accessToken');
-  await dashboard.page.reload();
-  await dashboard.page.waitForTimeout(1000);
+test('access token is refreshed automatically @smoke', async ({ admins }) => {
+  await admins.expireCookie('accessToken');
+  await admins.page.reload();
+  await admins.page.waitForTimeout(1000);
 
-  await dashboard.shouldBeVisible();
+  await admins.shouldBeVisible();
 });
 
-test('user is redirected to /login after refresh token expires @smoke', async ({ dashboard }) => {
-  await dashboard.expireCookie('accessToken');
-  await dashboard.expireCookie('refreshToken');
+test('user is redirected to /login after refresh token expires @smoke', async ({ admins }) => {
+  await admins.expireCookie('accessToken');
+  await admins.expireCookie('refreshToken');
 
-  await dashboard.page.reload();
-  await dashboard.page.waitForTimeout(1000);
+  await admins.page.reload();
+  await admins.page.waitForTimeout(1000);
 
-  await new Login(dashboard.page).shouldBeVisible();
+  await new Login(admins.page).shouldBeVisible();
 });
