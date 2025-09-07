@@ -25,7 +25,7 @@ export const test = base.extend<MyFixtures>({
         
         // Verify admin is logged in and on users page
         await expect(usersPage.welcomeMessage).toHaveText(`Welcome, ${username}`);
-        await expect(usersPage.title).toHaveText(/User Management/);
+        await usersPage.shouldBeVisible();
 
         await use(usersPage);
     },

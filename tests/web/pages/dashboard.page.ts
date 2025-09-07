@@ -1,8 +1,11 @@
 import { Locator, Page, expect } from "@playwright/test";
 import BasePage from "./base.page";
+import Login from "./login.page";
+import { th } from "@faker-js/faker/.";
 
 export default class Dashboard extends BasePage {
     welcomeMessage: Locator;
+    usersManagementButton: Locator;
     signOutButton: Locator;
     createFolderButton: Locator;
     createItemButton: Locator;
@@ -11,9 +14,10 @@ export default class Dashboard extends BasePage {
     constructor(page: Page) {
         super(page);
         this.welcomeMessage = page.locator('#welcome-message');
+        this.usersManagementButton = page.locator('#user-management-button');
         this.signOutButton = page.locator('button:has-text("Sign out")');
-        this.createFolderButton = page.locator('button:has-text("Create Folder")');
-        this.createItemButton = page.locator('button:has-text("Create Item")');
+        this.createFolderButton = page.locator('button:has-text("Create Folder")').first();
+        this.createItemButton = page.locator('button:has-text("Create Item")').first();
         this.foldersContainer = page.locator('[data-testid="folders-container"]');
     }
 
@@ -53,5 +57,10 @@ export default class Dashboard extends BasePage {
 
     async waitForErrorMessage() {
         await expect(this.page.locator('.bg-red-50')).toBeVisible();
+    }
+
+        async signOut()  {
+        await this.signOutButton.click();
+        return new Login(this.page);
     }
 }

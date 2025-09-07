@@ -1,7 +1,8 @@
 import { Locator, Page } from "@playwright/test";
 import BasePage from "./base.page";
-import Admins from "./admins.page";
 import { expect } from '@playwright/test';
+import Dashboard from "./dashboard.page";
+import { da } from "@faker-js/faker/.";
 
 
 export default class Login extends BasePage {
@@ -28,9 +29,12 @@ export default class Login extends BasePage {
         await this.passwordInput.fill(password);
         await this.submitButton.click();
         expect(this.submitButton).toBeDisabled();
-        expect(this.submitButton).not.toHaveText('Signing in...');
+        await this.page.waitForURL('**/dashboard');
 
-        return new Admins(this.page);
+        const dashboard = new Dashboard(this.page);
+        await dashboard.shouldBeVisible();
+
+        return dashboard;
     }
 
     async shouldBeVisible() {

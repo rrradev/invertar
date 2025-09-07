@@ -37,6 +37,7 @@ export default class Users extends BasePage {
         await expect(this.welcomeMessage).toBeVisible();
         await expect(this.createUserButton).toBeVisible();
         await expect(this.usersTable).toBeVisible();
+        await expect(this.title).toHaveText(/User Management/);
     }
 
     async createUser(username: string) {
@@ -60,7 +61,7 @@ export default class Users extends BasePage {
     async deleteUser(username: string) {
         await this.openUserActionsDropdown(username);
         await this.page.locator('text="Delete User"').click();
-        
+
         // Confirm deletion in modal
         const confirmButton = this.page.locator('button:has-text("Delete")');
         await confirmButton.click();
@@ -69,7 +70,7 @@ export default class Users extends BasePage {
     async resetUser(username: string) {
         await this.openUserActionsDropdown(username);
         await this.page.locator('text="Reset User"').click();
-        
+
         // Confirm reset in modal
         const confirmButton = this.page.locator('button:has-text("Reset")');
         await confirmButton.click();
@@ -78,7 +79,7 @@ export default class Users extends BasePage {
     async getUserRowData(username: string) {
         const userRow = this.page.locator(`tr:has-text("${username}")`);
         const cells = userRow.locator('td');
-        
+
         return {
             username: await cells.nth(0).textContent(),
             createdAt: await cells.nth(1).textContent(),

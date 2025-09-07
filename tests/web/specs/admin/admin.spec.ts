@@ -17,7 +17,7 @@ test.describe('Admin User Management', () => {
     await usersPage.waitForUsersTableToLoad();
   });
 
-  test('should create a new user successfully @smoke', async ({ usersPage }) => {
+  test('should create a new user successfully', { tag: '@smoke' }, async ({ usersPage }) => {
     // Get initial count of users
     const initialCount = await usersPage.getUsersTableRowCount();
 
@@ -61,7 +61,7 @@ test.describe('Admin User Management', () => {
     expect(await usersPage.isUserInTable('cancelled-user')).toBe(false);
   });
 
-  test('should reset user OTAC successfully @smoke', async ({ usersPage }) => {
+  test('should reset user OTAC successfully', { tag: '@smoke' }, async ({ usersPage }) => {
     // Create a user first
     await usersPage.createUser(testUsername2);
     await expect(usersPage.successAlert).toBeVisible();
@@ -85,7 +85,7 @@ test.describe('Admin User Management', () => {
     expect(updatedUserData.status).toContain('Pending Setup'); // Status should be reset
   });
 
-  test('should delete user successfully @smoke', async ({ usersPage }) => {
+  test('should delete user successfully', { tag: '@smoke' }, async ({ usersPage }) => {
     // Get first user in table
     const userToDelete = await usersPage.getFirstUsernameInTable();
     // Delete the user

@@ -55,6 +55,7 @@
 						{#if user.role === UserRole.SUPER_ADMIN || user.role === UserRole.ADMIN}
 							<button
 								on:click={handleSilhouetteClick}
+								id="user-management-button"
 								class="p-2 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-full transition-colors"
 								title={user.role === UserRole.SUPER_ADMIN ? 'Admin Management' : 'User Management'}
 							>

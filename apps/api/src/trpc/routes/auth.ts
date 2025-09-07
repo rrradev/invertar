@@ -34,7 +34,7 @@ function setAuthCookies(reply: FastifyReply, payload: JWTPayload) {
 
 function clearAuthCookies(reply: FastifyReply) {
   reply.clearCookie('accessToken', { path: '/' });
-  reply.clearCookie('refreshToken', { path: '/' });
+  reply.clearCookie('refreshToken', { path: '/trpc/auth.refreshToken' });
 }
 
 export const authRouter = router({
