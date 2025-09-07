@@ -1,13 +1,13 @@
 import { router, protectedProcedure } from "../../trpc";
 import { TRPCError } from "@trpc/server";
 import { prisma } from "@repo/db";
-import { 
-  createFolderInput, 
-  createItemInput, 
-  updateFolderInput, 
-  updateItemInput, 
-  deleteFolderInput, 
-  deleteItemInput 
+import {
+  createFolderInput,
+  createItemInput,
+  updateFolderInput,
+  updateItemInput,
+  deleteFolderInput,
+  deleteItemInput
 } from '@repo/types/schemas/dashboard';
 import { SuccessStatus } from '@repo/types/trpc';
 
@@ -302,8 +302,8 @@ export const dashboardRouter = router({
       // Check if folder exists and belongs to user's organization
       const folder = await prisma.folder.findUnique({
         where: { id: input.folderId },
-        select: { 
-          organizationId: true, 
+        select: {
+          organizationId: true,
           name: true,
           _count: {
             select: {
@@ -348,14 +348,8 @@ export const dashboardRouter = router({
   deleteItem: protectedProcedure
     .input(deleteItemInput)
     .mutation(async ({ input, ctx }) => {
-      // Check if item exists and belongs to user's organization
       const item = await prisma.item.findUnique({
         where: { id: input.itemId },
-        include: {
-          folder: {
-            select: { organizationId: true },
-          },
-        },
         select: {
           name: true,
           folder: {
@@ -363,6 +357,7 @@ export const dashboardRouter = router({
           },
         },
       });
+
 
       if (!item) {
         throw new TRPCError({
