@@ -1,37 +1,39 @@
 import type { PageLoad } from './$types';
 import { redirect } from '@sveltejs/kit';
 import { trpc } from '$lib/trpc';
+import { user } from '$lib/stores/user';
+import { get } from 'svelte/store';
 
 export const load: PageLoad = async () => {
+    // Check if we already have user data in store
+    const currentUser = get(user);
+    
+    if (currentUser) {
+        // User already exists in store, redirect to dashboard
+        throw redirect(302, '/dashboard');
+    }
+    
+    // No user in store, attempt to get profile
     try {
-        // Try to get user profile
         const profileResult = await trpc.auth.profile.query();
         
-        // If we get here, user is authenticated, redirect to dashboard
-        if (profileResult) {
-            throw redirect(302, '/dashboard');
-        }
+        // Set user store with profile data
+        user.set({
+            username: profileResult.username,
+            organizationName: profileResult.organizationName,
+            role: profileResult.role
+        });
         
-        // If no profile result, redirect to login
-        throw redirect(302, '/login');
+        // Redirect to dashboard
+        throw redirect(302, '/dashboard');
     } catch (error: any) {
         // If it's already a redirect, re-throw it
         if (error?.status === 302) {
             throw error;
         }
         
-        // If we get UNAUTHORIZED error (token refresh failed), redirect to login
-        // This handles both TRPC errors and HTTP errors
-        if (
-            error?.data?.code === 'UNAUTHORIZED' || 
-            error?.code === -32001 ||
-            error?.message === 'UNAUTHORIZED' ||
-            error?.status === 401
-        ) {
-            throw redirect(302, '/login');
-        }
-        
-        // For any other error, redirect to login as well
+        // For any error (including UNAUTHORIZED), redirect to login
+        // The TRPC middleware will handle token refresh if possible
         throw redirect(302, '/login');
     }
 };
