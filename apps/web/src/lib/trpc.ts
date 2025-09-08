@@ -24,24 +24,30 @@ export const trpc = createTRPCProxyClient<AppRouter>({
 					response = await fetch(url, { ...options, credentials: 'include' });
 
 					if (response.status === 401 || response.status === 403) {
-						// Refresh logic as before
+						// Handle token refresh
 						if (!isRefreshing) {
 							isRefreshing = true;
 							try {
-								await fetch(`${getBaseUrl()}/trpc/auth.refreshToken`, {
+								const refreshResponse = await fetch(`${getBaseUrl()}/trpc/auth.refreshToken`, {
 									method: 'POST',
 									credentials: 'include',
 									headers: { 'Content-Type': 'application/json' }
 								});
+								
+								// Check if refresh was successful
+								if (!refreshResponse.ok) {
+									throw new Error('Refresh token expired or invalid');
+								}
+								
 								isRefreshing = false;
 								refreshQueue.forEach((resolve) => resolve());
 								refreshQueue = [];
 							} catch (err) {
 								isRefreshing = false;
 								refreshQueue = [];
-								user.reset(); // Reset user store when redirected to login
+								user.setUnauthenticated(); // Set unauthenticated state
 								goto('/login');
-								throw err;
+								throw new Error('Authentication failed - redirecting to login');
 							}
 						} else {
 							await new Promise<void>((resolve) => refreshQueue.push(resolve));
@@ -49,6 +55,13 @@ export const trpc = createTRPCProxyClient<AppRouter>({
 
 						// Retry original request
 						response = await fetch(url, { ...options, credentials: 'include' });
+						
+						// If still unauthorized after refresh, redirect to login
+						if (response.status === 401 || response.status === 403) {
+							user.setUnauthenticated();
+							goto('/login');
+							throw new Error('Authentication failed - redirecting to login');
+						}
 					}
 
 					return response;

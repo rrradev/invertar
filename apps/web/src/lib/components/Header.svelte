@@ -6,16 +6,17 @@
 
 	async function logout() {
 		await trpc.auth.logout.mutate();
-		user.reset();
+		user.setUnauthenticated();
 		goto('/login');
 	}
 
 	function handleSilhouetteClick() {
-		if (!$user) return;
+		const authState = $user;
+		if (!authState.isAuthenticated || !authState.user) return;
 
-		if ($user.role === UserRole.SUPER_ADMIN) {
+		if (authState.user.role === UserRole.SUPER_ADMIN) {
 			goto('/admins');
-		} else if ($user.role === UserRole.ADMIN) {
+		} else if (authState.user.role === UserRole.ADMIN) {
 			goto('/users');
 		}
 		// USER role doesn't show the button, so this shouldn't happen
@@ -43,15 +44,15 @@
 			</div>
 
 			<div class="flex items-center space-x-4">
-				{#if $user}
+				{#if $user.user}
 					<div class="flex items-center space-x-3">
 						<!-- Role-based Silhouette Button -->
-						{#if $user.role === UserRole.SUPER_ADMIN || $user.role === UserRole.ADMIN}
+						{#if $user.user.role === UserRole.SUPER_ADMIN || $user.user.role === UserRole.ADMIN}
 							<button
 								on:click={handleSilhouetteClick}
 								id="user-management-button"
 								class="p-2 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-full transition-colors"
-								title={$user.role === UserRole.SUPER_ADMIN ? 'Admin Management' : 'User Management'}
+								title={$user.user.role === UserRole.SUPER_ADMIN ? 'Admin Management' : 'User Management'}
 							>
 								<svg class="h-6 w-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
 									<path
@@ -63,7 +64,7 @@
 								</svg>
 							</button>
 						{/if}
-						<span id="welcome-message" class="text-sm text-gray-700">Welcome, {$user.username}</span
+						<span id="welcome-message" class="text-sm text-gray-700">Welcome, {$user.user.username}</span
 						>
 						<button
 							on:click={logout}

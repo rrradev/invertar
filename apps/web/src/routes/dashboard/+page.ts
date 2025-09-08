@@ -1,8 +1,12 @@
 import type { PageLoad } from './$types';
 import { trpc } from '$lib/trpc';
+import { requireAuth } from '$lib/auth';
 
 export const load: PageLoad = async () => {
-	// Get dashboard data - user profile is handled in layout
+	// Wait for authentication to complete before making API calls
+	await requireAuth();
+	
+	// Get dashboard data
 	const result = await trpc.dashboard.getFoldersWithItems.query();
 
 	return {

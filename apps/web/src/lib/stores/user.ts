@@ -7,14 +7,47 @@ export interface UserData {
 	role: UserRoleType;
 }
 
+// Create an auth state store to track authentication status
+export interface AuthState {
+	isLoading: boolean;
+	user: UserData | null;
+	isAuthenticated: boolean;
+}
+
 function createUserStore() {
-	const { subscribe, set, update } = writable<UserData | null>(null);
+	const { subscribe, set, update } = writable<AuthState>({
+		isLoading: true,
+		user: null,
+		isAuthenticated: false
+	});
 
 	return {
 		subscribe,
-		set,
-		update,
-		reset: () => set(null)
+		setUser: (userData: UserData) => {
+			set({
+				isLoading: false,
+				user: userData,
+				isAuthenticated: true
+			});
+		},
+		setLoading: (loading: boolean) => {
+			update(state => ({
+				...state,
+				isLoading: loading
+			}));
+		},
+		setUnauthenticated: () => {
+			set({
+				isLoading: false,
+				user: null,
+				isAuthenticated: false
+			});
+		},
+		reset: () => set({
+			isLoading: true,
+			user: null,
+			isAuthenticated: false
+		})
 	};
 }
 

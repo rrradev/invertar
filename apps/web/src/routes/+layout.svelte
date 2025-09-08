@@ -5,7 +5,6 @@
 	import { goto } from '$app/navigation';
 	import { trpc } from '$lib/trpc';
 	import { user } from '$lib/stores/user';
-	import { get } from 'svelte/store';
 	import type { LayoutData } from './$types';
 
 	interface LayoutProps {
@@ -15,7 +14,6 @@
 
 	let { data, children }: LayoutProps = $props();
 
-	let isAuthLoading = $state(true);
 	let authError = $state('');
 
 	onMount(async () => {
@@ -24,17 +22,8 @@
 
 	async function handleAuth() {
 		try {
-			isAuthLoading = true;
 			authError = '';
-
-			// Check if user already exists in store
-			const currentUser = get(user);
-			
-			if (currentUser) {
-				// User already loaded, no need to call profile again
-				isAuthLoading = false;
-				return;
-			}
+			user.setLoading(true);
 
 			// Determine if current route requires auth
 			const currentPath = data.currentPath;
@@ -42,8 +31,8 @@
 			const isRootRoute = currentPath === '/';
 
 			if (isAuthRoute) {
-				// On auth pages, don't call profile
-				isAuthLoading = false;
+				// On auth pages, don't call profile and set unauthenticated
+				user.setUnauthenticated();
 				return;
 			}
 
@@ -52,7 +41,7 @@
 				const profileResult = await trpc.auth.profile.query();
 				
 				// Set user store with profile data
-				user.set({
+				user.setUser({
 					username: profileResult.username,
 					organizationName: profileResult.organizationName,
 					role: profileResult.role
@@ -63,22 +52,22 @@
 					await goto('/dashboard');
 				}
 			} catch (error: any) {
-				// Auth failed - redirect to login unless already on auth page
+				// Auth failed - set unauthenticated and redirect to login
+				user.setUnauthenticated();
 				if (!isAuthRoute) {
 					await goto('/login');
 				}
 			}
 		} catch (error: any) {
 			authError = 'Authentication failed';
+			user.setUnauthenticated();
 			console.error('Auth error:', error);
-		} finally {
-			isAuthLoading = false;
 		}
 	}
 </script>
 
 <!-- Auth Loading Overlay -->
-{#if isAuthLoading}
+{#if $user.isLoading}
 	<div class="fixed inset-0 z-50 bg-white bg-opacity-95 backdrop-blur-sm flex items-center justify-center">
 		<div class="flex flex-col items-center space-y-4">
 			<!-- Elegant Loading Spinner with Gradient -->
@@ -98,7 +87,7 @@
 {/if}
 
 <!-- Navigation Loading Overlay (separate from auth loading) -->
-{#if $navigating && !isAuthLoading}
+{#if $navigating && !$user.isLoading}
 	<div class="fixed inset-0 z-50 bg-white bg-opacity-80 backdrop-blur-sm flex items-center justify-center">
 		<div class="flex flex-col items-center space-y-4">
 			<!-- Elegant Loading Spinner with Gradient -->
@@ -125,6 +114,6 @@
 	</div>
 {/if}
 
-{#if !isAuthLoading && !authError}
+{#if !$user.isLoading && !authError}
 	{@render children()}
 {/if}

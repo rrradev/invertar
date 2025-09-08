@@ -25,7 +25,7 @@
 			if (result.status === SuccessStatus.SUCCESS) {
 				// Get user profile and set user store after successful login
 				const profileResult = await trpc.auth.profile.query();
-				user.set({
+				user.setUser({
 					username: profileResult.username,
 					organizationName: profileResult.organizationName,
 					role: profileResult.role
