@@ -30,7 +30,7 @@
 		items: Item[];
 	}
 
-	let folders = $state(data.folders as Folder[] || []);
+	let folders = $state((data.folders as Folder[]) || []);
 	let isCreatingFolder = $state(false);
 	let isCreatingItem = $state(false);
 	let isLoadingData = $state(false);

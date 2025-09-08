@@ -10,8 +10,6 @@
 	let isLoading = false;
 	let error = '';
 
-
-
 	async function handleLogin() {
 		if (!username.trim() || !organizationName.trim() || !password.trim()) {
 			error = 'All fields are required';

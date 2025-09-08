@@ -4,7 +4,6 @@
 	import { SuccessStatus } from '@repo/types/trpc/successStatus';
 	import Header from '$lib/components/Header.svelte';
 	import type { PageData } from './$types';
-	import { loading } from '$lib/stores/loading';
 
 	interface PageProps {
 		data: PageData;
@@ -12,7 +11,7 @@
 
 	let { data }: PageProps = $props();
 
-	let admins = $state(data.admins as Admin[] || []);
+	let admins = $state((data.admins as Admin[]) || []);
 	let isLoading = $state(false);
 	let isCreating = $state(false);
 	let isDeleting = $state('');
@@ -33,7 +32,6 @@
 		email: '',
 		organizationName: ''
 	});
-
 
 	async function loadAdmins() {
 		try {

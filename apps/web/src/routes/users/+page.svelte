@@ -20,7 +20,7 @@
 		hasInitialPassword: boolean;
 	}
 
-	let users = $state(data.users as UserListItem[] || []);
+	let users = $state((data.users as UserListItem[]) || []);
 	let isLoading = $state(false);
 	let isCreating = $state(false);
 	let isDeleting = $state('');

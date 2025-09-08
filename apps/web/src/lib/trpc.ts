@@ -31,10 +31,10 @@ export const trpc = createTRPCProxyClient<AppRouter>({
 								await fetch(`${getBaseUrl()}/trpc/auth.refreshToken`, {
 									method: 'POST',
 									credentials: 'include',
-									headers: { 'Content-Type': 'application/json' },
+									headers: { 'Content-Type': 'application/json' }
 								});
 								isRefreshing = false;
-								refreshQueue.forEach(resolve => resolve());
+								refreshQueue.forEach((resolve) => resolve());
 								refreshQueue = [];
 							} catch (err) {
 								isRefreshing = false;
@@ -55,7 +55,7 @@ export const trpc = createTRPCProxyClient<AppRouter>({
 				} finally {
 					loading.set(false); // stop loading
 				}
-			},
-		}),
-	],
+			}
+		})
+	]
 });
