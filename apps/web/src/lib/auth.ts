@@ -25,14 +25,16 @@ export async function waitForAuth(): Promise<AuthState> {
 }
 
 /**
- * Get the current user data, throwing an error if not authenticated
+ * Get the current user data, returning null if not authenticated
  * Used by page load functions that require authentication
  */
 export async function requireAuth() {
 	const authState = await waitForAuth();
 
 	if (!authState.isAuthenticated || !authState.user) {
-		throw new Error('User not authenticated');
+		// Don't throw error - let the layout handle redirects
+		// Return null to indicate auth failure
+		return null;
 	}
 
 	return authState.user;

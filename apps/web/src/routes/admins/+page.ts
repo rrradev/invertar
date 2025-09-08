@@ -4,13 +4,28 @@ import { requireAuth } from '$lib/auth';
 
 export const load: PageLoad = async () => {
 	// Wait for authentication to complete before making API calls
-	await requireAuth();
+	const user = await requireAuth();
 
-	// Get admins data
-	const result = await trpc.superAdmin.listAdmins.query();
+	// If not authenticated, return empty data - layout will handle redirect
+	if (!user) {
+		return {
+			admins: []
+		};
+	}
 
-	return {
-		admins: result.admins
-	};
+	try {
+		// Get admins data
+		const result = await trpc.superAdmin.listAdmins.query();
+
+		return {
+			admins: result.admins
+		};
+	} catch (error) {
+		// If API call fails, return empty data
+		console.error('Failed to load admins:', error);
+		return {
+			admins: []
+		};
+	}
 };
 export const ssr = false;

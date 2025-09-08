@@ -55,7 +55,9 @@
 			} catch (error: unknown) {
 				// Auth failed - set unauthenticated and redirect to login
 				user.setUnauthenticated();
-				if (!isAuthRoute) {
+				if (!isAuthRoute && !isRootRoute) {
+					await goto('/login');
+				} else if (isRootRoute) {
 					await goto('/login');
 				}
 			}
