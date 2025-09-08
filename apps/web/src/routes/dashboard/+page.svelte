@@ -33,7 +33,6 @@
 	let folders = $state((data.folders as Folder[]) || []);
 	let isCreatingFolder = $state(false);
 	let isCreatingItem = $state(false);
-	let isLoadingData = $state(false);
 	let showCreateFolderForm = $state(false);
 	let showCreateItemForm = $state(false);
 	let showAdvancedItemFields = $state(false);
@@ -52,21 +51,6 @@
 		folderId: ''
 	});
 
-	async function loadFoldersAndItems() {
-		try {
-			isLoadingData = true;
-			error = '';
-			const result = await trpc.dashboard.getFoldersWithItems.query();
-
-			if (result.status === SuccessStatus.SUCCESS) {
-				folders = result.folders as Folder[];
-			}
-		} catch (err: any) {
-			error = err.message || 'Failed to load folders and items';
-		} finally {
-			isLoadingData = false;
-		}
-	}
 
 	async function createFolder() {
 		if (!newFolder.name.trim()) {
@@ -87,7 +71,9 @@
 				successMessage = result.message;
 				newFolder = { name: '' };
 				showCreateFolderForm = false;
-				await loadFoldersAndItems();
+				
+				// Add the new folder to the existing folders array
+				folders = [result.folder as Folder, ...folders];
 			}
 		} catch (err: any) {
 			error = err.message || 'Failed to create folder';
@@ -107,19 +93,31 @@
 			error = '';
 			successMessage = '';
 
+			const targetFolderId = newItem.folderId; // Store before resetting
+
 			const result = await trpc.dashboard.createItem.mutate({
 				name: newItem.name.trim(),
 				description: newItem.description.trim() || undefined,
 				price: newItem.price || undefined,
 				quantity: newItem.quantity || undefined,
-				folderId: newItem.folderId
+				folderId: targetFolderId
 			});
 
 			if (result.status === SuccessStatus.SUCCESS) {
 				successMessage = result.message;
 				newItem = { name: '', description: '', price: 0, quantity: 0, folderId: '' };
 				showCreateItemForm = false;
-				await loadFoldersAndItems();
+				
+				// Add the new item to the corresponding folder
+				folders = folders.map(folder => {
+					if (folder.id === targetFolderId) {
+						return {
+							...folder,
+							items: [result.item as Item, ...folder.items]
+						};
+					}
+					return folder;
+				});
 			}
 		} catch (err: any) {
 			error = err.message || 'Failed to create item';
