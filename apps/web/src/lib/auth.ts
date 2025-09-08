@@ -27,12 +27,11 @@ export async function waitForAuth(): Promise<AuthState> {
 /**
  * Get the current user data, returning null if not authenticated
  * Used by page load functions that require authentication
- * Since auth now happens in layout load function, this should return immediately
+ * Waits for authentication to complete before returning result
  */
 export async function requireAuth() {
-	// Auth should already be complete when page load functions run
-	// since layout load function runs first
-	const authState = get(user);
+	// Wait for authentication to complete
+	const authState = await waitForAuth();
 
 	if (!authState.isAuthenticated || !authState.user) {
 		// Return null to indicate auth failure
