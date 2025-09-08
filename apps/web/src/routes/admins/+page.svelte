@@ -12,27 +12,27 @@
 
 	let { data }: PageProps = $props();
 
-	let admins = data.admins as Admin[] || [];
-	let isLoading = false;
-	let isCreating = false;
-	let isDeleting = '';
-	let isRefreshing = '';
-	let isResetting = '';
-	let showCreateForm = false;
-	let showDeleteModal = false;
-	let showResetModal = false;
-	let adminToDelete: Admin | null = null;
-	let adminToReset: Admin | null = null;
-	let openDropdown: string | null = null;
-	let dropdownPosition = { top: 0, left: 0 };
-	let error = '';
-	let successMessage = '';
+	let admins = $state(data.admins as Admin[] || []);
+	let isLoading = $state(false);
+	let isCreating = $state(false);
+	let isDeleting = $state('');
+	let isRefreshing = $state('');
+	let isResetting = $state('');
+	let showCreateForm = $state(false);
+	let showDeleteModal = $state(false);
+	let showResetModal = $state(false);
+	let adminToDelete: Admin | null = $state(null);
+	let adminToReset: Admin | null = $state(null);
+	let openDropdown: string | null = $state(null);
+	let dropdownPosition = $state({ top: 0, left: 0 });
+	let error = $state('');
+	let successMessage = $state('');
 
-	let newAdmin = {
+	let newAdmin = $state({
 		username: '',
 		email: '',
 		organizationName: ''
-	};
+	});
 
 
 	async function loadAdmins() {

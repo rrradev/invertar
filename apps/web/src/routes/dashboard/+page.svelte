@@ -30,27 +30,27 @@
 		items: Item[];
 	}
 
-	let folders = data.folders as Folder[] || [];
-	let isCreatingFolder = false;
-	let isCreatingItem = false;
-	let isLoadingData = false;
-	let showCreateFolderForm = false;
-	let showCreateItemForm = false;
-	let showAdvancedItemFields = false;
-	let error = '';
-	let successMessage = '';
+	let folders = $state(data.folders as Folder[] || []);
+	let isCreatingFolder = $state(false);
+	let isCreatingItem = $state(false);
+	let isLoadingData = $state(false);
+	let showCreateFolderForm = $state(false);
+	let showCreateItemForm = $state(false);
+	let showAdvancedItemFields = $state(false);
+	let error = $state('');
+	let successMessage = $state('');
 
-	let newFolder = {
+	let newFolder = $state({
 		name: ''
-	};
+	});
 
-	let newItem = {
+	let newItem = $state({
 		name: '',
 		description: '',
 		price: 0,
 		quantity: 0,
 		folderId: ''
-	};
+	});
 
 	async function loadFoldersAndItems() {
 		try {

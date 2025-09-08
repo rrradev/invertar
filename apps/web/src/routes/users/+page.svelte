@@ -20,24 +20,24 @@
 		hasInitialPassword: boolean;
 	}
 
-	let users = data.users as UserListItem[] || [];
-	let isLoading = false;
-	let isCreating = false;
-	let isDeleting = '';
-	let isResetting = '';
-	let showCreateForm = false;
-	let showDeleteModal = false;
-	let showResetModal = false;
-	let userToDelete: UserListItem | null = null;
-	let userToReset: UserListItem | null = null;
-	let openDropdown: string | null = null;
-	let dropdownPosition = { top: 0, left: 0 };
-	let error = '';
-	let successMessage = '';
+	let users = $state(data.users as UserListItem[] || []);
+	let isLoading = $state(false);
+	let isCreating = $state(false);
+	let isDeleting = $state('');
+	let isResetting = $state('');
+	let showCreateForm = $state(false);
+	let showDeleteModal = $state(false);
+	let showResetModal = $state(false);
+	let userToDelete: UserListItem | null = $state(null);
+	let userToReset: UserListItem | null = $state(null);
+	let openDropdown: string | null = $state(null);
+	let dropdownPosition = $state({ top: 0, left: 0 });
+	let error = $state('');
+	let successMessage = $state('');
 
-	let newUser = {
+	let newUser = $state({
 		username: ''
-	};
+	});
 
 	async function loadUsers() {
 		try {
