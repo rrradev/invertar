@@ -12,14 +12,14 @@
 	let error = '';
 
 	onMount(() => {
-		const unsubscribe = auth.subscribe(({ user }) => {
-			if (user) {
-				goto('/dashboard');
-			}
-		});
-		return () => {
-			unsubscribe();
-		};
+		// const unsubscribe = auth.subscribe(({ user }) => {
+		// 	if (user) {
+		// 		goto('/dashboard');
+		// 	}
+		// });
+		// return () => {
+		// 	unsubscribe();
+		// };
 	});
 
 	async function handleLogin() {

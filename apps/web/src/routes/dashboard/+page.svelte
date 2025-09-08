@@ -1,10 +1,11 @@
 <script lang="ts">
-	import { onMount } from 'svelte';
-	import { auth } from '$lib/stores/auth';
 	import { trpc } from '$lib/trpc';
-	import type { User } from '@repo/types/users';
 	import { SuccessStatus } from '@repo/types/trpc/successStatus';
 	import Header from '$lib/components/Header.svelte';
+	import type { PageProps } from './$types';
+	import { loading } from '$lib/stores/loading';
+
+	let { data }: PageProps = $props();
 
 	interface Item {
 		id: string;
@@ -26,10 +27,7 @@
 		items: Item[];
 	}
 
-	let user: User | null = null;
-	let folders: Folder[] = [];
-	let isLoading = true;
-	let isAuthLoading = true;
+	let folders = data.folders as Folder[] || [];
 	let isCreatingFolder = false;
 	let isCreatingItem = false;
 	let showCreateFolderForm = false;
@@ -50,24 +48,9 @@
 		folderId: ''
 	};
 
-	onMount(() => {
-		const unsubscribe = auth.subscribe(({ user: authUser, isLoading }) => {
-			user = authUser;
-			isAuthLoading = isLoading;
-
-			if (!isLoading && user) {
-				loadFoldersAndItems();
-			}
-		});
-
-		return () => unsubscribe();
-	});
-
 	async function loadFoldersAndItems() {
-		if (!user) return;
-
 		try {
-			isLoading = true;
+			loading.set(true);
 			error = '';
 			const result = await trpc.dashboard.getFoldersWithItems.query();
 
@@ -77,7 +60,7 @@
 		} catch (err: any) {
 			error = err.message || 'Failed to load folders and items';
 		} finally {
-			isLoading = false;
+			loading.set(false);
 		}
 	}
 
@@ -172,7 +155,7 @@
 
 	<!-- Main Content -->
 	<main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-		{#if isAuthLoading}
+		{#if $loading}
 			<div class="text-center py-12">
 				<svg class="animate-spin mx-auto h-8 w-8 text-gray-400" fill="none" viewBox="0 0 24 24">
 					<circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"
@@ -185,7 +168,7 @@
 				</svg>
 				<p class="mt-2 text-sm text-gray-500">Loading...</p>
 			</div>
-		{:else if user}
+		{:else if !$loading}
 			<!-- Page Header -->
 			<div class="mb-8">
 				<div class="sm:flex sm:items-center sm:justify-between">
@@ -460,7 +443,7 @@
 			{/if}
 
 			<!-- Folders List -->
-			{#if isLoading}
+			{#if $loading}
 				<div class="bg-white rounded-lg shadow-sm border border-gray-200 p-8 text-center">
 					<svg class="animate-spin mx-auto h-8 w-8 text-gray-400" fill="none" viewBox="0 0 24 24">
 						<circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"

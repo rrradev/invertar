@@ -1,21 +1,6 @@
 <script lang="ts">
-	import { onMount } from 'svelte';
-	import { auth } from '$lib/stores/auth';
-	import { goto } from '$app/navigation';
+	import { loading } from '$lib/stores/loading';
 
-	let loading = true;
-
-	onMount(() => {
-		const unsubscribe = auth.subscribe(($auth) => {
-			loading = false;
-
-			if ($auth.user) {
-				goto('/dashboard');
-			}
-		});
-
-		return () => unsubscribe();
-	});
 </script>
 
 {#if loading}

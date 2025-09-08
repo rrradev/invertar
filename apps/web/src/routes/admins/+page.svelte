@@ -1,6 +1,5 @@
 <script lang="ts">
 	import { onMount } from 'svelte';
-	import { goto } from '$app/navigation';
 	import { auth } from '$lib/stores/auth';
 	import { trpc } from '$lib/trpc';
 	import { UserRole } from '@repo/types/users';
@@ -33,20 +32,7 @@
 	};
 
 	onMount(() => {
-		const unsubscribe = auth.subscribe(({ user: authUser, isLoading }) => {
-			user = authUser;
-			isAuthLoading = isLoading;
-
-			if (!isLoading && user) {
-				if (authUser?.role !== UserRole.SUPER_ADMIN) {
-					error = 'Access denied. Super admin privileges required.';
-				} else {
-					loadAdmins();
-				}
-			}
-		});
-
-		return () => unsubscribe();
+		loadAdmins();
 	});
 
 	async function loadAdmins() {
