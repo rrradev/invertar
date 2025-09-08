@@ -1,4 +1,5 @@
 import type { LayoutLoad } from './$types';
+import { redirect } from '@sveltejs/kit';
 import { trpc } from '$lib/trpc';
 import { user } from '$lib/stores/user';
 
@@ -21,10 +22,22 @@ export const load: LayoutLoad = async ({ url }) => {
             return {
                 user: profileResult
             };
-        } catch (error) {
+        } catch (error: any) {
             // If profile fails, reset user store
             user.reset();
-            throw error;
+            
+            // If we get UNAUTHORIZED error (token refresh failed), redirect to login
+            if (
+                error?.data?.code === 'UNAUTHORIZED' || 
+                error?.code === -32001 ||
+                error?.message === 'UNAUTHORIZED' ||
+                error?.status === 401
+            ) {
+                throw redirect(302, '/login');
+            }
+            
+            // For other errors, also redirect to login
+            throw redirect(302, '/login');
         }
     }
 
