@@ -27,12 +27,14 @@ export async function waitForAuth(): Promise<AuthState> {
 /**
  * Get the current user data, returning null if not authenticated
  * Used by page load functions that require authentication
+ * Since auth now happens in layout load function, this should return immediately
  */
 export async function requireAuth() {
-	const authState = await waitForAuth();
+	// Auth should already be complete when page load functions run
+	// since layout load function runs first
+	const authState = get(user);
 
 	if (!authState.isAuthenticated || !authState.user) {
-		// Don't throw error - let the layout handle redirects
 		// Return null to indicate auth failure
 		return null;
 	}

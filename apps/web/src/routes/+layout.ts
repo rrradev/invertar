@@ -1,10 +1,61 @@
 import type { LayoutLoad } from './$types';
+import { trpc } from '$lib/trpc';
+import { user } from '$lib/stores/user';
+import { redirect } from '@sveltejs/kit';
 
 export const load: LayoutLoad = async ({ url }) => {
-	// Pass the current URL to the layout for auth handling
-	return {
-		currentPath: url.pathname
-	};
+	const currentPath = url.pathname;
+	const isAuthRoute = currentPath === '/login' || currentPath === '/set-password';
+	const isRootRoute = currentPath === '/';
+
+	// Set loading state
+	user.setLoading(true);
+
+	if (isAuthRoute) {
+		// On auth pages, don't call profile and set unauthenticated
+		user.setUnauthenticated();
+		return {
+			currentPath
+		};
+	}
+
+	// For protected routes or root, check auth
+	try {
+		const profileResult = await trpc.auth.profile.query();
+
+		// Set user store with profile data
+		user.setUser({
+			username: profileResult.username,
+			organizationName: profileResult.organizationName,
+			role: profileResult.role
+		});
+
+		// If on root page, redirect to dashboard
+		if (isRootRoute) {
+			throw redirect(302, '/dashboard');
+		}
+
+		return {
+			currentPath
+		};
+	} catch (error: unknown) {
+		// Check if it's a redirect (which we should allow)
+		if (error && typeof error === 'object' && 'status' in error && error.status === 302) {
+			throw error;
+		}
+
+		// Auth failed - set unauthenticated and redirect to login
+		user.setUnauthenticated();
+		if (!isAuthRoute && !isRootRoute) {
+			throw redirect(302, '/login');
+		} else if (isRootRoute) {
+			throw redirect(302, '/login');
+		}
+
+		return {
+			currentPath
+		};
+	}
 };
 
 export const ssr = false;
