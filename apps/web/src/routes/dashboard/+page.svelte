@@ -157,20 +157,6 @@
 
 	<!-- Main Content -->
 	<main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-		{#if isLoadingData}
-			<div class="text-center py-12">
-				<svg class="animate-spin mx-auto h-8 w-8 text-gray-400" fill="none" viewBox="0 0 24 24">
-					<circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"
-					></circle>
-					<path
-						class="opacity-75"
-						fill="currentColor"
-						d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
-					></path>
-				</svg>
-				<p class="mt-2 text-sm text-gray-500">Loading...</p>
-			</div>
-		{:else if !isLoadingData}
 			<!-- Page Header -->
 			<div class="mb-8">
 				<div class="sm:flex sm:items-center sm:justify-between">
@@ -445,7 +431,7 @@
 			{/if}
 
 			<!-- Folders List -->
-			{#if isLoadingData}
+			{#if folders.length === 0}
 				<div class="bg-white rounded-lg shadow-sm border border-gray-200 p-8 text-center">
 					<svg class="animate-spin mx-auto h-8 w-8 text-gray-400" fill="none" viewBox="0 0 24 24">
 						<circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"
@@ -630,25 +616,6 @@
 						</div>
 					{/each}
 				</div>
-			{/if}
-		{:else}
-			<div class="text-center py-12">
-				<svg
-					class="mx-auto h-12 w-12 text-red-400"
-					fill="none"
-					stroke="currentColor"
-					viewBox="0 0 24 24"
-				>
-					<path
-						stroke-linecap="round"
-						stroke-linejoin="round"
-						stroke-width="2"
-						d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L3.732 16.5c-.77.833.192 2.5 1.732 2.5z"
-					/>
-				</svg>
-				<h3 class="mt-2 text-sm font-medium text-gray-900">Access Denied</h3>
-				<p class="mt-1 text-sm text-gray-500">Please log in to access the dashboard.</p>
-			</div>
-		{/if}
+				{/if}
 	</main>
 </div>
