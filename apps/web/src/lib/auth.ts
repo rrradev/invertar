@@ -30,10 +30,10 @@ export async function waitForAuth(): Promise<AuthState> {
  */
 export async function requireAuth() {
 	const authState = await waitForAuth();
-	
+
 	if (!authState.isAuthenticated || !authState.user) {
 		throw new Error('User not authenticated');
 	}
-	
+
 	return authState.user;
 }

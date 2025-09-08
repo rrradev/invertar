@@ -5,7 +5,7 @@ import { requireAuth } from '$lib/auth';
 export const load: PageLoad = async () => {
 	// Wait for authentication to complete before making API calls
 	await requireAuth();
-	
+
 	// Get users data
 	const result = await trpc.admin.listUsers.query();
 

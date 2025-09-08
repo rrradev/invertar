@@ -31,7 +31,7 @@ function createUserStore() {
 			});
 		},
 		setLoading: (loading: boolean) => {
-			update(state => ({
+			update((state) => ({
 				...state,
 				isLoading: loading
 			}));
@@ -43,11 +43,12 @@ function createUserStore() {
 				isAuthenticated: false
 			});
 		},
-		reset: () => set({
-			isLoading: true,
-			user: null,
-			isAuthenticated: false
-		})
+		reset: () =>
+			set({
+				isLoading: true,
+				user: null,
+				isAuthenticated: false
+			})
 	};
 }
 

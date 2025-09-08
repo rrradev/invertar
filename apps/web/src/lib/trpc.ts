@@ -33,12 +33,12 @@ export const trpc = createTRPCProxyClient<AppRouter>({
 									credentials: 'include',
 									headers: { 'Content-Type': 'application/json' }
 								});
-								
+
 								// Check if refresh was successful
 								if (!refreshResponse.ok) {
 									throw new Error('Refresh token expired or invalid');
 								}
-								
+
 								isRefreshing = false;
 								refreshQueue.forEach((resolve) => resolve());
 								refreshQueue = [];
@@ -55,7 +55,7 @@ export const trpc = createTRPCProxyClient<AppRouter>({
 
 						// Retry original request
 						response = await fetch(url, { ...options, credentials: 'include' });
-						
+
 						// If still unauthorized after refresh, redirect to login
 						if (response.status === 401 || response.status === 403) {
 							user.setUnauthenticated();

@@ -39,7 +39,7 @@
 			// For protected routes or root, check auth
 			try {
 				const profileResult = await trpc.auth.profile.query();
-				
+
 				// Set user store with profile data
 				user.setUser({
 					username: profileResult.username,
@@ -68,7 +68,9 @@
 
 <!-- Auth Loading Overlay -->
 {#if $user.isLoading}
-	<div class="fixed inset-0 z-50 bg-white bg-opacity-95 backdrop-blur-sm flex items-center justify-center">
+	<div
+		class="fixed inset-0 z-50 bg-white bg-opacity-95 backdrop-blur-sm flex items-center justify-center"
+	>
 		<div class="flex flex-col items-center space-y-4">
 			<!-- Elegant Loading Spinner with Gradient -->
 			<div class="relative">
@@ -88,7 +90,9 @@
 
 <!-- Navigation Loading Overlay (separate from auth loading) -->
 {#if $navigating && !$user.isLoading}
-	<div class="fixed inset-0 z-50 bg-white bg-opacity-80 backdrop-blur-sm flex items-center justify-center">
+	<div
+		class="fixed inset-0 z-50 bg-white bg-opacity-80 backdrop-blur-sm flex items-center justify-center"
+	>
 		<div class="flex flex-col items-center space-y-4">
 			<!-- Elegant Loading Spinner with Gradient -->
 			<div class="relative">

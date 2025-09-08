@@ -52,7 +52,9 @@
 								on:click={handleSilhouetteClick}
 								id="user-management-button"
 								class="p-2 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-full transition-colors"
-								title={$user.user.role === UserRole.SUPER_ADMIN ? 'Admin Management' : 'User Management'}
+								title={$user.user.role === UserRole.SUPER_ADMIN
+									? 'Admin Management'
+									: 'User Management'}
 							>
 								<svg class="h-6 w-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
 									<path
@@ -64,7 +66,8 @@
 								</svg>
 							</button>
 						{/if}
-						<span id="welcome-message" class="text-sm text-gray-700">Welcome, {$user.user.username}</span
+						<span id="welcome-message" class="text-sm text-gray-700"
+							>Welcome, {$user.user.username}</span
 						>
 						<button
 							on:click={logout}
