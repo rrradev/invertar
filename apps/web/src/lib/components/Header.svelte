@@ -66,9 +66,10 @@
 								</svg>
 							</button>
 						{/if}
-						<span id="welcome-message" class="text-sm text-gray-700"
-							>Welcome, {$user.user.username}</span
-						>
+						<span id="welcome-message" class="text-sm text-gray-700">
+							Welcome, {$user.user.username} from
+							<span class="underline">{$user.user.organizationName}</span>
+						</span>
 						<button
 							on:click={logout}
 							class="px-3 py-2 text-sm font-medium text-gray-700 hover:text-gray-900 hover:bg-gray-100 rounded-md transition-colors"

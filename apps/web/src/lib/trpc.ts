@@ -18,13 +18,12 @@ export const trpc = createTRPCProxyClient<AppRouter>({
 			url: `${getBaseUrl()}/trpc`,
 			fetch: async (url, options) => {
 				loading.set(true); // start loading
-				let response;
+				let response : Response;
 
 				try {
 					response = await fetch(url, { ...options, credentials: 'include' });
-
-					if (response.status === 401 || response.status === 403) {
-						// Handle token refresh
+					if (response.status === 401 && !response.url.includes('auth.login')) {
+						// Unauthorized, try to refresh token
 						if (!isRefreshing) {
 							isRefreshing = true;
 							try {

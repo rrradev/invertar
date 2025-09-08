@@ -41,7 +41,7 @@ export const protectedProcedure = t.procedure.use(
   t.middleware(({ ctx, next }) => {
     const allowedRoles: UserRoleType[] = ["ADMIN", "USER", "SUPER_ADMIN"];
     if (!ctx.user || !allowedRoles.includes(ctx.user.role)) {
-      throw new TRPCError({ code: "UNAUTHORIZED" });
+      throw new TRPCError({ code: "UNAUTHORIZED", message: "Missing access token" });
     }
     return next();
   })
@@ -49,17 +49,26 @@ export const protectedProcedure = t.procedure.use(
 
 export const adminProcedure = t.procedure.use(
   t.middleware(({ ctx, next }) => {
-    if (!ctx.user || ctx.user.role !== UserRole.ADMIN) {
-      throw new TRPCError({ code: "FORBIDDEN" });
+    if (!ctx.user) {
+      throw new TRPCError({ code: "UNAUTHORIZED", message: "Missing access token" });
     }
+
+    if (ctx.user.role !== UserRole.ADMIN) {
+      throw new TRPCError({ code: "FORBIDDEN", message: "Insufficient permissions" });
+    }
+
     return next();
   })
 );
 
 export const superAdminProcedure = t.procedure.use(
   t.middleware(({ ctx, next }) => {
-    if (!ctx.user || ctx.user.role !== UserRole.SUPER_ADMIN) {
-      throw new TRPCError({ code: "FORBIDDEN" });
+    if (!ctx.user) {
+      throw new TRPCError({ code: "UNAUTHORIZED", message: "Missing access token" });
+    }
+
+    if (ctx.user.role !== UserRole.SUPER_ADMIN) {
+      throw new TRPCError({ code: "FORBIDDEN", message: "Insufficient permissions" });
     }
     return next();
   })
