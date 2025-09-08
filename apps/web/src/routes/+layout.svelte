@@ -9,6 +9,7 @@
 
 	interface LayoutProps {
 		data: LayoutData;
+		// eslint-disable-next-line @typescript-eslint/no-explicit-any
 		children: any;
 	}
 
@@ -51,14 +52,14 @@
 				if (isRootRoute) {
 					await goto('/dashboard');
 				}
-			} catch (error: any) {
+			} catch (error: unknown) {
 				// Auth failed - set unauthenticated and redirect to login
 				user.setUnauthenticated();
 				if (!isAuthRoute) {
 					await goto('/login');
 				}
 			}
-		} catch (error: any) {
+		} catch (error: unknown) {
 			authError = 'Authentication failed';
 			user.setUnauthenticated();
 			console.error('Auth error:', error);

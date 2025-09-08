@@ -42,7 +42,7 @@ export const trpc = createTRPCProxyClient<AppRouter>({
 								isRefreshing = false;
 								refreshQueue.forEach((resolve) => resolve());
 								refreshQueue = [];
-							} catch (err) {
+							} catch {
 								isRefreshing = false;
 								refreshQueue = [];
 								user.setUnauthenticated(); // Set unauthenticated state
