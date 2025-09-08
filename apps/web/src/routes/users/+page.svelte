@@ -1,11 +1,11 @@
 <script lang="ts">
-	import { onMount } from 'svelte';
-	import { auth } from '$lib/stores/auth';
 	import { trpc } from '$lib/trpc';
-	import { UserRole } from '@repo/types/users';
-	import type { User } from '@repo/types/users';
 	import { SuccessStatus } from '@repo/types/trpc/successStatus';
 	import Header from '$lib/components/Header.svelte';
+	import type { PageProps } from './$types';
+	import { loading } from '$lib/stores/loading';
+
+	let { data }: PageProps = $props();
 
 	interface UserListItem {
 		id: string;
@@ -16,10 +16,8 @@
 		hasInitialPassword: boolean;
 	}
 
-	let user: User | null = null;
-	let users: UserListItem[] = [];
-	let isLoading = true;
-	let isAuthLoading = true;
+	let users = data.users as UserListItem[] || [];
+	let isLoading = false;
 	let isCreating = false;
 	let isDeleting = '';
 	let isResetting = '';
@@ -37,26 +35,7 @@
 		username: ''
 	};
 
-	onMount(() => {
-		const unsubscribe = auth.subscribe(({ user: authUser, isLoading }) => {
-			user = authUser;
-			isAuthLoading = isLoading;
-
-			if (!isLoading && user) {
-				if (authUser?.role !== UserRole.ADMIN) {
-					error = 'Access denied. Admin privileges required.';
-				} else {
-					loadUsers();
-				}
-			}
-		});
-
-		return () => unsubscribe();
-	});
-
 	async function loadUsers() {
-		if (!user || user.role !== UserRole.ADMIN) return;
-
 		try {
 			isLoading = true;
 			error = '';
@@ -229,7 +208,7 @@
 
 	<!-- Main Content -->
 	<main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-		{#if isAuthLoading}
+		{#if $loading}
 			<div class="text-center py-12">
 				<svg class="animate-spin mx-auto h-8 w-8 text-gray-400" fill="none" viewBox="0 0 24 24">
 					<circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"
@@ -242,7 +221,7 @@
 				</svg>
 				<p class="mt-2 text-sm text-gray-500">Loading...</p>
 			</div>
-		{:else if user && user.role === UserRole.ADMIN}
+		{:else}
 			<!-- Page Header -->
 			<div class="mb-8">
 				<div class="sm:flex sm:items-center sm:justify-between">
@@ -505,24 +484,6 @@
 						</table>
 					</div>
 				{/if}
-			</div>
-		{:else if user}
-			<div class="text-center py-12">
-				<svg
-					class="mx-auto h-12 w-12 text-red-400"
-					fill="none"
-					stroke="currentColor"
-					viewBox="0 0 24 24"
-				>
-					<path
-						stroke-linecap="round"
-						stroke-linejoin="round"
-						stroke-width="2"
-						d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L3.732 16.5c-.77.833.192 2.5 1.732 2.5z"
-					/>
-				</svg>
-				<h3 class="mt-2 text-sm font-medium text-gray-900">Access Denied</h3>
-				<p class="mt-1 text-sm text-gray-500">You need admin privileges to access this page.</p>
 			</div>
 		{/if}
 	</main>

@@ -2,6 +2,7 @@ import { createTRPCProxyClient, httpBatchLink } from '@trpc/client';
 import type { AppRouter } from '@repo/api';
 import { goto } from '$app/navigation';
 import { loading } from '$lib/stores/loading';
+import { user } from '$lib/stores/user';
 
 const getBaseUrl = () => {
 	if (typeof window !== 'undefined') return 'http://localhost:3000';
@@ -38,6 +39,7 @@ export const trpc = createTRPCProxyClient<AppRouter>({
 							} catch (err) {
 								isRefreshing = false;
 								refreshQueue = [];
+								user.reset(); // Reset user store when redirected to login
 								goto('/login');
 								throw err;
 							}

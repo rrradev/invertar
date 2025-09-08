@@ -1,27 +1,21 @@
 <script lang="ts">
 	import { goto } from '$app/navigation';
 	import { trpc } from '$lib/trpc';
-	import { auth } from '$lib/stores/auth';
+	import { user } from '$lib/stores/user';
 	import { UserRole } from '@repo/types/users';
-	import type { User } from '@repo/types/users';
-
-	let user: User | null = null;
-
-	// Subscribe directly to auth store to ensure real-time updates
-	$: ({ user } = $auth);
 
 	async function logout() {
 		await trpc.auth.logout.mutate();
-		auth.reset();
+		user.reset();
 		goto('/login');
 	}
 
 	function handleSilhouetteClick() {
-		if (!user) return;
+		if (!$user) return;
 
-		if (user.role === UserRole.SUPER_ADMIN) {
+		if ($user.role === UserRole.SUPER_ADMIN) {
 			goto('/admins');
-		} else if (user.role === UserRole.ADMIN) {
+		} else if ($user.role === UserRole.ADMIN) {
 			goto('/users');
 		}
 		// USER role doesn't show the button, so this shouldn't happen
@@ -49,15 +43,15 @@
 			</div>
 
 			<div class="flex items-center space-x-4">
-				{#if user}
+				{#if $user}
 					<div class="flex items-center space-x-3">
 						<!-- Role-based Silhouette Button -->
-						{#if user.role === UserRole.SUPER_ADMIN || user.role === UserRole.ADMIN}
+						{#if $user.role === UserRole.SUPER_ADMIN || $user.role === UserRole.ADMIN}
 							<button
 								on:click={handleSilhouetteClick}
 								id="user-management-button"
 								class="p-2 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-full transition-colors"
-								title={user.role === UserRole.SUPER_ADMIN ? 'Admin Management' : 'User Management'}
+								title={$user.role === UserRole.SUPER_ADMIN ? 'Admin Management' : 'User Management'}
 							>
 								<svg class="h-6 w-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
 									<path
@@ -69,7 +63,7 @@
 								</svg>
 							</button>
 						{/if}
-						<span id="welcome-message" class="text-sm text-gray-700">Welcome, {user.username}</span>
+						<span id="welcome-message" class="text-sm text-gray-700">Welcome, {$user.username}</span>
 						<button
 							on:click={logout}
 							class="px-3 py-2 text-sm font-medium text-gray-700 hover:text-gray-900 hover:bg-gray-100 rounded-md transition-colors"
