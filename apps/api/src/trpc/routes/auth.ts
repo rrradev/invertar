@@ -192,4 +192,28 @@ export const authRouter = router({
       return { status: SuccessStatus.LOGGED_OUT };
     }),
 
+  profile: protectedProcedure
+    .query(async ({ ctx }) => {
+      const user = await prisma.user.findUnique({
+        where: { id: ctx.user!.id },
+        include: {
+          organization: {
+            select: {
+              name: true
+            }
+          }
+        }
+      });
+
+      if (!user) {
+        throw new TRPCError({ code: "NOT_FOUND", message: "User not found" });
+      }
+
+      return {
+        username: user.username,
+        role: user.role,
+        organizationName: user.organization.name
+      };
+    }),
+
 });

@@ -1,7 +1,6 @@
 <script lang="ts">
-	import { onMount } from 'svelte';
 	import { goto } from '$app/navigation';
-	import { auth } from '$lib/stores/auth';
+	import { user } from '$lib/stores/user';
 	import { trpc } from '$lib/trpc';
 	import { SuccessStatus } from '@repo/types/trpc/successStatus';
 
@@ -11,16 +10,7 @@
 	let isLoading = false;
 	let error = '';
 
-	onMount(() => {
-		// const unsubscribe = auth.subscribe(({ user }) => {
-		// 	if (user) {
-		// 		goto('/dashboard');
-		// 	}
-		// });
-		// return () => {
-		// 	unsubscribe();
-		// };
-	});
+
 
 	async function handleLogin() {
 		if (!username.trim() || !organizationName.trim() || !password.trim()) {
@@ -35,6 +25,13 @@
 			const result = await trpc.auth.login.mutate({ username, organizationName, password });
 
 			if (result.status === SuccessStatus.SUCCESS) {
+				// Get user profile and set user store after successful login
+				const profileResult = await trpc.auth.profile.query();
+				user.set({
+					username: profileResult.username,
+					organizationName: profileResult.organizationName,
+					role: profileResult.role
+				});
 				goto('/dashboard');
 			} else if (result.status === SuccessStatus.VALID_ACCESS_CODE) {
 				goto(`/set-password?userId=${result.userId}&code=${password}`);
