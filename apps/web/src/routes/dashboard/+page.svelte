@@ -2,8 +2,11 @@
 	import { trpc } from '$lib/trpc';
 	import { SuccessStatus } from '@repo/types/trpc/successStatus';
 	import Header from '$lib/components/Header.svelte';
-	import type { PageProps } from './$types';
-	import { loading } from '$lib/stores/loading';
+	import type { PageData } from './$types';
+
+	interface PageProps {
+		data: PageData;
+	}
 
 	let { data }: PageProps = $props();
 
@@ -30,6 +33,7 @@
 	let folders = data.folders as Folder[] || [];
 	let isCreatingFolder = false;
 	let isCreatingItem = false;
+	let isLoadingData = false;
 	let showCreateFolderForm = false;
 	let showCreateItemForm = false;
 	let showAdvancedItemFields = false;
@@ -50,7 +54,7 @@
 
 	async function loadFoldersAndItems() {
 		try {
-			loading.set(true);
+			isLoadingData = true;
 			error = '';
 			const result = await trpc.dashboard.getFoldersWithItems.query();
 
@@ -60,7 +64,7 @@
 		} catch (err: any) {
 			error = err.message || 'Failed to load folders and items';
 		} finally {
-			loading.set(false);
+			isLoadingData = false;
 		}
 	}
 
@@ -155,7 +159,7 @@
 
 	<!-- Main Content -->
 	<main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-		{#if $loading}
+		{#if isLoadingData}
 			<div class="text-center py-12">
 				<svg class="animate-spin mx-auto h-8 w-8 text-gray-400" fill="none" viewBox="0 0 24 24">
 					<circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"
@@ -168,7 +172,7 @@
 				</svg>
 				<p class="mt-2 text-sm text-gray-500">Loading...</p>
 			</div>
-		{:else if !$loading}
+		{:else if !isLoadingData}
 			<!-- Page Header -->
 			<div class="mb-8">
 				<div class="sm:flex sm:items-center sm:justify-between">
@@ -443,7 +447,7 @@
 			{/if}
 
 			<!-- Folders List -->
-			{#if $loading}
+			{#if isLoadingData}
 				<div class="bg-white rounded-lg shadow-sm border border-gray-200 p-8 text-center">
 					<svg class="animate-spin mx-auto h-8 w-8 text-gray-400" fill="none" viewBox="0 0 24 24">
 						<circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"

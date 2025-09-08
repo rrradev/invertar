@@ -3,8 +3,12 @@
 	import type { Admin } from '@repo/types/users';
 	import { SuccessStatus } from '@repo/types/trpc/successStatus';
 	import Header from '$lib/components/Header.svelte';
-	import type { PageProps } from './$types';
+	import type { PageData } from './$types';
 	import { loading } from '$lib/stores/loading';
+
+	interface PageProps {
+		data: PageData;
+	}
 
 	let { data }: PageProps = $props();
 
