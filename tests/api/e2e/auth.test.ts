@@ -130,7 +130,7 @@ test('auth.profile returns UNAUTHORIZED for missing token', async () => {
         AUTH_PROFILE
     );
 
-    expect(res.code).toBe('UNAUTHORIZED');
+    expect(res.data.code).toBe('UNAUTHORIZED');
     expect(res.message).toBeDefined();
 });
 
@@ -142,6 +142,6 @@ test('auth.profile returns UNAUTHORIZED for invalid token', async () => {
         'invalid_token'
     );
 
-    expect(res.code).toBe('UNAUTHORIZED');
+    expect(res.data.code).toBe('UNAUTHORIZED');
     expect(res.message).toBeDefined();
 });

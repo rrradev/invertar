@@ -88,7 +88,7 @@ test('auth.profile error handling for various invalid scenarios', async () => {
         'GET',
         AUTH_PROFILE
     );
-    expect(noTokenResponse.code).toBe('UNAUTHORIZED');
+    expect(noTokenResponse.data.code).toBe('UNAUTHORIZED');
 
     // Test with completely invalid token format
     const invalidTokenResponse = await req<ErrorResponse>(
@@ -97,7 +97,7 @@ test('auth.profile error handling for various invalid scenarios', async () => {
         undefined,
         'completely_invalid_token'
     );
-    expect(invalidTokenResponse.code).toBe('UNAUTHORIZED');
+    expect(invalidTokenResponse.data.code).toBe('UNAUTHORIZED');
 
     // Test with empty token
     const emptyTokenResponse = await req<ErrorResponse>(
@@ -106,7 +106,7 @@ test('auth.profile error handling for various invalid scenarios', async () => {
         undefined,
         ''
     );
-    expect(emptyTokenResponse.code).toBe('UNAUTHORIZED');
+    expect(emptyTokenResponse.data.code).toBe('UNAUTHORIZED');
 
     // Test with malformed JWT-like token
     const malformedTokenResponse = await req<ErrorResponse>(
@@ -115,7 +115,7 @@ test('auth.profile error handling for various invalid scenarios', async () => {
         undefined,
         'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.invalid.signature'
     );
-    expect(malformedTokenResponse.code).toBe('UNAUTHORIZED');
+    expect(malformedTokenResponse.data.code).toBe('UNAUTHORIZED');
 });
 
 test('auth.profile returns proper organization name in response', async () => {

@@ -221,7 +221,7 @@ test('non-admin cannot delete user', async () => {
     userToken
   );
 
-  expect(res.message).toBe("FORBIDDEN");
+  expect(res.message).toBe("Insufficient permissions");
 });
 
 // Test organization boundary enforcement

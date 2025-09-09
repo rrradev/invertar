@@ -1,6 +1,8 @@
 import { Locator, Page, expect } from "@playwright/test";
 import BasePage from "./base.page";
 import Login from "./login.page";
+import SuccessMessage from "./components/success-message.component";
+import ErrorMessage from "./components/error-message.component";
 import { th } from "@faker-js/faker/.";
 
 export default class Dashboard extends BasePage {
@@ -10,6 +12,8 @@ export default class Dashboard extends BasePage {
     createFolderButton: Locator;
     createItemButton: Locator;
     foldersContainer: Locator;
+    errorMessage: ErrorMessage;
+    successMessage: SuccessMessage;
 
     constructor(page: Page) {
         super(page);
@@ -19,6 +23,8 @@ export default class Dashboard extends BasePage {
         this.createFolderButton = page.locator('button:has-text("Create Folder")').first();
         this.createItemButton = page.locator('button:has-text("Create Item")').first();
         this.foldersContainer = page.locator('[data-testid="folders-container"]');
+        this.errorMessage = new ErrorMessage(page);
+        this.successMessage = new SuccessMessage(page);
     }
 
     async open() {
@@ -52,11 +58,11 @@ export default class Dashboard extends BasePage {
     }
 
     async waitForSuccessMessage() {
-        await expect(this.page.locator('.bg-green-50')).toBeVisible();
+        await expect(this.successMessage.container).toBeVisible();
     }
 
     async waitForErrorMessage() {
-        await expect(this.page.locator('.bg-red-50')).toBeVisible();
+        await expect(this.errorMessage.container).toBeVisible();
     }
 
         async signOut()  {

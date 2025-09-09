@@ -1,4 +1,4 @@
-import { test, expect } from 'vitest';
+import { test, expect, describe } from 'vitest';
 import { req, getToken } from './config/config';
 import { ErrorResponse, SuccessResponse } from '@repo/types/trpc/response';
 import { SuccessStatus } from '@repo/types/trpc/successStatus';
@@ -8,7 +8,7 @@ import { parsedEnv } from '../../utils/envSchema';
 const AUTH_REFRESH_TOKEN = 'auth.refreshToken';
 const AUTH_LOGOUT = 'auth.logout';
 
-test.describe('Token Refresh and Session Management API Tests', () => {
+describe('Token Refresh and Session Management API Tests', () => {
 
   test('Token refresh endpoint works correctly', async () => {
     // Get initial token
@@ -37,7 +37,7 @@ test.describe('Token Refresh and Session Management API Tests', () => {
       expect(refreshResponse.status).toBe(SuccessStatus.TOKEN_REFRESHED);
       expect(refreshResponse.accessToken).toBeDefined();
     } else {
-      expect(refreshResponse.code).toBe('UNAUTHORIZED');
+      expect(refreshResponse.data.code).toBe('UNAUTHORIZED');
     }
   });
 
@@ -57,7 +57,7 @@ test.describe('Token Refresh and Session Management API Tests', () => {
       AUTH_REFRESH_TOKEN
     );
     
-    expect(refreshResponse.code).toBe('UNAUTHORIZED');
+    expect(refreshResponse.data.code).toBe('UNAUTHORIZED');
     expect(refreshResponse.message).toContain('refresh token');
   });
 

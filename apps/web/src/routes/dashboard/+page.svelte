@@ -426,7 +426,7 @@
 		{/if}
 
 		<!-- Folders List -->
-		{#if folders.length === 0}
+		{#if !folders}
 			<div class="bg-white rounded-lg shadow-sm border border-gray-200 p-8 text-center">
 				<svg class="animate-spin mx-auto h-8 w-8 text-gray-400" fill="none" viewBox="0 0 24 24">
 					<circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"

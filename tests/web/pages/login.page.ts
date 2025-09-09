@@ -2,8 +2,6 @@ import { Locator, Page } from "@playwright/test";
 import BasePage from "./base.page";
 import { expect } from '@playwright/test';
 import Dashboard from "./dashboard.page";
-import { da } from "@faker-js/faker/.";
-
 
 export default class Login extends BasePage {
     orgInput: Locator;
@@ -23,7 +21,7 @@ export default class Login extends BasePage {
         await this.goto('/login');
     }
 
-    async login(org: string, username: string, password: string) {
+    async loginAs(org: string, username: string, password: string) {
         await this.orgInput.fill(org);
         await this.usernameInput.fill(username);
         await this.passwordInput.fill(password);
