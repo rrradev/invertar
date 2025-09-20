@@ -191,25 +191,23 @@
 				itemId: editingItem.id,
 				name: editingItem.name.trim(),
 				description: editingItem.description?.trim() || undefined,
-				price: editingItem.price || 0,
+				price: editingItem.price || 0
 			});
 
 			if (result.status === SuccessStatus.SUCCESS) {
 				successMessage = result.message;
-				
+
 				// Update the item in the folders array
 				folders = folders.map((folder) => ({
 					...folder,
 					items: folder.items.map((item) =>
-						item.id === editingItem.id
-							? { ...item, ...editingItem }
-							: item
-					),
+						item.id === editingItem.id ? { ...item, ...editingItem } : item
+					)
 				}));
 			}
-		} catch (err: any) {
+		} catch (err: unknown) {
 			console.error('Error updating item:', err);
-			error = err.message || 'Failed to update item. Please try again.';
+			error = (err as Error).message || 'Failed to update item. Please try again.';
 		} finally {
 			isUpdatingItem = false;
 		}
@@ -225,20 +223,18 @@
 
 			const result = await trpc.dashboard.adjustItemQuantity.mutate({
 				itemId: editingItem.id,
-				adjustment: quantityAdjustment,
+				adjustment: quantityAdjustment
 			});
 
 			if (result.status === SuccessStatus.SUCCESS) {
 				successMessage = result.message;
-				
+
 				// Update the item quantity in the folders array
 				folders = folders.map((folder) => ({
 					...folder,
 					items: folder.items.map((item) =>
-						item.id === editingItem.id
-							? { ...item, quantity: result.newQuantity }
-							: item
-					),
+						item.id === editingItem.id ? { ...item, quantity: result.newQuantity } : item
+					)
 				}));
 
 				// Update editingItem to reflect the new quantity
@@ -248,9 +244,9 @@
 
 				quantityAdjustment = 0;
 			}
-		} catch (err: any) {
+		} catch (err: unknown) {
 			console.error('Error adjusting quantity:', err);
-			error = err.message || 'Failed to adjust quantity. Please try again.';
+			error = (err as Error).message || 'Failed to adjust quantity. Please try again.';
 		} finally {
 			isAdjustingQuantity = false;
 		}
@@ -265,64 +261,28 @@
 			successMessage = '';
 
 			const result = await trpc.dashboard.deleteItem.mutate({
-				itemId: editingItem.id,
+				itemId: editingItem.id
 			});
 
 			if (result.status === SuccessStatus.SUCCESS) {
 				successMessage = result.message;
-				
+
 				// Remove the item from the folders array
 				folders = folders.map((folder) => ({
 					...folder,
-					items: folder.items.filter((item) => item.id !== editingItem.id),
+					items: folder.items.filter((item) => item.id !== editingItem.id)
 				}));
 
 				closeEditModal();
 			}
-		} catch (err: any) {
+		} catch (err: unknown) {
 			console.error('Error deleting item:', err);
-			error = err.message || 'Failed to delete item. Please try again.';
+			error = (err as Error).message || 'Failed to delete item. Please try again.';
 		} finally {
 			isDeletingItem = false;
 		}
 	}
 </script>
-
-<style>
-	/* Custom slider styling */
-	.slider::-webkit-slider-thumb {
-		appearance: none;
-		height: 20px;
-		width: 20px;
-		border-radius: 50%;
-		background: #4f46e5;
-		cursor: pointer;
-		box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
-	}
-
-	.slider::-moz-range-thumb {
-		height: 20px;
-		width: 20px;
-		border-radius: 50%;
-		background: #4f46e5;
-		cursor: pointer;
-		border: none;
-		box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
-	}
-
-	.slider::-webkit-slider-track {
-		height: 8px;
-		background: linear-gradient(to right, #ef4444 0%, #f59e0b 50%, #10b981 100%);
-		border-radius: 4px;
-	}
-
-	.slider::-moz-range-track {
-		height: 8px;
-		background: linear-gradient(to right, #ef4444 0%, #f59e0b 50%, #10b981 100%);
-		border-radius: 4px;
-		border: none;
-	}
-</style>
 
 <div class="min-h-screen bg-gray-50">
 	<Header />
@@ -870,20 +830,29 @@
 						aria-label="Close modal"
 					>
 						<svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-							<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+							<path
+								stroke-linecap="round"
+								stroke-linejoin="round"
+								stroke-width="2"
+								d="M6 18L18 6M6 6l12 12"
+							/>
 						</svg>
 					</button>
 				</div>
 
 				<!-- Error/Success Messages -->
 				{#if error}
-					<div class="mb-4 bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg text-sm">
+					<div
+						class="mb-4 bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg text-sm"
+					>
 						{error}
 					</div>
 				{/if}
 
 				{#if successMessage}
-					<div class="mb-4 bg-green-50 border border-green-200 text-green-700 px-4 py-3 rounded-lg text-sm">
+					<div
+						class="mb-4 bg-green-50 border border-green-200 text-green-700 px-4 py-3 rounded-lg text-sm"
+					>
 						{successMessage}
 					</div>
 				{/if}
@@ -945,9 +914,11 @@
 						<div class="bg-gray-50 p-4 rounded-lg space-y-3">
 							<div class="flex items-center justify-between text-sm">
 								<span class="text-gray-600">Current Quantity:</span>
-								<span class="font-medium" data-testid="current-quantity">{editingItem.quantity}</span>
+								<span class="font-medium" data-testid="current-quantity"
+									>{editingItem.quantity}</span
+								>
 							</div>
-							
+
 							<!-- Quantity Adjustment Slider -->
 							<div class="space-y-2">
 								<div class="flex items-center justify-center">
@@ -982,18 +953,38 @@
 							<!-- Apply Quantity Adjustment Button -->
 							<button
 								onclick={adjustQuantity}
-								disabled={quantityAdjustment === 0 || isAdjustingQuantity || isUpdatingItem || isDeletingItem}
+								disabled={quantityAdjustment === 0 ||
+									isAdjustingQuantity ||
+									isUpdatingItem ||
+									isDeletingItem}
 								class="w-full px-4 py-2 text-sm font-medium text-white bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 rounded-md focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200"
 								data-testid="apply-quantity-button"
 							>
 								{#if isAdjustingQuantity}
-									<svg class="animate-spin -ml-1 mr-2 h-4 w-4 text-white inline" fill="none" viewBox="0 0 24 24">
-										<circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
-										<path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 714 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+									<svg
+										class="animate-spin -ml-1 mr-2 h-4 w-4 text-white inline"
+										fill="none"
+										viewBox="0 0 24 24"
+									>
+										<circle
+											class="opacity-25"
+											cx="12"
+											cy="12"
+											r="10"
+											stroke="currentColor"
+											stroke-width="4"
+										></circle>
+										<path
+											class="opacity-75"
+											fill="currentColor"
+											d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 714 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+										></path>
 									</svg>
 									Adjusting...
 								{:else}
-									Apply Quantity Change ({quantityAdjustment > 0 ? `+${quantityAdjustment}` : quantityAdjustment})
+									Apply Quantity Change ({quantityAdjustment > 0
+										? `+${quantityAdjustment}`
+										: quantityAdjustment})
 								{/if}
 							</button>
 						</div>
@@ -1009,9 +1000,24 @@
 						data-testid="update-item-button"
 					>
 						{#if isUpdatingItem}
-							<svg class="animate-spin -ml-1 mr-2 h-4 w-4 text-white inline" fill="none" viewBox="0 0 24 24">
-								<circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
-								<path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 714 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+							<svg
+								class="animate-spin -ml-1 mr-2 h-4 w-4 text-white inline"
+								fill="none"
+								viewBox="0 0 24 24"
+							>
+								<circle
+									class="opacity-25"
+									cx="12"
+									cy="12"
+									r="10"
+									stroke="currentColor"
+									stroke-width="4"
+								></circle>
+								<path
+									class="opacity-75"
+									fill="currentColor"
+									d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 714 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+								></path>
 							</svg>
 							Updating...
 						{:else}
@@ -1026,9 +1032,24 @@
 						data-testid="delete-item-button"
 					>
 						{#if isDeletingItem}
-							<svg class="animate-spin -ml-1 mr-2 h-4 w-4 text-white inline" fill="none" viewBox="0 0 24 24">
-								<circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
-								<path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 714 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+							<svg
+								class="animate-spin -ml-1 mr-2 h-4 w-4 text-white inline"
+								fill="none"
+								viewBox="0 0 24 24"
+							>
+								<circle
+									class="opacity-25"
+									cx="12"
+									cy="12"
+									r="10"
+									stroke="currentColor"
+									stroke-width="4"
+								></circle>
+								<path
+									class="opacity-75"
+									fill="currentColor"
+									d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 714 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+								></path>
 							</svg>
 							Deleting...
 						{:else}
@@ -1049,3 +1070,39 @@
 		</div>
 	</div>
 {/if}
+
+<style>
+	/* Custom slider styling */
+	.slider::-webkit-slider-thumb {
+		appearance: none;
+		height: 20px;
+		width: 20px;
+		border-radius: 50%;
+		background: #4f46e5;
+		cursor: pointer;
+		box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+	}
+
+	.slider::-moz-range-thumb {
+		height: 20px;
+		width: 20px;
+		border-radius: 50%;
+		background: #4f46e5;
+		cursor: pointer;
+		border: none;
+		box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+	}
+
+	.slider::-webkit-slider-track {
+		height: 8px;
+		background: linear-gradient(to right, #ef4444 0%, #f59e0b 50%, #10b981 100%);
+		border-radius: 4px;
+	}
+
+	.slider::-moz-range-track {
+		height: 8px;
+		background: linear-gradient(to right, #ef4444 0%, #f59e0b 50%, #10b981 100%);
+		border-radius: 4px;
+		border: none;
+	}
+</style>
