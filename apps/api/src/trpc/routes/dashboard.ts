@@ -307,18 +307,10 @@ export const dashboardRouter = router({
 
       const newQuantity = item.quantity + input.adjustment;
 
-      // Validate that quantity doesn't go below 0
-      if (newQuantity < 0) {
-        throw new TRPCError({
-          code: "BAD_REQUEST",
-          message: "Quantity cannot be negative. Current quantity is " + item.quantity,
-        });
-      }
-
       const updatedItem = await prisma.item.update({
         where: { id: input.itemId },
         data: {
-          quantity: newQuantity,
+          quantity: { increment: input.adjustment }, // Use increment for atomic updates, Table has a constraint to prevent negative quantities
           lastModifiedById: ctx.user!.id,
         },
       });

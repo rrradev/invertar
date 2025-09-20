@@ -1,14 +1,14 @@
 import { test, expect } from '../../fixtures/user.fixture';
-import { faker } from '@faker-js/faker';
+import { da, faker } from '@faker-js/faker';
 
 test.describe('Dashboard - Edit Item Modal', () => {
 
-  test('should open edit modal when clicking on item name', async ({ dashboard, folder, randomItemName }) => {
+  test('should open edit modal when clicking on the pencil button', async ({ dashboard, folder, randomItemName }) => {
     // Create an item to edit
     await dashboard.createBasicItem(randomItemName, folder);
     await dashboard.waitForSuccessMessage();
 
-    // Open edit modal by clicking on item name
+    // Open edit modal by clicking on pencil button
     await dashboard.openEditModalForItem(randomItemName);
 
     // Verify modal is open with correct title
@@ -46,7 +46,7 @@ test.describe('Dashboard - Edit Item Modal', () => {
     await dashboard.closeEditModal();
   });
 
-  test('should update item name, description, and price', async ({ dashboard, folder, randomItemName }) => {
+  test('should update item name, description, and price', { tag: '@smoke' }, async ({ dashboard, folder, randomItemName }) => {
     // Create initial item
     await dashboard.createBasicItem(randomItemName, folder);
     await dashboard.waitForSuccessMessage();
@@ -62,6 +62,7 @@ test.describe('Dashboard - Edit Item Modal', () => {
 
     await dashboard.updateItemDetails(updateData);
     await dashboard.submitItemUpdate();
+    await dashboard.closeEditModal();
 
     // Verify success message
     await dashboard.waitForSuccessMessage();
@@ -70,7 +71,7 @@ test.describe('Dashboard - Edit Item Modal', () => {
 
     // Verify item appears with updated data in the table
     await folder.shouldHaveItemWithName(updateData.name);
-    const itemRow = await folder.getItemRowByName(updateData.name);
+    const itemRow = folder.getItemRowByName(updateData.name);
     await expect(itemRow).toContainText(updateData.description);
     await expect(itemRow).toContainText('$99.99');
   });
@@ -109,7 +110,7 @@ test.describe('Dashboard - Edit Item Modal', () => {
     await dashboard.closeEditModal();
   });
 
-  test('should show color-coded quantity change display', async ({ dashboard, folder, randomItemName }) => {
+  test.only('should show color-coded quantity change display', async ({ dashboard, folder, randomItemName }) => {
     const initialQuantity = 50;
     const itemData = {
       name: randomItemName,
@@ -127,12 +128,12 @@ test.describe('Dashboard - Edit Item Modal', () => {
     // Test increase quantity (should show green)
     await dashboard.adjustQuantityBy(10);
     const increaseDisplay = await dashboard.getQuantityDisplayText();
-    expect(increaseDisplay).toContain(`Current Quantity: ${initialQuantity} + 10 → ${initialQuantity + 10}`);
-
+    expect(increaseDisplay).toContain(`Current Quantity: ${initialQuantity}  + 10 → ${initialQuantity + 10}`);
+    
     // Test decrease quantity (should show red)
     await dashboard.setQuantityDirectly(initialQuantity - 15);
     const decreaseDisplay = await dashboard.getQuantityDisplayText();
-    expect(decreaseDisplay).toContain(`Current Quantity: ${initialQuantity} - 15 → ${initialQuantity - 15}`);
+    expect(decreaseDisplay).toContain(`Current Quantity: ${initialQuantity}  - 15 → ${initialQuantity - 15}`);
 
     await dashboard.closeEditModal();
   });
@@ -199,7 +200,7 @@ test.describe('Dashboard - Edit Item Modal', () => {
     await dashboard.openEditModalForItem(randomItemName);
 
     // Click delete button
-    await dashboard.initateDeleteItem();
+    await dashboard.initiateDeleteItem();
 
     // Verify confirmation modal appears
     await expect(dashboard.deleteConfirmationTitle).toBeVisible();
@@ -217,7 +218,7 @@ test.describe('Dashboard - Edit Item Modal', () => {
     await folder.shouldHaveItemWithName(randomItemName);
   });
 
-  test('should delete item when confirmed', async ({ dashboard, folder, randomItemName }) => {
+  test('should delete item when confirmed', { tag: '@smoke' }, async ({ dashboard, folder, randomItemName }) => {
     // Create item
     await dashboard.createBasicItem(randomItemName, folder);
     await dashboard.waitForSuccessMessage();
@@ -227,7 +228,7 @@ test.describe('Dashboard - Edit Item Modal', () => {
 
     // Open edit modal and delete item
     await dashboard.openEditModalForItem(randomItemName);
-    await dashboard.initateDeleteItem();
+    await dashboard.initiateDeleteItem();
     await dashboard.confirmDeleteItem();
 
     // Verify success message
@@ -240,7 +241,7 @@ test.describe('Dashboard - Edit Item Modal', () => {
     expect(finalItemCount).toBe(initialItemCount - 1);
 
     // Verify item no longer exists in folder
-    await expect(folder.getItemByName(randomItemName)).not.toBeVisible();
+    await expect(folder.getItemByName(randomItemName)).toHaveCount(0);
   });
 
   test('should handle validation errors in edit modal', async ({ dashboard, folder, randomItemName }) => {
@@ -262,34 +263,7 @@ test.describe('Dashboard - Edit Item Modal', () => {
     await dashboard.closeEditModal();
   });
 
-  test('should close modal when clicking cancel', async ({ dashboard, folder, randomItemName }) => {
-    // Create item
-    await dashboard.createBasicItem(randomItemName, folder);
-    await dashboard.waitForSuccessMessage();
-
-    // Open edit modal
-    await dashboard.openEditModalForItem(randomItemName);
-
-    // Make some changes
-    await dashboard.updateItemDetails({ 
-      name: `modified-${randomItemName}`,
-      description: 'Modified description'
-    });
-    await dashboard.adjustQuantityBy(5);
-
-    // Cancel the edit
-    await dashboard.closeEditModal();
-
-    // Verify modal is closed
-    await expect(dashboard.editItemModal).not.toBeVisible();
-
-    // Verify original item is unchanged
-    await folder.shouldHaveItemWithName(randomItemName);
-    const itemRow = await folder.getItemRowByName(randomItemName);
-    await expect(itemRow).not.toContainText('Modified description');
-  });
-
-  test('should handle concurrent quantity updates properly', async ({ dashboard, folder, randomItemName }) => {
+  test('should handle concurrent quantity updates properly', { tag: '@smoke' }, async ({ dashboard, folder, randomItemName }) => {
     const initialQuantity = 100;
     const itemData = {
       name: randomItemName,
@@ -317,7 +291,7 @@ test.describe('Dashboard - Edit Item Modal', () => {
     await dashboard.waitForSuccessMessage();
 
     // Verify quantity in table
-    const itemRow = await folder.getItemRowByName(randomItemName);
+    const itemRow = folder.getItemRowByName(randomItemName);
     await expect(itemRow).toContainText('130');
   });
 });

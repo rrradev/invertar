@@ -50,7 +50,7 @@ export default class Dashboard extends BasePage {
     increaseBy10Button: Locator;
     updateItemButton: Locator;
     deleteItemButton: Locator;
-    cancelEditButton: Locator;
+    closeEditModalBtn: Locator;
     
     // Delete Confirmation Modal
     deleteConfirmationModal: Locator;
@@ -115,7 +115,7 @@ export default class Dashboard extends BasePage {
         this.increaseBy10Button = page.getByTestId('increase-10-button');
         this.updateItemButton = page.getByTestId('update-item-button');
         this.deleteItemButton = page.getByTestId('delete-item-button');
-        this.cancelEditButton = page.getByTestId('cancel-edit-button');
+        this.closeEditModalBtn = page.getByLabel('Close modal');
         
         // Delete Confirmation Modal
         this.deleteConfirmationModal = page.locator('.fixed.inset-0.bg-gray-600.bg-opacity-50').nth(1);
@@ -261,13 +261,13 @@ export default class Dashboard extends BasePage {
 
     // Edit Item Modal Methods
     async openEditModalForItem(itemName: string) {
-        await this.page.getByTestId('edit-item-name-button').filter({ hasText: itemName }).click();
+        await this.page.getByTestId('item-row').filter({ hasText: itemName }).getByTestId('edit-item-button').click();
         await expect(this.editItemModal).toBeVisible();
         await expect(this.editItemModalTitle).toBeVisible();
     }
 
     async closeEditModal() {
-        await this.cancelEditButton.click();
+        await this.closeEditModalBtn.click();
         await expect(this.editItemModal).not.toBeVisible();
     }
 
@@ -311,6 +311,8 @@ export default class Dashboard extends BasePage {
 
     async submitItemUpdate() {
         await this.updateItemButton.click();
+        await this.page.waitForTimeout(500); // Wait briefly for update to process
+        await expect(this.updateItemButton).toBeEnabled();
     }
 
     async isUpdateButtonEnabled() {
@@ -323,7 +325,7 @@ export default class Dashboard extends BasePage {
         return await quantitySection.textContent();
     }
 
-    async initateDeleteItem() {
+    async initiateDeleteItem() {
         await this.deleteItemButton.click();
         await expect(this.deleteConfirmationModal).toBeVisible();
         await expect(this.deleteConfirmationTitle).toBeVisible();
