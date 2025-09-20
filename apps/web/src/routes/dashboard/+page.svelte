@@ -36,6 +36,13 @@
 	let showCreateFolderForm = $state(false);
 	let showCreateItemForm = $state(false);
 	let showAdvancedItemFields = $state(false);
+	let showEditItemModal = $state(false);
+	let showDeleteConfirmation = $state(false);
+	let editingItem: Item | null = $state(null);
+	let originalItem: Item | null = $state(null); // Store original values to detect changes
+	let isUpdatingItem = $state(false);
+	let isDeletingItem = $state(false);
+	let quantityInput = $state(0);
 	let error = $state('');
 	let successMessage = $state('');
 
@@ -149,6 +156,149 @@
 	function getTotalItems(items: Item[]) {
 		return items.reduce((sum, item) => sum + item.quantity, 0);
 	}
+
+	function openEditModal(item: Item) {
+		editingItem = item;
+		originalItem = { ...item }; // Store a copy of the original item
+		quantityInput = item.quantity;
+		showEditItemModal = true;
+		showDeleteConfirmation = false;
+		error = '';
+		successMessage = '';
+	}
+
+	function closeEditModal() {
+		showEditItemModal = false;
+		showDeleteConfirmation = false;
+		editingItem = null;
+		originalItem = null;
+		quantityInput = 0;
+		isUpdatingItem = false;
+		isDeletingItem = false;
+		error = '';
+	}
+
+	function adjustQuantityBy(amount: number) {
+		if (!editingItem) return;
+		const newQuantity = quantityInput + amount;
+		if (newQuantity >= 0) {
+			quantityInput = newQuantity;
+		}
+	}
+
+	function hasChanges(): boolean {
+		if (!editingItem || !originalItem) return false;
+		
+		return (
+			editingItem.name !== originalItem.name ||
+			editingItem.description !== originalItem.description ||
+			editingItem.price !== originalItem.price ||
+			quantityInput !== originalItem.quantity
+		);
+	}
+
+	function confirmDelete() {
+		showDeleteConfirmation = true;
+	}
+
+	function cancelDelete() {
+		showDeleteConfirmation = false;
+	}
+
+	async function updateItem() {
+		if (!editingItem) return;
+
+		if (!editingItem.name.trim()) {
+			error = 'Item name is required';
+			return;
+		}
+
+		try {
+			isUpdatingItem = true;
+			error = '';
+			successMessage = '';
+
+			// First update the item details
+			const updateResult = await trpc.dashboard.updateItem.mutate({
+				itemId: editingItem.id,
+				name: editingItem.name.trim(),
+				description: editingItem.description?.trim() || undefined,
+				price: editingItem.price || 0
+			});
+
+			if (updateResult.status === SuccessStatus.SUCCESS) {
+				// Update the item in the folders array with new details
+				folders = folders.map((folder) => ({
+					...folder,
+					items: folder.items.map((item) =>
+						item.id === editingItem.id ? { ...item, ...editingItem } : item
+					)
+				}));
+
+				// If quantity has changed, update it separately
+				if (quantityInput !== editingItem.quantity) {
+					const quantityAdjustment = quantityInput - editingItem.quantity;
+					const quantityResult = await trpc.dashboard.adjustItemQuantity.mutate({
+						itemId: editingItem.id,
+						adjustment: quantityAdjustment
+					});
+
+					if (quantityResult.status === SuccessStatus.SUCCESS) {
+						// Update the quantity in the folders array and editingItem
+						folders = folders.map((folder) => ({
+							...folder,
+							items: folder.items.map((item) =>
+								item.id === editingItem.id ? { ...item, quantity: quantityResult.newQuantity } : item
+							)
+						}));
+
+						if (editingItem) {
+							editingItem.quantity = quantityResult.newQuantity;
+						}
+					}
+				}
+
+				successMessage = updateResult.message;
+			}
+		} catch (err: unknown) {
+			console.error('Error updating item:', err);
+			error = (err as Error).message || 'Failed to update item. Please try again.';
+		} finally {
+			isUpdatingItem = false;
+		}
+	}
+
+	async function deleteItem() {
+		if (!editingItem) return;
+
+		try {
+			isDeletingItem = true;
+			showDeleteConfirmation = false; // Close confirmation dialog
+			error = '';
+			successMessage = '';
+
+			const result = await trpc.dashboard.deleteItem.mutate({
+				itemId: editingItem.id
+			});
+
+			if (result.status === SuccessStatus.SUCCESS) {
+				successMessage = result.message;
+
+				// Remove the item from the folders array
+				folders = folders.map((folder) => ({
+					...folder,
+					items: folder.items.filter((item) => item.id !== editingItem.id)
+				}));
+
+				closeEditModal();
+			}
+		} catch (err: unknown) {
+			console.error('Error deleting item:', err);
+			error = (err as Error).message || 'Failed to delete item. Please try again.';
+		} finally {
+			isDeletingItem = false;
+		}
+	}
 </script>
 
 <div class="min-h-screen bg-gray-50">
@@ -165,7 +315,7 @@
 				</div>
 				<div class="mt-4 sm:mt-0 flex space-x-3">
 					<button
-						on:click={() => (showCreateFolderForm = !showCreateFolderForm)}
+						onclick={() => (showCreateFolderForm = !showCreateFolderForm)}
 						class="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-gradient-to-r from-green-600 to-green-700 hover:from-green-700 hover:to-green-800 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 transition-all duration-200"
 						data-testid="create-folder-button"
 					>
@@ -180,7 +330,7 @@
 						Create Folder
 					</button>
 					<button
-						on:click={() => (showCreateItemForm = !showCreateItemForm)}
+						onclick={() => (showCreateItemForm = !showCreateItemForm)}
 						class="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-gradient-to-r from-indigo-600 to-cyan-600 hover:from-indigo-700 hover:to-cyan-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 transition-all duration-200"
 						data-testid="create-item-button"
 					>
@@ -240,7 +390,7 @@
 					</div>
 					<div class="flex space-x-3">
 						<button
-							on:click={() => (showCreateFolderForm = false)}
+							onclick={() => (showCreateFolderForm = false)}
 							class="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 transition-colors"
 							disabled={isCreatingFolder}
 							data-testid="cancel-folder-button"
@@ -248,7 +398,7 @@
 							Cancel
 						</button>
 						<button
-							on:click={createFolder}
+							onclick={createFolder}
 							disabled={isCreatingFolder}
 							class="px-4 py-2 text-sm font-medium text-white bg-gradient-to-r from-green-600 to-green-700 hover:from-green-700 hover:to-green-800 rounded-md focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200"
 							data-testid="submit-folder-button"
@@ -328,7 +478,7 @@
 				<div class="mb-4">
 					<button
 						type="button"
-						on:click={() => (showAdvancedItemFields = !showAdvancedItemFields)}
+						onclick={() => (showAdvancedItemFields = !showAdvancedItemFields)}
 						class="flex items-center text-sm text-indigo-600 hover:text-indigo-700 focus:outline-none focus:underline transition-colors"
 						disabled={isCreatingItem}
 						data-testid="toggle-advanced-fields"
@@ -401,7 +551,7 @@
 
 				<div class="flex justify-end space-x-3">
 					<button
-						on:click={() => {
+						onclick={() => {
 							showCreateItemForm = false;
 							showAdvancedItemFields = false;
 							newItem = { name: '', description: '', price: 0, quantity: 0, folderId: '' };
@@ -413,7 +563,7 @@
 						Cancel
 					</button>
 					<button
-						on:click={createItem}
+						onclick={createItem}
 						disabled={isCreatingItem}
 						class="px-4 py-2 text-sm font-medium text-white bg-gradient-to-r from-indigo-600 to-cyan-600 hover:from-indigo-700 hover:to-cyan-700 rounded-md focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200"
 						data-testid="submit-item-button"
@@ -486,7 +636,7 @@
 				<p class="mt-1 text-sm text-gray-500">Get started by creating your first folder.</p>
 				<div class="mt-6">
 					<button
-						on:click={() => (showCreateFolderForm = true)}
+						onclick={() => (showCreateFolderForm = true)}
 						class="inline-flex items-center px-4 py-2 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-gradient-to-r from-green-600 to-green-700 hover:from-green-700 hover:to-green-800 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500"
 					>
 						<svg class="-ml-1 mr-2 h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -599,6 +749,11 @@
 											>
 												Last Modified
 											</th>
+											<th
+												class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
+											>
+												Actions
+											</th>
 										</tr>
 									</thead>
 									<tbody class="bg-white divide-y divide-gray-200">
@@ -640,6 +795,30 @@
 													<div class="text-sm text-gray-900">{formatDate(item.updatedAt)}</div>
 													<div class="text-xs text-gray-500">by {item.lastModifiedBy}</div>
 												</td>
+												<td class="px-6 py-4 whitespace-nowrap">
+													<button
+														onclick={() => openEditModal(item)}
+														class="inline-flex items-center justify-center w-8 h-8 text-gray-400 hover:text-indigo-600 rounded-full hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-indigo-500 transition-colors"
+														aria-label="Edit item"
+														data-testid="edit-item-button"
+														data-item-id={item.id}
+													>
+														<!-- Pencil Icon -->
+														<svg
+															class="w-4 h-4"
+															fill="none"
+															stroke="currentColor"
+															viewBox="0 0 24 24"
+														>
+															<path
+																stroke-linecap="round"
+																stroke-linejoin="round"
+																stroke-width="2"
+																d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"
+															/>
+														</svg>
+													</button>
+												</td>
 											</tr>
 										{/each}
 									</tbody>
@@ -652,3 +831,341 @@
 		{/if}
 	</main>
 </div>
+
+<!-- Edit Item Modal -->
+{#if showEditItemModal && editingItem}
+	<div class="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full z-50">
+		<div class="relative top-20 mx-auto p-5 border w-full max-w-lg shadow-lg rounded-md bg-white">
+			<div class="mt-3">
+				<div class="flex items-center justify-between mb-4">
+					<h3 class="text-lg font-medium text-gray-900" data-testid="edit-modal-title">
+						Edit Item
+					</h3>
+					<button
+						onclick={closeEditModal}
+						class="text-gray-400 hover:text-gray-600 focus:outline-none focus:ring-2 focus:ring-indigo-500 rounded-md p-1"
+						aria-label="Close modal"
+					>
+						<svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+							<path
+								stroke-linecap="round"
+								stroke-linejoin="round"
+								stroke-width="2"
+								d="M6 18L18 6M6 6l12 12"
+							/>
+						</svg>
+					</button>
+				</div>
+
+				<!-- Error/Success Messages -->
+				{#if error}
+					<div
+						class="mb-4 bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg text-sm"
+					>
+						{error}
+					</div>
+				{/if}
+
+				{#if successMessage}
+					<div
+						class="mb-4 bg-green-50 border border-green-200 text-green-700 px-4 py-3 rounded-lg text-sm"
+					>
+						{successMessage}
+					</div>
+				{/if}
+
+				<!-- Item Details Form -->
+				<div class="space-y-4">
+					<div>
+						<label for="editItemName" class="block text-sm font-medium text-gray-700 mb-2">
+							Item Name <span class="text-red-500">*</span>
+						</label>
+						<input
+							id="editItemName"
+							type="text"
+							bind:value={editingItem.name}
+							placeholder="Enter item name"
+							class="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-colors"
+							disabled={isUpdatingItem || isDeletingItem}
+							data-testid="edit-item-name"
+						/>
+					</div>
+
+					<div>
+						<label for="editItemDescription" class="block text-sm font-medium text-gray-700 mb-2">
+							Description
+						</label>
+						<input
+							id="editItemDescription"
+							type="text"
+							bind:value={editingItem.description}
+							placeholder="Enter description (optional)"
+							class="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-colors"
+							disabled={isUpdatingItem || isDeletingItem}
+							data-testid="edit-item-description"
+						/>
+					</div>
+
+					<div>
+						<label for="editItemPrice" class="block text-sm font-medium text-gray-700 mb-2">
+							Price
+						</label>
+						<input
+							id="editItemPrice"
+							type="number"
+							min="0"
+							step="0.01"
+							bind:value={editingItem.price}
+							placeholder="0.00"
+							class="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-colors"
+							disabled={isUpdatingItem || isDeletingItem}
+							data-testid="edit-item-price"
+						/>
+					</div>
+
+					<!-- Quantity Section -->
+					<div>
+						<label class="block text-sm font-medium text-gray-700 mb-2">
+							Quantity
+						</label>
+						<div class="bg-gray-50 p-4 rounded-lg space-y-3">
+							<!-- Current Quantity Display with Color Coding -->
+							<div class="text-sm">
+								{#if quantityInput === editingItem.quantity}
+									<span class="text-gray-600">Current Quantity: </span>
+									<span class="font-medium" data-testid="current-quantity">
+										{editingItem.quantity}
+									</span>
+								{:else}
+									{@const quantityChange = quantityInput - editingItem.quantity}
+									<span class="text-gray-600">Current Quantity: </span>
+									<span class="font-medium">{editingItem.quantity}</span>
+									<span 
+										class="font-bold {quantityChange > 0 ? 'text-green-600' : 'text-red-600'}" 
+										data-testid="quantity-change"
+									>
+										{quantityChange > 0 ? ` + ${quantityChange}` : ` - ${Math.abs(quantityChange)}`}
+									</span>
+									<span class="text-gray-600"> → </span>
+									<span 
+										class="font-bold {quantityInput > editingItem.quantity ? 'text-green-600' : 'text-red-600'}" 
+										data-testid="new-quantity"
+									>
+										{quantityInput}
+									</span>
+								{/if}
+							</div>
+
+							<!-- Quantity Input with Buttons -->
+							<div class="flex items-center space-x-2">
+								<!-- Decrease buttons -->
+								<button
+									type="button"
+									onclick={() => adjustQuantityBy(-10)}
+									disabled={isUpdatingItem || isDeletingItem || quantityInput < 10}
+									class="px-3 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-indigo-500 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+									data-testid="decrease-10-button"
+								>
+									-10
+								</button>
+								<button
+									type="button"
+									onclick={() => adjustQuantityBy(-1)}
+									disabled={isUpdatingItem || isDeletingItem || quantityInput < 1}
+									class="px-3 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-indigo-500 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+									data-testid="decrease-1-button"
+								>
+									-1
+								</button>
+
+								<!-- Quantity Input Field -->
+								<input
+									type="number"
+									min="0"
+									bind:value={quantityInput}
+									class="flex-1 px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-colors text-center"
+									disabled={isUpdatingItem || isDeletingItem}
+									data-testid="quantity-input"
+								/>
+
+								<!-- Increase buttons -->
+								<button
+									type="button"
+									onclick={() => adjustQuantityBy(1)}
+									disabled={isUpdatingItem || isDeletingItem}
+									class="px-3 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-indigo-500 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+									data-testid="increase-1-button"
+								>
+									+1
+								</button>
+								<button
+									type="button"
+									onclick={() => adjustQuantityBy(10)}
+									disabled={isUpdatingItem || isDeletingItem}
+									class="px-3 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-indigo-500 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+									data-testid="increase-10-button"
+								>
+									+10
+								</button>
+							</div>
+						</div>
+					</div>
+				</div>
+
+				<!-- Modal Actions -->
+				<div class="mt-6 flex flex-col sm:flex-row gap-3">
+					<button
+						onclick={updateItem}
+						disabled={isUpdatingItem || isDeletingItem || !hasChanges()}
+						class="flex-1 px-4 py-2 text-sm font-medium text-white {hasChanges() ? 'bg-gradient-to-r from-indigo-600 to-cyan-600 hover:from-indigo-700 hover:to-cyan-700' : 'bg-gray-400 cursor-not-allowed'} rounded-md focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200"
+						data-testid="update-item-button"
+					>
+						{#if isUpdatingItem}
+							<svg
+								class="animate-spin -ml-1 mr-2 h-4 w-4 text-white inline"
+								fill="none"
+								viewBox="0 0 24 24"
+							>
+								<circle
+									class="opacity-25"
+									cx="12"
+									cy="12"
+									r="10"
+									stroke="currentColor"
+									stroke-width="4"
+								></circle>
+								<path
+									class="opacity-75"
+									fill="currentColor"
+									d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 714 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+								></path>
+							</svg>
+							Updating...
+						{:else}
+							Update Item
+						{/if}
+					</button>
+
+					<button
+						onclick={confirmDelete}
+						disabled={isDeletingItem || isUpdatingItem}
+						class="flex-1 px-4 py-2 text-sm font-medium text-white bg-gradient-to-r from-red-600 to-red-700 hover:from-red-700 hover:to-red-800 rounded-md focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200"
+						data-testid="delete-item-button"
+					>
+						{#if isDeletingItem}
+							<svg
+								class="animate-spin -ml-1 mr-2 h-4 w-4 text-white inline"
+								fill="none"
+								viewBox="0 0 24 24"
+							>
+								<circle
+									class="opacity-25"
+									cx="12"
+									cy="12"
+									r="10"
+									stroke="currentColor"
+									stroke-width="4"
+								></circle>
+								<path
+									class="opacity-75"
+									fill="currentColor"
+									d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 714 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+								></path>
+							</svg>
+							Deleting...
+						{:else}
+							Delete Item
+						{/if}
+					</button>
+				</div>
+			</div>
+		</div>
+	</div>
+{/if}
+
+<!-- Delete Confirmation Modal -->
+{#if showDeleteConfirmation && editingItem}
+	<div class="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full z-50">
+		<div class="relative top-20 mx-auto p-5 border w-96 shadow-lg rounded-md bg-white">
+			<div class="mt-3 text-center">
+				<div class="mx-auto flex items-center justify-center h-12 w-12 rounded-full bg-red-100 mb-4">
+					<svg
+						class="h-6 w-6 text-red-600"
+						fill="none"
+						stroke="currentColor"
+						viewBox="0 0 24 24"
+					>
+						<path
+							stroke-linecap="round"
+							stroke-linejoin="round"
+							stroke-width="2"
+							d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L3.732 16.5c-.77.833.192 2.5 1.732 2.5z"
+						/>
+					</svg>
+				</div>
+				<h3 class="text-lg font-medium text-gray-900 mb-2" data-testid="delete-confirmation-title">
+					Delete Item
+				</h3>
+				<p class="text-sm text-gray-500 mb-6">
+					Are you sure you want to delete "<span class="font-medium text-gray-900">{editingItem.name}</span>"? This action cannot be undone.
+				</p>
+				
+				<!-- Confirmation Buttons -->
+				<div class="flex justify-center space-x-3">
+					<button
+						onclick={cancelDelete}
+						disabled={isDeletingItem}
+						class="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+						data-testid="cancel-delete-button"
+					>
+						Cancel
+					</button>
+					<button
+						onclick={deleteItem}
+						disabled={isDeletingItem}
+						class="px-4 py-2 text-sm font-medium text-white bg-red-600 border border-transparent rounded-md hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+						data-testid="confirm-delete-button"
+					>
+						Delete Item
+					</button>
+				</div>
+			</div>
+		</div>
+	</div>
+{/if}
+
+<style>
+	/* Custom slider styling */
+	.slider::-webkit-slider-thumb {
+		appearance: none;
+		height: 20px;
+		width: 20px;
+		border-radius: 50%;
+		background: #4f46e5;
+		cursor: pointer;
+		box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+	}
+
+	.slider::-moz-range-thumb {
+		height: 20px;
+		width: 20px;
+		border-radius: 50%;
+		background: #4f46e5;
+		cursor: pointer;
+		border: none;
+		box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+	}
+
+	.slider::-webkit-slider-track {
+		height: 8px;
+		background: linear-gradient(to right, #ef4444 0%, #f59e0b 50%, #10b981 100%);
+		border-radius: 4px;
+	}
+
+	.slider::-moz-range-track {
+		height: 8px;
+		background: linear-gradient(to right, #ef4444 0%, #f59e0b 50%, #10b981 100%);
+		border-radius: 4px;
+		border: none;
+	}
+</style>

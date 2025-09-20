@@ -21,7 +21,11 @@ export default class Folder extends BaseComponent {
         await expect(itemRow).toBeVisible();
     }   
 
-    async getItemRowByName(name: string) { 
+     getItemRowByName(name: string) { 
+        return this.itemsTable.getByRole('row').filter({ hasText: name });
+    }
+
+    getItemByName(name: string) {
         return this.itemsTable.getByRole('row').filter({ hasText: name });
     }
 

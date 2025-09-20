@@ -34,6 +34,30 @@ export default class Dashboard extends BasePage {
     // Advanced fields
     advancedFieldsContainer: Locator;
     
+    // Edit Item Modal
+    editItemModal: Locator;
+    editItemModalTitle: Locator;
+    editItemNameInput: Locator;
+    editItemDescriptionInput: Locator;
+    editItemPriceInput: Locator;
+    quantityInput: Locator;
+    currentQuantityLabel: Locator;
+    quantityChangeLabel: Locator;
+    newQuantityLabel: Locator;
+    decreaseBy10Button: Locator;
+    decreaseBy1Button: Locator;
+    increaseBy1Button: Locator;
+    increaseBy10Button: Locator;
+    updateItemButton: Locator;
+    deleteItemButton: Locator;
+    closeEditModalBtn: Locator;
+    
+    // Delete Confirmation Modal
+    deleteConfirmationModal: Locator;
+    deleteConfirmationTitle: Locator;
+    confirmDeleteButton: Locator;
+    cancelDeleteButton: Locator;
+    
     // Content areas
     foldersContainer: Locator;
     loadingState: Locator;
@@ -74,6 +98,30 @@ export default class Dashboard extends BasePage {
         
         // Advanced fields
         this.advancedFieldsContainer = page.getByTestId('advanced-fields-container');
+        
+        // Edit Item Modal
+        this.editItemModal = page.locator('.fixed.inset-0.bg-gray-600.bg-opacity-50');
+        this.editItemModalTitle = page.getByTestId('edit-modal-title');
+        this.editItemNameInput = page.getByTestId('edit-item-name');
+        this.editItemDescriptionInput = page.getByTestId('edit-item-description');
+        this.editItemPriceInput = page.getByTestId('edit-item-price');
+        this.quantityInput = page.getByTestId('quantity-input');
+        this.currentQuantityLabel = page.getByTestId('current-quantity');
+        this.quantityChangeLabel = page.getByTestId('quantity-change');
+        this.newQuantityLabel = page.getByTestId('new-quantity');
+        this.decreaseBy10Button = page.getByTestId('decrease-10-button');
+        this.decreaseBy1Button = page.getByTestId('decrease-1-button');
+        this.increaseBy1Button = page.getByTestId('increase-1-button');
+        this.increaseBy10Button = page.getByTestId('increase-10-button');
+        this.updateItemButton = page.getByTestId('update-item-button');
+        this.deleteItemButton = page.getByTestId('delete-item-button');
+        this.closeEditModalBtn = page.getByLabel('Close modal');
+        
+        // Delete Confirmation Modal
+        this.deleteConfirmationModal = page.locator('.fixed.inset-0.bg-gray-600.bg-opacity-50').nth(1);
+        this.deleteConfirmationTitle = page.getByTestId('delete-confirmation-title');
+        this.confirmDeleteButton = page.getByTestId('confirm-delete-button');
+        this.cancelDeleteButton = page.getByTestId('cancel-delete-button');
         
         // Content areas
         this.foldersContainer = page.getByTestId('folders-container');
@@ -209,5 +257,106 @@ export default class Dashboard extends BasePage {
 
     async getErrorMessageText() {
         return await this.page.getByTestId('error-message').textContent();
+    }
+
+    // Edit Item Modal Methods
+    async openEditModalForItem(itemName: string) {
+        await this.page.getByTestId('item-row').filter({ hasText: itemName }).getByTestId('edit-item-button').click();
+        await expect(this.editItemModal).toBeVisible();
+        await expect(this.editItemModalTitle).toBeVisible();
+    }
+
+    async closeEditModal() {
+        await this.closeEditModalBtn.click();
+        await expect(this.editItemModal).not.toBeVisible();
+    }
+
+    async updateItemDetails(data: { name?: string; description?: string; price?: number }) {
+        if (data.name !== undefined) {
+            await this.editItemNameInput.clear();
+            await this.editItemNameInput.fill(data.name);
+        }
+        if (data.description !== undefined) {
+            await this.editItemDescriptionInput.clear();
+            await this.editItemDescriptionInput.fill(data.description);
+        }
+        if (data.price !== undefined) {
+            await this.editItemPriceInput.clear();
+            await this.editItemPriceInput.fill(data.price.toString());
+        }
+    }
+
+    async adjustQuantityBy(amount: number) {
+        if (amount === -10) {
+            await this.decreaseBy10Button.click();
+        } else if (amount === -1) {
+            await this.decreaseBy1Button.click();
+        } else if (amount === 1) {
+            await this.increaseBy1Button.click();
+        } else if (amount === 10) {
+            await this.increaseBy10Button.click();
+        } else {
+            // For custom amounts, directly set the input
+            const currentValue = await this.quantityInput.inputValue();
+            const newValue = parseInt(currentValue) + amount;
+            await this.quantityInput.clear();
+            await this.quantityInput.fill(newValue.toString());
+        }
+    }
+
+    async setQuantityDirectly(quantity: number) {
+        await this.quantityInput.clear();
+        await this.quantityInput.fill(quantity.toString());
+    }
+
+    async submitItemUpdate() {
+        await this.updateItemButton.click();
+        await this.page.waitForTimeout(500); // Wait briefly for update to process
+        await expect(this.updateItemButton).toBeEnabled();
+    }
+
+    async isUpdateButtonEnabled() {
+        return await this.updateItemButton.isEnabled();
+    }
+
+    async getQuantityDisplayText() {
+        // Get the complete text from the quantity section
+        const quantitySection = this.page.locator('.bg-gray-50.p-4.rounded-lg .text-sm').first();
+        return await quantitySection.textContent();
+    }
+
+    async initiateDeleteItem() {
+        await this.deleteItemButton.click();
+        await expect(this.deleteConfirmationModal).toBeVisible();
+        await expect(this.deleteConfirmationTitle).toBeVisible();
+    }
+
+    async confirmDeleteItem() {
+        await this.confirmDeleteButton.click();
+    }
+
+    async cancelDeleteItem() {
+        await this.cancelDeleteButton.click();
+        await expect(this.deleteConfirmationModal).not.toBeVisible();
+    }
+
+    async waitForModalToClose() {
+        await expect(this.editItemModal).not.toBeVisible();
+    }
+
+    async getEditModalErrorMessage() {
+        const errorMsg = this.editItemModal.locator('.bg-red-50.border.border-red-200.text-red-700');
+        if (await errorMsg.isVisible()) {
+            return await errorMsg.textContent();
+        }
+        return null;
+    }
+
+    async getEditModalSuccessMessage() {
+        const successMsg = this.editItemModal.locator('.bg-green-50.border.border-green-200.text-green-700');
+        if (await successMsg.isVisible()) {
+            return await successMsg.textContent();
+        }
+        return null;
     }
 }
