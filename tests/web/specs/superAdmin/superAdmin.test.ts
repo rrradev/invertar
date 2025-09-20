@@ -10,7 +10,8 @@ test('login and reload dashboard page', { tag: '@smoke' }, async ({ dashboard })
 });
 
 test('signout flow', { tag: '@smoke' }, async ({ dashboard }) => {
-  const login = await dashboard.signOut();
+  await dashboard.header.clickSignOut();
+  const login = new Login(dashboard.page);
 
   await login.shouldBeVisible();
 });
@@ -33,7 +34,7 @@ test('user is redirected to /login on reload after refresh token expires', { tag
 
 test('access token is refreshed automatically on redirect', { tag: '@smoke' }, async ({ dashboard }) => {
   await dashboard.expireCookie('accessToken');
-  await dashboard.usersManagementButton.click();
+  await dashboard.header.userManagementButton.click();
 
   await new Admins(dashboard.page).shouldBeVisible();
 });
@@ -42,7 +43,7 @@ test('user is redirected to /login on redirect after refresh token expires', { t
   await dashboard.expireCookie('accessToken');
   await dashboard.expireCookie('refreshToken');
 
-  await dashboard.usersManagementButton.click();
+  await dashboard.header.userManagementButton.click();
 
   await new Login(dashboard.page).shouldBeVisible();
 });

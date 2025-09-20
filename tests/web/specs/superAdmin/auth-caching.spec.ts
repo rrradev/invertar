@@ -26,7 +26,7 @@ test.describe('Intelligent Auth Caching Tests', () => {
     await dashboard.shouldBeVisible();
 
     // Navigate to different routes multiple times
-    await dashboard.usersManagementButton.click();
+    await dashboard.header.userManagementButton.click();
     const admins = new Admins(page);
     await admins.shouldBeVisible();
 

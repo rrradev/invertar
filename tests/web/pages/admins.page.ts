@@ -2,12 +2,13 @@ import { expect, Locator, Page } from "@playwright/test";
 import BasePage from "./base.page";
 import SuccessMessage from "./components/success-message.component";
 import ErrorMessage from "./components/error-message.component";
+import Header from "./components/header.component";
+import { th } from "@faker-js/faker/.";
 
 export default class Admins extends BasePage {
+    header : Header;
     title: Locator;
     subtitle: Locator;
-    welcomeMessage: Locator;
-    signOutButton: Locator;
     createAdminButton: Locator;
     createAdminFormTitle: Locator;
     createAdminFormButton: Locator;
@@ -24,10 +25,9 @@ export default class Admins extends BasePage {
 
     constructor(page: Page) {
         super(page);
+        this.header = Header.from(page);
         this.title = page.locator('h2').first();
         this.subtitle = page.locator('p').first();
-        this.welcomeMessage = page.locator('#welcome-message');
-        this.signOutButton = this.welcomeMessage.locator('xpath=following-sibling::button');
         this.createAdminButton = page.locator('button:has-text("Create Admin")').first();
         this.createAdminFormTitle = page.locator('h3').filter({ hasText: 'Create New Admin' });
         this.createAdminFormButton = page.locator('button:has-text("Create Admin")').last();
@@ -35,8 +35,8 @@ export default class Admins extends BasePage {
         this.emailField = page.locator('#email');
         this.organizationField = page.locator('#organization');
         this.cancelFormButton = page.locator('button:has-text("Cancel")');
-        this.successMessage = new SuccessMessage(page);
-        this.errorMessage = new ErrorMessage(page);
+        this.successMessage = SuccessMessage.from(page);
+        this.errorMessage = ErrorMessage.from(page);
         this.adminRows = page.locator('tbody tr');
         this.deleteAdminButton = page.locator('button:has-text("Delete Admin")');
         this.refreshOtacButton = page.locator('button:has-text("Refresh OTAC")');
@@ -44,8 +44,7 @@ export default class Admins extends BasePage {
     }
 
     async shouldBeVisible(): Promise<void> {
-        await this.welcomeMessage.waitFor({ state: 'visible' });
-        await this.signOutButton.waitFor({ state: 'visible' });
+        await this.header.shouldBeVisible();
         await expect(this.title).toHaveText(/Admin Management/);
         await expect(this.subtitle).toContainText('Manage administrators in your app');
     }
@@ -53,10 +52,6 @@ export default class Admins extends BasePage {
     async open() {
         await this.goto('/admins');
         await this.shouldBeVisible();
-    }
-
-    async getWelcomeMessageText(): Promise<string> {
-        return await this.welcomeMessage.textContent() ?? '';
     }
 
     async adminsFormShouldBeVisible(): Promise<void> {

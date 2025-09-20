@@ -19,7 +19,7 @@ export const load: LayoutLoad = async ({ url }) => {
 
 	// Check if we already have valid user data
 	const currentUserState = get(user);
-	
+
 	// If user is already authenticated and we have user data, skip the profile call
 	if (currentUserState.isAuthenticated && currentUserState.user) {
 		// If on root page, redirect to dashboard

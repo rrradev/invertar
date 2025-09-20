@@ -1,4 +1,4 @@
-import { test, expect, beforeAll, afterAll } from 'vitest';
+import { test, expect, beforeAll } from 'vitest';
 import { req, getToken } from './config/config';
 import { UserRole } from '@repo/types/users/roles';
 import { ErrorResponse, SuccessResponse } from '@repo/types/trpc/response';
@@ -13,8 +13,6 @@ const testUsernames = [
   faker.internet.username() + Date.now(),
   faker.internet.username() + Date.now()
 ];
-
-let createdUserIds: string[] = [];
 
 beforeAll(async () => {
   // Get tokens for different user roles
@@ -72,9 +70,6 @@ test('admin can create new user', async () => {
   expect(res.username).toBe(username);
   expect(res.oneTimeAccessCode).toBeDefined();
   expect(res.expiresAt).toBeDefined();
-
-  // Store created user ID for cleanup
-  createdUserIds.push(res.userId);
 });
 
 test('admin cannot create user with duplicate username in same organization', async () => {
@@ -87,7 +82,6 @@ test('admin cannot create user with duplicate username in same organization', as
     { username },
     adminToken
   );
-  createdUserIds.push(firstRes.userId);
 
   // Try to create second user with same username
   const res = await req<ErrorResponse>(
@@ -124,7 +118,6 @@ test('admin can reset user OTAC', async () => {
     { username },
     adminToken
   );
-  createdUserIds.push(createRes.userId);
 
   // Reset the user
   const res = await req<SuccessResponse<{ username: string; oneTimeAccessCode: string; expiresAt: Date }>>(

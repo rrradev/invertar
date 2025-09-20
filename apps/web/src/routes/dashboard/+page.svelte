@@ -74,8 +74,8 @@
 				// Add the new folder to the existing folders array
 				folders = [result.folder as Folder, ...folders];
 			}
-		} catch (err: any) {
-			error = err.message || 'Failed to create folder';
+		} catch (err: unknown) {
+			error = (err as Error).message || 'Failed to create folder';
 		} finally {
 			isCreatingFolder = false;
 		}
@@ -118,8 +118,8 @@
 					return folder;
 				});
 			}
-		} catch (err: any) {
-			error = err.message || 'Failed to create item';
+		} catch (err: unknown) {
+			error = (err as Error).message || 'Failed to create item';
 		} finally {
 			isCreatingItem = false;
 		}
@@ -160,13 +160,14 @@
 		<div class="mb-8">
 			<div class="sm:flex sm:items-center sm:justify-between">
 				<div>
-					<h2 class="text-2xl font-bold text-gray-900">Dashboard</h2>
+					<h2 class="text-2xl font-bold text-gray-900" data-testid="dashboard-title">Dashboard</h2>
 					<p class="mt-2 text-sm text-gray-700">Manage your inventory folders and items</p>
 				</div>
 				<div class="mt-4 sm:mt-0 flex space-x-3">
 					<button
 						on:click={() => (showCreateFolderForm = !showCreateFolderForm)}
 						class="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-gradient-to-r from-green-600 to-green-700 hover:from-green-700 hover:to-green-800 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 transition-all duration-200"
+						data-testid="create-folder-button"
 					>
 						<svg class="h-5 w-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
 							<path
@@ -181,6 +182,7 @@
 					<button
 						on:click={() => (showCreateItemForm = !showCreateItemForm)}
 						class="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-gradient-to-r from-indigo-600 to-cyan-600 hover:from-indigo-700 hover:to-cyan-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 transition-all duration-200"
+						data-testid="create-item-button"
 					>
 						<svg class="h-5 w-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
 							<path
@@ -198,20 +200,29 @@
 
 		<!-- Messages -->
 		{#if error}
-			<div class="mb-6 bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg">
+			<div
+				class="mb-6 bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg"
+				data-testid="error-message"
+			>
 				{error}
 			</div>
 		{/if}
 
 		{#if successMessage}
-			<div class="mb-6 bg-green-50 border border-green-200 text-green-700 px-4 py-3 rounded-lg">
+			<div
+				class="mb-6 bg-green-50 border border-green-200 text-green-700 px-4 py-3 rounded-lg"
+				data-testid="success-message"
+			>
 				{successMessage}
 			</div>
 		{/if}
 
 		<!-- Create Folder Form -->
 		{#if showCreateFolderForm}
-			<div class="mb-8 bg-white rounded-lg shadow-sm border border-gray-200 p-6">
+			<div
+				class="mb-8 bg-white rounded-lg shadow-sm border border-gray-200 p-6"
+				data-testid="create-folder-form"
+			>
 				<h3 class="text-lg font-medium text-gray-900 mb-4">Create New Folder</h3>
 				<div class="flex items-end space-x-4">
 					<div class="flex-1">
@@ -232,6 +243,7 @@
 							on:click={() => (showCreateFolderForm = false)}
 							class="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 transition-colors"
 							disabled={isCreatingFolder}
+							data-testid="cancel-folder-button"
 						>
 							Cancel
 						</button>
@@ -239,6 +251,7 @@
 							on:click={createFolder}
 							disabled={isCreatingFolder}
 							class="px-4 py-2 text-sm font-medium text-white bg-gradient-to-r from-green-600 to-green-700 hover:from-green-700 hover:to-green-800 rounded-md focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200"
+							data-testid="submit-folder-button"
 						>
 							{#if isCreatingFolder}
 								<svg
@@ -272,7 +285,10 @@
 
 		<!-- Create Item Form -->
 		{#if showCreateItemForm}
-			<div class="mb-8 bg-white rounded-lg shadow-sm border border-gray-200 p-6">
+			<div
+				class="mb-8 bg-white rounded-lg shadow-sm border border-gray-200 p-6"
+				data-testid="create-item-form"
+			>
 				<h3 class="text-lg font-medium text-gray-900 mb-4">Create New Item</h3>
 
 				<!-- Essential Fields -->
@@ -301,7 +317,7 @@
 							disabled={isCreatingItem}
 						>
 							<option value="">Select folder</option>
-							{#each folders as folder}
+							{#each folders as folder (folder.id)}
 								<option value={folder.id}>{folder.name}</option>
 							{/each}
 						</select>
@@ -315,6 +331,7 @@
 						on:click={() => (showAdvancedItemFields = !showAdvancedItemFields)}
 						class="flex items-center text-sm text-indigo-600 hover:text-indigo-700 focus:outline-none focus:underline transition-colors"
 						disabled={isCreatingItem}
+						data-testid="toggle-advanced-fields"
 					>
 						<svg
 							class="w-4 h-4 mr-1 transform transition-transform {showAdvancedItemFields
@@ -333,7 +350,10 @@
 
 				<!-- Advanced Fields (Collapsible) -->
 				{#if showAdvancedItemFields}
-					<div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4 p-4 bg-gray-50 rounded-lg">
+					<div
+						class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4 p-4 bg-gray-50 rounded-lg"
+						data-testid="advanced-fields-container"
+					>
 						<div>
 							<label for="itemDescription" class="block text-sm font-medium text-gray-700 mb-2"
 								>Description</label
@@ -388,6 +408,7 @@
 						}}
 						class="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 transition-colors"
 						disabled={isCreatingItem}
+						data-testid="cancel-item-button"
 					>
 						Cancel
 					</button>
@@ -395,6 +416,7 @@
 						on:click={createItem}
 						disabled={isCreatingItem}
 						class="px-4 py-2 text-sm font-medium text-white bg-gradient-to-r from-indigo-600 to-cyan-600 hover:from-indigo-700 hover:to-cyan-700 rounded-md focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200"
+						data-testid="submit-item-button"
 					>
 						{#if isCreatingItem}
 							<svg
@@ -427,7 +449,10 @@
 
 		<!-- Folders List -->
 		{#if !folders}
-			<div class="bg-white rounded-lg shadow-sm border border-gray-200 p-8 text-center">
+			<div
+				class="bg-white rounded-lg shadow-sm border border-gray-200 p-8 text-center"
+				data-testid="loading-state"
+			>
 				<svg class="animate-spin mx-auto h-8 w-8 text-gray-400" fill="none" viewBox="0 0 24 24">
 					<circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"
 					></circle>
@@ -440,7 +465,10 @@
 				<p class="mt-2 text-sm text-gray-500">Loading folders and items...</p>
 			</div>
 		{:else if folders.length === 0}
-			<div class="bg-white rounded-lg shadow-sm border border-gray-200 p-8 text-center">
+			<div
+				class="bg-white rounded-lg shadow-sm border border-gray-200 p-8 text-center"
+				data-testid="empty-state"
+			>
 				<svg
 					class="mx-auto h-12 w-12 text-gray-400"
 					fill="none"
@@ -474,9 +502,13 @@
 				</div>
 			</div>
 		{:else}
-			<div class="space-y-6">
-				{#each folders as folder}
-					<div class="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden">
+			<div class="space-y-6" data-testid="folders-container">
+				{#each folders as folder (folder.id)}
+					<div
+						class="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden"
+						data-testid="folder-item"
+						data-folder-id={folder.id}
+					>
 						<!-- Folder Header -->
 						<div class="px-6 py-4 bg-gray-50 border-b border-gray-200">
 							<div class="flex items-center justify-between">
@@ -495,17 +527,19 @@
 										/>
 									</svg>
 									<div>
-										<h3 class="text-lg font-medium text-gray-900">{folder.name}</h3>
+										<h3 class="text-lg font-medium text-gray-900" data-testid="folder-name">
+											{folder.name}
+										</h3>
 										<p class="text-sm text-gray-500">
 											Created {formatDate(folder.createdAt)} by {folder.lastModifiedBy}
 										</p>
 									</div>
 								</div>
 								<div class="text-right">
-									<div class="text-sm text-gray-500">
+									<div class="text-sm text-gray-500" data-testid="folder-stats">
 										{folder.items.length} items • {getTotalItems(folder.items)} total quantity
 									</div>
-									<div class="text-lg font-semibold text-gray-900">
+									<div class="text-lg font-semibold text-gray-900" data-testid="folder-total-value">
 										{formatPrice(getTotalValue(folder.items))}
 									</div>
 								</div>
@@ -514,7 +548,7 @@
 
 						<!-- Items List -->
 						{#if folder.items.length === 0}
-							<div class="px-6 py-8 text-center">
+							<div class="px-6 py-8 text-center" data-testid="empty-folder-state">
 								<svg
 									class="mx-auto h-8 w-8 text-gray-400"
 									fill="none"
@@ -532,7 +566,7 @@
 							</div>
 						{:else}
 							<div class="overflow-x-auto">
-								<table class="min-w-full divide-y divide-gray-200">
+								<table class="min-w-full divide-y divide-gray-200" data-testid="items-table">
 									<thead class="bg-gray-50">
 										<tr>
 											<th
@@ -568,8 +602,12 @@
 										</tr>
 									</thead>
 									<tbody class="bg-white divide-y divide-gray-200">
-										{#each folder.items as item}
-											<tr class="hover:bg-gray-50 transition-colors">
+										{#each folder.items as item (item.id)}
+											<tr
+												class="hover:bg-gray-50 transition-colors"
+												data-testid="item-row"
+												data-item-id={item.id}
+											>
 												<td class="px-6 py-4 whitespace-nowrap">
 													<div class="flex items-center">
 														<div

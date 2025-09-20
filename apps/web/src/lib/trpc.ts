@@ -18,7 +18,7 @@ export const trpc = createTRPCProxyClient<AppRouter>({
 			url: `${getBaseUrl()}/trpc`,
 			fetch: async (url, options) => {
 				loading.set(true); // start loading
-				let response : Response;
+				let response: Response;
 
 				try {
 					response = await fetch(url, { ...options, credentials: 'include' });

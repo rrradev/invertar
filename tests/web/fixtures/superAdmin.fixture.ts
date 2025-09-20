@@ -18,16 +18,13 @@ export const test = base.extend<MyFixtures>({
         await loginPage.open();
         const dashboard = await loginPage.loginAs(org, username, password);
 
-        await expect(dashboard.welcomeMessage).toHaveText(`Welcome, ${username} from ${org}`);
+        await expect(dashboard.header.welcomeMessage).toHaveText(`Welcome, ${username} from ${org}`);
         await dashboard.shouldBeVisible();
         await use(dashboard);
     },
-    admins: async ({ page }, use) => {
-        const login = new Login(page);
-        await login.open();
-        const dashboard = await login.loginAs(org, username, password);
-        await dashboard.usersManagementButton.click();
-        const admins = new Admins(page);
+    admins: async ({ dashboard }, use) => {
+        await dashboard.header.userManagementButton.click();
+        const admins = new Admins(dashboard.page);
         await admins.shouldBeVisible();
         await use(admins);
     }

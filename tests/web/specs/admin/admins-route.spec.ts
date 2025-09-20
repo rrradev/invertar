@@ -67,7 +67,7 @@ test.describe('Admins Page', () => {
     await admins.createAdminFormButton.click();
 
     // Should show error message
-    await expect(admins.errorMessage.container).toBeVisible();
+    await expect(admins.errorMessage.$).toBeVisible();
     const errorMessage = await admins.errorMessage.getMessageText();
     expect(errorMessage).toContain('All fields are required');
   });
