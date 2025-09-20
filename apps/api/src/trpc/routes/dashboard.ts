@@ -281,11 +281,6 @@ export const dashboardRouter = router({
       // Check if item exists and belongs to user's organization
       const item = await prisma.item.findUnique({
         where: { id: input.itemId },
-        include: {
-          folder: {
-            select: { organizationId: true },
-          },
-        },
         select: {
           id: true,
           name: true,
