@@ -7,7 +7,8 @@ import {
   updateFolderInput,
   updateItemInput,
   deleteFolderInput,
-  deleteItemInput
+  deleteItemInput,
+  adjustItemQuantityInput
 } from '@repo/types/schemas/dashboard';
 import { SuccessStatus } from '@repo/types/trpc';
 
@@ -229,7 +230,7 @@ export const dashboardRouter = router({
       };
     }),
 
-  // Update item
+  // Update item (name, description, price only - quantity handled separately)
   updateItem: protectedProcedure
     .input(updateItemInput)
     .mutation(async ({ input, ctx }) => {
@@ -257,34 +258,12 @@ export const dashboardRouter = router({
         });
       }
 
-      // Check if target folder exists and belongs to user's organization
-      const targetFolder = await prisma.folder.findUnique({
-        where: { id: input.folderId },
-        select: { organizationId: true },
-      });
-
-      if (!targetFolder) {
-        throw new TRPCError({
-          code: "NOT_FOUND",
-          message: "Target folder not found."
-        });
-      }
-
-      if (targetFolder.organizationId !== ctx.user!.organizationId) {
-        throw new TRPCError({
-          code: "FORBIDDEN",
-          message: "You can only move items to folders in your organization."
-        });
-      }
-
       const updatedItem = await prisma.item.update({
         where: { id: input.itemId },
         data: {
           name: input.name,
           description: input.description,
           price: input.price ?? 0,
-          quantity: input.quantity ?? 0,
-          folderId: input.folderId,
           lastModifiedById: ctx.user!.id,
         },
       });
@@ -292,6 +271,68 @@ export const dashboardRouter = router({
       return {
         status: SuccessStatus.SUCCESS,
         message: `Item "${input.name}" updated successfully!`,
+      };
+    }),
+
+  // Adjust item quantity (+/-)
+  adjustItemQuantity: protectedProcedure
+    .input(adjustItemQuantityInput)
+    .mutation(async ({ input, ctx }) => {
+      // Check if item exists and belongs to user's organization
+      const item = await prisma.item.findUnique({
+        where: { id: input.itemId },
+        include: {
+          folder: {
+            select: { organizationId: true },
+          },
+        },
+        select: {
+          id: true,
+          name: true,
+          quantity: true,
+          folder: {
+            select: { organizationId: true },
+          },
+        },
+      });
+
+      if (!item) {
+        throw new TRPCError({
+          code: "NOT_FOUND",
+          message: "Item not found."
+        });
+      }
+
+      if (item.folder.organizationId !== ctx.user!.organizationId) {
+        throw new TRPCError({
+          code: "FORBIDDEN",
+          message: "You can only edit items in your organization."
+        });
+      }
+
+      const newQuantity = item.quantity + input.adjustment;
+
+      // Validate that quantity doesn't go below 0
+      if (newQuantity < 0) {
+        throw new TRPCError({
+          code: "BAD_REQUEST",
+          message: "Quantity cannot be negative. Current quantity is " + item.quantity,
+        });
+      }
+
+      const updatedItem = await prisma.item.update({
+        where: { id: input.itemId },
+        data: {
+          quantity: newQuantity,
+          lastModifiedById: ctx.user!.id,
+        },
+      });
+
+      const adjustmentText = input.adjustment > 0 ? `+${input.adjustment}` : `${input.adjustment}`;
+      return {
+        status: SuccessStatus.SUCCESS,
+        message: `Item "${item.name}" quantity adjusted by ${adjustmentText}. New quantity: ${newQuantity}`,
+        newQuantity: newQuantity,
       };
     }),
 
