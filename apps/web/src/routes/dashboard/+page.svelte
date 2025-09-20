@@ -937,8 +937,15 @@
 										{editingItem.quantity}
 									</span>
 								{:else}
+									{@const quantityChange = quantityInput - editingItem.quantity}
 									<span class="text-gray-600">Current Quantity: </span>
 									<span class="font-medium">{editingItem.quantity}</span>
+									<span 
+										class="font-bold {quantityChange > 0 ? 'text-green-600' : 'text-red-600'}" 
+										data-testid="quantity-change"
+									>
+										{quantityChange > 0 ? ` + ${quantityChange}` : ` - ${Math.abs(quantityChange)}`}
+									</span>
 									<span class="text-gray-600"> → </span>
 									<span 
 										class="font-bold {quantityInput > editingItem.quantity ? 'text-green-600' : 'text-red-600'}" 
