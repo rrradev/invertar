@@ -1,6 +1,7 @@
 <script lang="ts">
 	import { onMount } from 'svelte';
 	import { goto } from '$app/navigation';
+	import { user } from '$lib/stores/user';
 	import { trpc } from '$lib/trpc';
 	import { SuccessStatus } from '@repo/types/trpc/successStatus';
 
@@ -48,6 +49,13 @@
 			});
 
 			if (result.status === SuccessStatus.PASSWORD_SET) {
+				// Get user profile and set user store after successful password setup
+				const profileResult = await trpc.auth.profile.query();
+				user.setUser({
+					username: profileResult.username,
+					organizationName: profileResult.organizationName,
+					role: profileResult.role
+				});
 				goto('/dashboard');
 			}
 		} catch (err: any) {

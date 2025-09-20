@@ -1,18 +1,25 @@
 <script lang="ts">
 	import { goto } from '$app/navigation';
 	import { trpc } from '$lib/trpc';
-	import { auth } from '$lib/stores/auth';
-	import type { User } from '@repo/types/users';
-
-	let user: User | null = null;
-
-	// Subscribe directly to auth store to ensure real-time updates
-	$: ({ user } = $auth);
+	import { user } from '$lib/stores/user';
+	import { UserRole } from '@repo/types/users';
 
 	async function logout() {
 		await trpc.auth.logout.mutate();
-		auth.reset();
+		user.setUnauthenticated();
 		goto('/login');
+	}
+
+	function handleSilhouetteClick() {
+		const authState = $user;
+		if (!authState.isAuthenticated || !authState.user) return;
+
+		if (authState.user.role === UserRole.SUPER_ADMIN) {
+			goto('/admins');
+		} else if (authState.user.role === UserRole.ADMIN) {
+			goto('/users');
+		}
+		// USER role doesn't show the button, so this shouldn't happen
 	}
 </script>
 
@@ -37,11 +44,32 @@
 			</div>
 
 			<div class="flex items-center space-x-4">
-				{#if user}
+				{#if $user.user}
 					<div class="flex items-center space-x-3">
-						<span id="welcome-message" class="text-sm text-gray-700"
-							>Welcome, {user.username}</span
-						>
+						<!-- Role-based Silhouette Button -->
+						{#if $user.user.role === UserRole.SUPER_ADMIN || $user.user.role === UserRole.ADMIN}
+							<button
+								on:click={handleSilhouetteClick}
+								id="user-management-button"
+								class="p-2 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-full transition-colors"
+								title={$user.user.role === UserRole.SUPER_ADMIN
+									? 'Admin Management'
+									: 'User Management'}
+							>
+								<svg class="h-6 w-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+									<path
+										stroke-linecap="round"
+										stroke-linejoin="round"
+										stroke-width="2"
+										d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"
+									/>
+								</svg>
+							</button>
+						{/if}
+						<span id="welcome-message" class="text-sm text-gray-700">
+							Welcome, {$user.user.username} from
+							<span class="underline">{$user.user.organizationName}</span>
+						</span>
 						<button
 							on:click={logout}
 							class="px-3 py-2 text-sm font-medium text-gray-700 hover:text-gray-900 hover:bg-gray-100 rounded-md transition-colors"

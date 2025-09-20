@@ -1,29 +1,38 @@
 <script lang="ts">
-	export let data;
-	import { auth } from '$lib/stores/auth';
 	import '../app.css';
-	import { trpc } from '$lib/trpc';
-	import { onDestroy, onMount } from 'svelte';
-	import { page } from '$app/state';
-	import { jwtDecode } from 'jwt-decode';
-	import type { JWTPayload } from '@repo/types/auth';
-	import { SuccessStatus } from '@repo/types/trpc/successStatus';
+	import { navigating } from '$app/stores';
+	import { user } from '$lib/stores/user';
+	import type { LayoutData } from './$types';
 
-	$: auth.set({ user: data.user, isLoading: false });
+	interface LayoutProps {
+		data: LayoutData;
+		// eslint-disable-next-line @typescript-eslint/no-explicit-any
+		children: any;
+	}
 
-	onMount(async () => {
-		if (!data.user && page.url.pathname !== '/login') {
-			const result = await trpc.auth.refreshToken.mutate();
-			if (result.status === SuccessStatus.TOKEN_REFRESHED) {
-				const user = jwtDecode<JWTPayload>(result.accessToken);
-				auth.set({ user, isLoading: false });
-			} else {
-				auth.reset();
-			}
-		}
-	});
-
-	onDestroy(() => {});
+	let { data, children }: LayoutProps = $props();
 </script>
 
-<slot />
+<!-- Navigation Loading Overlay -->
+{#if $navigating}
+	<div
+		class="fixed inset-0 z-50 bg-white bg-opacity-80 backdrop-blur-sm flex items-center justify-center"
+	>
+		<div class="flex flex-col items-center space-y-4">
+			<!-- Elegant Loading Spinner with Gradient -->
+			<div class="relative">
+				<div class="w-16 h-16 border-4 border-gray-200 rounded-full"></div>
+				<div
+					class="absolute inset-0 w-16 h-16 border-4 border-transparent border-t-indigo-600 border-r-cyan-600 rounded-full animate-spin"
+				></div>
+			</div>
+			<!-- Loading Text with Branding -->
+			<div class="text-center">
+				<div class="text-gray-700 font-medium text-lg">Loading...</div>
+				<div class="text-gray-500 text-sm mt-1">Please wait while we load your content</div>
+			</div>
+		</div>
+	</div>
+{/if}
+
+{@render children()}

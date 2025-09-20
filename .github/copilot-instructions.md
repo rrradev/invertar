@@ -132,6 +132,21 @@ Focus on E2E testing.
    - Use existing config from `tests/api/e2e/config/config.ts`
    - Do NOT add any additional libraries like `supertest` or `axios` or `fetch`, the `req` function in `tests/api/e2e/config/config.ts` should be used for making requests.
    - Create hooks and fixtures when needed and reuse them - DRY!
+   - Avoid the following assumption mistake in tests:
+```
+ Expected:
+"UNAUTHORIZED"
+
++ Received:
+-32001
+
+ ❯ tests/api/e2e/auth-profile.test.ts:109:37
+    107|         ''
+    108|     );
+    109|     expect(emptyTokenResponse.code).toBe('UNAUTHORIZED');
+```
+   the trpc error code resides in res.data.code, not in res.code
+   - vitest does not support `test.describe` instead there is `describe` - https://vitest.dev/api/#describe
 
 2. **UI E2E Testing**: Simulate real user scenarios from start to finish.
    - Reside in `tests/web/`
@@ -148,6 +163,17 @@ Focus on E2E testing.
    - Never use the svelte class names as locator strategies - since they can change frequently and are not reliable.
    - Use meaningful and descriptive names for locators to improve readability and maintainability.
    - Never invent success/ error messages, toasts, etc. - check the actual strings from the html and use them in your tests.
+   - Avoid using locators directly in the specs/tests - instead create methods in the page objects and use those methods or expose the locators from the page objects.
+   - Avoid `await page.goto(...)` in the tests for navigation - instead simulate user actions like clicks to navigate. Use `goto(...)` only when testing direct URL access, redirects or intercepting routes traffic.
+   - Avoid unnecessary visibility checks mid test like:
+   ```
+     // Verify Create Admin button is visible
+    await expect(page.locator('button:has-text("Create Admin")')).toBeVisible();
+    
+    // Click Create Admin button
+    await page.locator('button:has-text("Create Admin")').click();
+   ```
+   focus on E2E flows and user journeys instead, if the button is not visible the test will fail on the click action anyway. And again avoid using locators directly in the tests. 
 
 Create unit and integration tests when appropriate.
 

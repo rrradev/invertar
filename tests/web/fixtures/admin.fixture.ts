@@ -1,33 +1,30 @@
 import { test as base, expect } from '@playwright/test';
 import Login from '../pages/login.page';
 import Users from '../pages/users.page';
+import Dashboard from '../pages/dashboard.page';
 
 const org = process.env.ADMIN_ORGANIZATION!;
 const username = process.env.ADMIN_USERNAME!;
 const password = process.env.ADMIN_PASSWORD!;
 
 type MyFixtures = {
-    usersPage: Users;
+    users: Users;
+    dashboard: Dashboard;
 };
 
 export const test = base.extend<MyFixtures>({
-    usersPage: async ({ page }, use) => {
+    dashboard: async ({ page }, use) => {
         const loginPage = new Login(page);
         await loginPage.open();
-        
-        // Login as admin
-        await loginPage.login(org, username, password);
-
-        // Navigate to users page
-        await page.waitForTimeout(2000);
-        await page.goto('/users');
-        const usersPage = new Users(page);
-        
-        // Verify admin is logged in and on users page
-        await expect(usersPage.welcomeMessage).toHaveText(`Welcome, ${username}`);
-        await expect(usersPage.title).toHaveText(/User Management/);
-
-        await use(usersPage);
+        const dashboard = await loginPage.loginAs(org, username, password);
+        await dashboard.shouldBeVisible();
+        await use(dashboard);
+    },
+    users: async ({ dashboard }, use) => {
+        await dashboard.header.userManagementButton.click();
+        const users = new Users(dashboard.page);
+        await users.shouldBeVisible();
+        await use(users);
     },
 });
 

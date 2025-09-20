@@ -34,7 +34,7 @@ function setAuthCookies(reply: FastifyReply, payload: JWTPayload) {
 
 function clearAuthCookies(reply: FastifyReply) {
   reply.clearCookie('accessToken', { path: '/' });
-  reply.clearCookie('refreshToken', { path: '/' });
+  reply.clearCookie('refreshToken', { path: '/trpc/auth.refreshToken' });
 }
 
 export const authRouter = router({
@@ -190,6 +190,30 @@ export const authRouter = router({
       clearAuthCookies(ctx.res);
 
       return { status: SuccessStatus.LOGGED_OUT };
+    }),
+
+  profile: protectedProcedure
+    .query(async ({ ctx }) => {
+      const user = await prisma.user.findUnique({
+        where: { id: ctx.user!.id },
+        include: {
+          organization: {
+            select: {
+              name: true
+            }
+          }
+        }
+      });
+
+      if (!user) {
+        throw new TRPCError({ code: "NOT_FOUND", message: "User not found" });
+      }
+
+      return {
+        username: user.username,
+        role: user.role,
+        organizationName: user.organization.name
+      };
     }),
 
 });
