@@ -25,6 +25,10 @@ export default class Folder extends BaseComponent {
         return this.itemsTable.getByRole('row').filter({ hasText: name });
     }
 
+    async getItemByName(name: string) {
+        return this.itemsTable.getByRole('row').filter({ hasText: name });
+    }
+
     async getItemCount() : Promise<number> {
         return parseInt((await this.stats.textContent())?.match(/(\d+) items/)?.[1] || '0');
     }
