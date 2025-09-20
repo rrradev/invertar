@@ -40,8 +40,7 @@
 	let editingItem: Item | null = $state(null);
 	let isUpdatingItem = $state(false);
 	let isDeletingItem = $state(false);
-	let isAdjustingQuantity = $state(false);
-	let quantityAdjustment = $state(0);
+	let quantityInput = $state(0);
 	let error = $state('');
 	let successMessage = $state('');
 
@@ -158,7 +157,7 @@
 
 	function openEditModal(item: Item) {
 		editingItem = item;
-		quantityAdjustment = 0;
+		quantityInput = item.quantity;
 		showEditItemModal = true;
 		error = '';
 		successMessage = '';
@@ -167,11 +166,18 @@
 	function closeEditModal() {
 		showEditItemModal = false;
 		editingItem = null;
-		quantityAdjustment = 0;
+		quantityInput = 0;
 		isUpdatingItem = false;
 		isDeletingItem = false;
-		isAdjustingQuantity = false;
 		error = '';
+	}
+
+	function adjustQuantityBy(amount: number) {
+		if (!editingItem) return;
+		const newQuantity = quantityInput + amount;
+		if (newQuantity >= 0) {
+			quantityInput = newQuantity;
+		}
 	}
 
 	async function updateItem() {
@@ -187,68 +193,53 @@
 			error = '';
 			successMessage = '';
 
-			const result = await trpc.dashboard.updateItem.mutate({
+			// First update the item details
+			const updateResult = await trpc.dashboard.updateItem.mutate({
 				itemId: editingItem.id,
 				name: editingItem.name.trim(),
 				description: editingItem.description?.trim() || undefined,
 				price: editingItem.price || 0
 			});
 
-			if (result.status === SuccessStatus.SUCCESS) {
-				successMessage = result.message;
-
-				// Update the item in the folders array
+			if (updateResult.status === SuccessStatus.SUCCESS) {
+				// Update the item in the folders array with new details
 				folders = folders.map((folder) => ({
 					...folder,
 					items: folder.items.map((item) =>
 						item.id === editingItem.id ? { ...item, ...editingItem } : item
 					)
 				}));
+
+				// If quantity has changed, update it separately
+				if (quantityInput !== editingItem.quantity) {
+					const quantityAdjustment = quantityInput - editingItem.quantity;
+					const quantityResult = await trpc.dashboard.adjustItemQuantity.mutate({
+						itemId: editingItem.id,
+						adjustment: quantityAdjustment
+					});
+
+					if (quantityResult.status === SuccessStatus.SUCCESS) {
+						// Update the quantity in the folders array and editingItem
+						folders = folders.map((folder) => ({
+							...folder,
+							items: folder.items.map((item) =>
+								item.id === editingItem.id ? { ...item, quantity: quantityResult.newQuantity } : item
+							)
+						}));
+
+						if (editingItem) {
+							editingItem.quantity = quantityResult.newQuantity;
+						}
+					}
+				}
+
+				successMessage = updateResult.message;
 			}
 		} catch (err: unknown) {
 			console.error('Error updating item:', err);
 			error = (err as Error).message || 'Failed to update item. Please try again.';
 		} finally {
 			isUpdatingItem = false;
-		}
-	}
-
-	async function adjustQuantity() {
-		if (!editingItem || quantityAdjustment === 0) return;
-
-		try {
-			isAdjustingQuantity = true;
-			error = '';
-			successMessage = '';
-
-			const result = await trpc.dashboard.adjustItemQuantity.mutate({
-				itemId: editingItem.id,
-				adjustment: quantityAdjustment
-			});
-
-			if (result.status === SuccessStatus.SUCCESS) {
-				successMessage = result.message;
-
-				// Update the item quantity in the folders array
-				folders = folders.map((folder) => ({
-					...folder,
-					items: folder.items.map((item) =>
-						item.id === editingItem.id ? { ...item, quantity: result.newQuantity } : item
-					)
-				}));
-
-				// Update editingItem to reflect the new quantity
-				if (editingItem) {
-					editingItem.quantity = result.newQuantity;
-				}
-
-				quantityAdjustment = 0;
-			}
-		} catch (err: unknown) {
-			console.error('Error adjusting quantity:', err);
-			error = (err as Error).message || 'Failed to adjust quantity. Please try again.';
-		} finally {
-			isAdjustingQuantity = false;
 		}
 	}
 
@@ -906,87 +897,84 @@
 						/>
 					</div>
 
-					<!-- Quantity Adjustment Section -->
+					<!-- Quantity Section -->
 					<div>
 						<label class="block text-sm font-medium text-gray-700 mb-2">
-							Quantity Adjustment
+							Quantity
 						</label>
 						<div class="bg-gray-50 p-4 rounded-lg space-y-3">
-							<div class="flex items-center justify-between text-sm">
-								<span class="text-gray-600">Current Quantity:</span>
-								<span class="font-medium" data-testid="current-quantity"
-									>{editingItem.quantity}</span
-								>
-							</div>
-
-							<!-- Quantity Adjustment Slider -->
-							<div class="space-y-2">
-								<div class="flex items-center justify-center">
-									<input
-										type="range"
-										min="-10"
-										max="10"
-										step="1"
-										bind:value={quantityAdjustment}
-										class="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer slider"
-										disabled={isAdjustingQuantity || isUpdatingItem || isDeletingItem}
-										data-testid="quantity-slider"
-									/>
-								</div>
-								<div class="flex items-center justify-between text-xs text-gray-500">
-									<span>-10</span>
-									<span class="font-medium text-gray-700" data-testid="adjustment-value">
-										{quantityAdjustment > 0 ? `+${quantityAdjustment}` : quantityAdjustment}
+							<!-- Current Quantity Display with Color Coding -->
+							<div class="text-sm">
+								{#if quantityInput === editingItem.quantity}
+									<span class="text-gray-600">Current Quantity: </span>
+									<span class="font-medium" data-testid="current-quantity">
+										{editingItem.quantity}
 									</span>
-									<span>+10</span>
-								</div>
-								{#if quantityAdjustment !== 0}
-									<div class="text-center text-sm">
-										<span class="text-gray-600">New quantity will be:</span>
-										<span class="font-medium text-indigo-600" data-testid="new-quantity">
-											{editingItem.quantity + quantityAdjustment}
-										</span>
-									</div>
+								{:else}
+									<span class="text-gray-600">Current Quantity: </span>
+									<span class="font-medium">{editingItem.quantity}</span>
+									<span class="text-gray-600"> → </span>
+									<span 
+										class="font-bold {quantityInput > editingItem.quantity ? 'text-green-600' : 'text-red-600'}" 
+										data-testid="new-quantity"
+									>
+										{quantityInput}
+									</span>
 								{/if}
 							</div>
 
-							<!-- Apply Quantity Adjustment Button -->
-							<button
-								onclick={adjustQuantity}
-								disabled={quantityAdjustment === 0 ||
-									isAdjustingQuantity ||
-									isUpdatingItem ||
-									isDeletingItem}
-								class="w-full px-4 py-2 text-sm font-medium text-white bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 rounded-md focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200"
-								data-testid="apply-quantity-button"
-							>
-								{#if isAdjustingQuantity}
-									<svg
-										class="animate-spin -ml-1 mr-2 h-4 w-4 text-white inline"
-										fill="none"
-										viewBox="0 0 24 24"
-									>
-										<circle
-											class="opacity-25"
-											cx="12"
-											cy="12"
-											r="10"
-											stroke="currentColor"
-											stroke-width="4"
-										></circle>
-										<path
-											class="opacity-75"
-											fill="currentColor"
-											d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 714 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
-										></path>
-									</svg>
-									Adjusting...
-								{:else}
-									Apply Quantity Change ({quantityAdjustment > 0
-										? `+${quantityAdjustment}`
-										: quantityAdjustment})
-								{/if}
-							</button>
+							<!-- Quantity Input with Buttons -->
+							<div class="flex items-center space-x-2">
+								<!-- Decrease buttons -->
+								<button
+									type="button"
+									onclick={() => adjustQuantityBy(-10)}
+									disabled={isUpdatingItem || isDeletingItem || quantityInput < 10}
+									class="px-3 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-indigo-500 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+									data-testid="decrease-10-button"
+								>
+									-10
+								</button>
+								<button
+									type="button"
+									onclick={() => adjustQuantityBy(-1)}
+									disabled={isUpdatingItem || isDeletingItem || quantityInput < 1}
+									class="px-3 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-indigo-500 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+									data-testid="decrease-1-button"
+								>
+									-1
+								</button>
+
+								<!-- Quantity Input Field -->
+								<input
+									type="number"
+									min="0"
+									bind:value={quantityInput}
+									class="flex-1 px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-colors text-center"
+									disabled={isUpdatingItem || isDeletingItem}
+									data-testid="quantity-input"
+								/>
+
+								<!-- Increase buttons -->
+								<button
+									type="button"
+									onclick={() => adjustQuantityBy(1)}
+									disabled={isUpdatingItem || isDeletingItem}
+									class="px-3 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-indigo-500 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+									data-testid="increase-1-button"
+								>
+									+1
+								</button>
+								<button
+									type="button"
+									onclick={() => adjustQuantityBy(10)}
+									disabled={isUpdatingItem || isDeletingItem}
+									class="px-3 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-indigo-500 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+									data-testid="increase-10-button"
+								>
+									+10
+								</button>
+							</div>
 						</div>
 					</div>
 				</div>
@@ -995,7 +983,7 @@
 				<div class="mt-6 flex flex-col sm:flex-row gap-3">
 					<button
 						onclick={updateItem}
-						disabled={isUpdatingItem || isDeletingItem || isAdjustingQuantity}
+						disabled={isUpdatingItem || isDeletingItem}
 						class="flex-1 px-4 py-2 text-sm font-medium text-white bg-gradient-to-r from-indigo-600 to-cyan-600 hover:from-indigo-700 hover:to-cyan-700 rounded-md focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200"
 						data-testid="update-item-button"
 					>
@@ -1027,7 +1015,7 @@
 
 					<button
 						onclick={deleteItem}
-						disabled={isDeletingItem || isUpdatingItem || isAdjustingQuantity}
+						disabled={isDeletingItem || isUpdatingItem}
 						class="flex-1 px-4 py-2 text-sm font-medium text-white bg-gradient-to-r from-red-600 to-red-700 hover:from-red-700 hover:to-red-800 rounded-md focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200"
 						data-testid="delete-item-button"
 					>
@@ -1059,7 +1047,7 @@
 
 					<button
 						onclick={closeEditModal}
-						disabled={isUpdatingItem || isDeletingItem || isAdjustingQuantity}
+						disabled={isUpdatingItem || isDeletingItem}
 						class="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
 						data-testid="cancel-edit-button"
 					>
