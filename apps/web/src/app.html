@@ -86,22 +86,25 @@
 		<div>%sveltekit.body%</div>
 
 		<script>
-			// Hide the loading overlay once the DOM is ready and Svelte starts loading
-			document.addEventListener('DOMContentLoaded', function () {
-				// Small delay to ensure smooth transition
-				setTimeout(function () {
-					var loadingEl = document.getElementById('initial-loading');
-					if (loadingEl) {
-						loadingEl.classList.add('hidden');
-						// Remove the element after transition completes
-						setTimeout(function () {
-							if (loadingEl && loadingEl.parentNode) {
-								loadingEl.parentNode.removeChild(loadingEl);
-							}
-						}, 300);
-					}
-				}, 100);
-			});
+			// Hide the loading overlay function
+			function hideLoading() {
+				var loadingEl = document.getElementById('initial-loading');
+				if (loadingEl) {
+					loadingEl.classList.add('hidden');
+					// Remove the element after transition completes
+					setTimeout(function () {
+						if (loadingEl && loadingEl.parentNode) {
+							loadingEl.parentNode.removeChild(loadingEl);
+						}
+					}, 300);
+				}
+			}
+
+			// Global function that can be called by SvelteKit when ready
+			window.__hideInitialLoading = hideLoading;
+
+			// Fallback: hide after maximum 12 seconds to prevent infinite loading
+			setTimeout(hideLoading, 12000);
 		</script>
 	</body>
 </html>
