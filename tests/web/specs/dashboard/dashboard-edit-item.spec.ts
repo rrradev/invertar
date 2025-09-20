@@ -110,7 +110,7 @@ test.describe('Dashboard - Edit Item Modal', () => {
     await dashboard.closeEditModal();
   });
 
-  test.only('should show color-coded quantity change display', async ({ dashboard, folder, randomItemName }) => {
+  test('should show color-coded quantity change display', async ({ dashboard, folder, randomItemName }) => {
     const initialQuantity = 50;
     const itemData = {
       name: randomItemName,
