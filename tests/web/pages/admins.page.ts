@@ -3,7 +3,6 @@ import BasePage from "./base.page";
 import SuccessMessage from "./components/success-message.component";
 import ErrorMessage from "./components/error-message.component";
 import Header from "./components/header.component";
-import { th } from "@faker-js/faker/.";
 
 export default class Admins extends BasePage {
     header : Header;
