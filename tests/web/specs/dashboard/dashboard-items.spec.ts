@@ -57,7 +57,7 @@ test.describe('Dashboard - Item Management', () => {
     await expect(itemRow).toBeVisible();
     await expect(itemRow).toContainText(itemData.description);
     await expect(itemRow).toContainText(itemData.price.toFixed(2));
-    await expect(itemRow).toContainText(itemData.quantity.toString());;
+    await expect(itemRow).toContainText(itemData.quantity.toString());
   });
 
   test('should not create item without required fields', async ({ dashboard, folder }) => {
