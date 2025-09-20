@@ -1,5 +1,5 @@
 import { test, expect } from '../../fixtures/user.fixture';
-import { da, faker } from '@faker-js/faker';
+import { faker } from '@faker-js/faker';
 
 test.describe('Dashboard - Edit Item Modal', () => {
 
