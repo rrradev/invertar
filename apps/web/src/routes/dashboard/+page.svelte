@@ -188,7 +188,7 @@
 
 	function hasChanges(): boolean {
 		if (!editingItem || !originalItem) return false;
-		
+
 		return (
 			editingItem.name !== originalItem.name ||
 			editingItem.description !== originalItem.description ||
@@ -248,7 +248,9 @@
 						folders = folders.map((folder) => ({
 							...folder,
 							items: folder.items.map((item) =>
-								item.id === editingItem.id ? { ...item, quantity: quantityResult.newQuantity } : item
+								item.id === editingItem.id
+									? { ...item, quantity: quantityResult.newQuantity }
+									: item
 							)
 						}));
 
@@ -925,9 +927,7 @@
 
 					<!-- Quantity Section -->
 					<div>
-						<label class="block text-sm font-medium text-gray-700 mb-2">
-							Quantity
-						</label>
+						<label class="block text-sm font-medium text-gray-700 mb-2"> Quantity </label>
 						<div class="bg-gray-50 p-4 rounded-lg space-y-3">
 							<!-- Current Quantity Display with Color Coding -->
 							<div class="text-sm">
@@ -940,15 +940,17 @@
 									{@const quantityChange = quantityInput - editingItem.quantity}
 									<span class="text-gray-600">Current Quantity: </span>
 									<span class="font-medium">{editingItem.quantity}</span>
-									<span 
-										class="font-bold {quantityChange > 0 ? 'text-green-600' : 'text-red-600'}" 
+									<span
+										class="font-bold {quantityChange > 0 ? 'text-green-600' : 'text-red-600'}"
 										data-testid="quantity-change"
 									>
 										{quantityChange > 0 ? ` + ${quantityChange}` : ` - ${Math.abs(quantityChange)}`}
 									</span>
 									<span class="text-gray-600"> → </span>
-									<span 
-										class="font-bold {quantityInput > editingItem.quantity ? 'text-green-600' : 'text-red-600'}" 
+									<span
+										class="font-bold {quantityInput > editingItem.quantity
+											? 'text-green-600'
+											: 'text-red-600'}"
 										data-testid="new-quantity"
 									>
 										{quantityInput}
@@ -1017,7 +1019,9 @@
 					<button
 						onclick={updateItem}
 						disabled={isUpdatingItem || isDeletingItem || !hasChanges()}
-						class="flex-1 px-4 py-2 text-sm font-medium text-white {hasChanges() ? 'bg-gradient-to-r from-indigo-600 to-cyan-600 hover:from-indigo-700 hover:to-cyan-700' : 'bg-gray-400 cursor-not-allowed'} rounded-md focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200"
+						class="flex-1 px-4 py-2 text-sm font-medium text-white {hasChanges()
+							? 'bg-gradient-to-r from-indigo-600 to-cyan-600 hover:from-indigo-700 hover:to-cyan-700'
+							: 'bg-gray-400 cursor-not-allowed'} rounded-md focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200"
 						data-testid="update-item-button"
 					>
 						{#if isUpdatingItem}
@@ -1088,13 +1092,10 @@
 	<div class="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full z-50">
 		<div class="relative top-20 mx-auto p-5 border w-96 shadow-lg rounded-md bg-white">
 			<div class="mt-3 text-center">
-				<div class="mx-auto flex items-center justify-center h-12 w-12 rounded-full bg-red-100 mb-4">
-					<svg
-						class="h-6 w-6 text-red-600"
-						fill="none"
-						stroke="currentColor"
-						viewBox="0 0 24 24"
-					>
+				<div
+					class="mx-auto flex items-center justify-center h-12 w-12 rounded-full bg-red-100 mb-4"
+				>
+					<svg class="h-6 w-6 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
 						<path
 							stroke-linecap="round"
 							stroke-linejoin="round"
@@ -1107,9 +1108,11 @@
 					Delete Item
 				</h3>
 				<p class="text-sm text-gray-500 mb-6">
-					Are you sure you want to delete "<span class="font-medium text-gray-900">{editingItem.name}</span>"? This action cannot be undone.
+					Are you sure you want to delete "<span class="font-medium text-gray-900"
+						>{editingItem.name}</span
+					>"? This action cannot be undone.
 				</p>
-				
+
 				<!-- Confirmation Buttons -->
 				<div class="flex justify-center space-x-3">
 					<button
