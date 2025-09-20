@@ -4,9 +4,83 @@
 		<meta charset="utf-8" />
 		<link rel="icon" href="%sveltekit.assets%/favicon.svg" />
 		<meta name="viewport" content="width=device-width, initial-scale=1" />
+		<script src="https://cdn.tailwindcss.com"></script>
 		%sveltekit.head%
+		<style>
+			/* Initial loading overlay - shown before Svelte app loads */
+			#initial-loading {
+				position: fixed;
+				inset: 0;
+				z-index: 9999;
+				background: rgba(255, 255, 255, 0.95);
+				backdrop-filter: blur(4px);
+				display: flex;
+				align-items: center;
+				justify-content: center;
+				opacity: 1;
+				transition: opacity 0.3s ease-out;
+			}
+
+			#initial-loading.hidden {
+				opacity: 0;
+				pointer-events: none;
+			}
+
+			.spinner {
+				width: 64px;
+				height: 64px;
+				border: 4px solid #e5e7eb;
+				border-radius: 50%;
+				position: relative;
+			}
+
+			.spinner::before {
+				content: '';
+				position: absolute;
+				inset: 0;
+				border: 4px solid transparent;
+				border-top: 4px solid #4f46e5;
+				border-right: 4px solid #06b6d4;
+				border-radius: 50%;
+				animation: spin 1s linear infinite;
+			}
+
+			@keyframes spin {
+				to {
+					transform: rotate(360deg);
+				}
+			}
+		</style>
 	</head>
 	<body data-sveltekit-preload-data="hover">
+		<!-- Initial loading overlay - shows immediately -->
+		<div id="initial-loading">
+			<div class="flex flex-col items-center space-y-4">
+				<div class="spinner"></div>
+				<div class="text-center">
+					<div class="text-gray-700 font-medium text-lg">Loading Invertar...</div>
+					<div class="text-gray-500 text-sm mt-1">
+						Please wait while we initialize the application
+					</div>
+				</div>
+			</div>
+		</div>
+
 		<div>%sveltekit.body%</div>
+
+		<script>
+			// Hide the initial loading overlay once the Svelte app is ready
+			document.addEventListener('DOMContentLoaded', function () {
+				// Wait a bit for Svelte to initialize, then hide the loading overlay
+				setTimeout(function () {
+					const loadingEl = document.getElementById('initial-loading');
+					if (loadingEl) {
+						loadingEl.classList.add('hidden');
+						// Remove the element completely after transition
+						setTimeout(() => loadingEl.remove(), 300);
+					}
+				}, 100);
+			});
+		</script>
 	</body>
 </html>

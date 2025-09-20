@@ -1,7 +1,6 @@
 <script lang="ts">
 	import '../app.css';
 	import { navigating } from '$app/stores';
-	import { user } from '$lib/stores/user';
 
 	interface LayoutProps {
 		// eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -10,30 +9,6 @@
 
 	let { children }: LayoutProps = $props();
 </script>
-
-<!-- Initial App Loading Overlay -->
-{#if $user.isLoading}
-	<div
-		class="fixed inset-0 z-50 bg-white bg-opacity-90 backdrop-blur-sm flex items-center justify-center"
-	>
-		<div class="flex flex-col items-center space-y-4">
-			<!-- Elegant Loading Spinner with Gradient -->
-			<div class="relative">
-				<div class="w-16 h-16 border-4 border-gray-200 rounded-full"></div>
-				<div
-					class="absolute inset-0 w-16 h-16 border-4 border-transparent border-t-indigo-600 border-r-cyan-600 rounded-full animate-spin"
-				></div>
-			</div>
-			<!-- Loading Text with Branding -->
-			<div class="text-center">
-				<div class="text-gray-700 font-medium text-lg">Loading Invertar...</div>
-				<div class="text-gray-500 text-sm mt-1">
-					Please wait while we initialize the application
-				</div>
-			</div>
-		</div>
-	</div>
-{/if}
 
 <!-- Navigation Loading Overlay -->
 {#if $navigating}
