@@ -1,4 +1,4 @@
-import { expect, test } from '../../fixtures/superAdmin.fixture';;
+import { expect, test } from '../../fixtures/superAdmin.fixture';
 import Login from '../../pages/login.page';
 import { faker } from '@faker-js/faker';
 
