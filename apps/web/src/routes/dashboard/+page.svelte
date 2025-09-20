@@ -37,7 +37,9 @@
 	let showCreateItemForm = $state(false);
 	let showAdvancedItemFields = $state(false);
 	let showEditItemModal = $state(false);
+	let showDeleteConfirmation = $state(false);
 	let editingItem: Item | null = $state(null);
+	let originalItem: Item | null = $state(null); // Store original values to detect changes
 	let isUpdatingItem = $state(false);
 	let isDeletingItem = $state(false);
 	let quantityInput = $state(0);
@@ -157,15 +159,19 @@
 
 	function openEditModal(item: Item) {
 		editingItem = item;
+		originalItem = { ...item }; // Store a copy of the original item
 		quantityInput = item.quantity;
 		showEditItemModal = true;
+		showDeleteConfirmation = false;
 		error = '';
 		successMessage = '';
 	}
 
 	function closeEditModal() {
 		showEditItemModal = false;
+		showDeleteConfirmation = false;
 		editingItem = null;
+		originalItem = null;
 		quantityInput = 0;
 		isUpdatingItem = false;
 		isDeletingItem = false;
@@ -178,6 +184,25 @@
 		if (newQuantity >= 0) {
 			quantityInput = newQuantity;
 		}
+	}
+
+	function hasChanges(): boolean {
+		if (!editingItem || !originalItem) return false;
+		
+		return (
+			editingItem.name !== originalItem.name ||
+			editingItem.description !== originalItem.description ||
+			editingItem.price !== originalItem.price ||
+			quantityInput !== originalItem.quantity
+		);
+	}
+
+	function confirmDelete() {
+		showDeleteConfirmation = true;
+	}
+
+	function cancelDelete() {
+		showDeleteConfirmation = false;
 	}
 
 	async function updateItem() {
@@ -248,6 +273,7 @@
 
 		try {
 			isDeletingItem = true;
+			showDeleteConfirmation = false; // Close confirmation dialog
 			error = '';
 			successMessage = '';
 
@@ -983,8 +1009,8 @@
 				<div class="mt-6 flex flex-col sm:flex-row gap-3">
 					<button
 						onclick={updateItem}
-						disabled={isUpdatingItem || isDeletingItem}
-						class="flex-1 px-4 py-2 text-sm font-medium text-white bg-gradient-to-r from-indigo-600 to-cyan-600 hover:from-indigo-700 hover:to-cyan-700 rounded-md focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200"
+						disabled={isUpdatingItem || isDeletingItem || !hasChanges()}
+						class="flex-1 px-4 py-2 text-sm font-medium text-white {hasChanges() ? 'bg-gradient-to-r from-indigo-600 to-cyan-600 hover:from-indigo-700 hover:to-cyan-700' : 'bg-gray-400 cursor-not-allowed'} rounded-md focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200"
 						data-testid="update-item-button"
 					>
 						{#if isUpdatingItem}
@@ -1014,7 +1040,7 @@
 					</button>
 
 					<button
-						onclick={deleteItem}
+						onclick={confirmDelete}
 						disabled={isDeletingItem || isUpdatingItem}
 						class="flex-1 px-4 py-2 text-sm font-medium text-white bg-gradient-to-r from-red-600 to-red-700 hover:from-red-700 hover:to-red-800 rounded-md focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200"
 						data-testid="delete-item-button"
@@ -1052,6 +1078,57 @@
 						data-testid="cancel-edit-button"
 					>
 						Cancel
+					</button>
+				</div>
+			</div>
+		</div>
+	</div>
+{/if}
+
+<!-- Delete Confirmation Modal -->
+{#if showDeleteConfirmation && editingItem}
+	<div class="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full z-50">
+		<div class="relative top-20 mx-auto p-5 border w-96 shadow-lg rounded-md bg-white">
+			<div class="mt-3 text-center">
+				<div class="mx-auto flex items-center justify-center h-12 w-12 rounded-full bg-red-100 mb-4">
+					<svg
+						class="h-6 w-6 text-red-600"
+						fill="none"
+						stroke="currentColor"
+						viewBox="0 0 24 24"
+					>
+						<path
+							stroke-linecap="round"
+							stroke-linejoin="round"
+							stroke-width="2"
+							d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L3.732 16.5c-.77.833.192 2.5 1.732 2.5z"
+						/>
+					</svg>
+				</div>
+				<h3 class="text-lg font-medium text-gray-900 mb-2" data-testid="delete-confirmation-title">
+					Delete Item
+				</h3>
+				<p class="text-sm text-gray-500 mb-6">
+					Are you sure you want to delete "<span class="font-medium text-gray-900">{editingItem.name}</span>"? This action cannot be undone.
+				</p>
+				
+				<!-- Confirmation Buttons -->
+				<div class="flex justify-center space-x-3">
+					<button
+						onclick={cancelDelete}
+						disabled={isDeletingItem}
+						class="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+						data-testid="cancel-delete-button"
+					>
+						Cancel
+					</button>
+					<button
+						onclick={deleteItem}
+						disabled={isDeletingItem}
+						class="px-4 py-2 text-sm font-medium text-white bg-red-600 border border-transparent rounded-md hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+						data-testid="confirm-delete-button"
+					>
+						Delete Item
 					</button>
 				</div>
 			</div>
