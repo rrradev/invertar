@@ -28,8 +28,11 @@
 	<div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
 		<div class="flex justify-between items-center h-16">
 			<div class="flex items-center space-x-4">
-				<div
-					class="h-8 w-8 bg-gradient-to-r from-indigo-600 to-cyan-600 rounded-lg flex items-center justify-center"
+				<button
+					title="Dashboard"
+					aria-label="Dashboard"
+					onclick={() => goto('/dashboard')}
+					class="h-8 w-8 bg-gradient-to-r from-indigo-600 to-cyan-600 rounded-lg flex items-center justify-center cursor-pointer hover:opacity-90 transition"
 				>
 					<svg class="h-5 w-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
 						<path
@@ -39,7 +42,7 @@
 							d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"
 						/>
 					</svg>
-				</div>
+				</button>
 				<h1 class="text-xl font-semibold text-gray-900">Invertar</h1>
 			</div>
 
@@ -49,7 +52,8 @@
 						<!-- Role-based Silhouette Button -->
 						{#if $user.user.role === UserRole.SUPER_ADMIN || $user.user.role === UserRole.ADMIN}
 							<button
-								on:click={handleSilhouetteClick}
+								aria-label="User Management"
+								onclick={handleSilhouetteClick}
 								id="user-management-button"
 								class="p-2 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-full transition-colors"
 								title={$user.user.role === UserRole.SUPER_ADMIN
@@ -71,7 +75,7 @@
 							<span class="underline">{$user.user.organizationName}</span>
 						</span>
 						<button
-							on:click={logout}
+							onclick={logout}
 							class="px-3 py-2 text-sm font-medium text-gray-700 hover:text-gray-900 hover:bg-gray-100 rounded-md transition-colors"
 						>
 							Sign out
