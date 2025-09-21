@@ -94,7 +94,8 @@
 		price: 0,
 		quantity: 0,
 		folderId: '',
-		recipe: [] as { itemId: string; quantity: number }[]
+		recipe: [] as { itemId: string; quantity: number }[],
+		expendItemsOnCreation: false
 	});
 
 	async function createFolder() {
@@ -189,14 +190,47 @@
 				name: newProduct.name.trim(),
 				description: newProduct.description.trim() || undefined,
 				price: newProduct.price || undefined,
-				quantity: newProduct.quantity || undefined,
+				quantity: newProduct.expendItemsOnCreation ? 0 : (newProduct.quantity || undefined), // Start with 0 if expending items
 				folderId: targetFolderId,
 				recipe: newProduct.recipe
 			});
 
 			if (result.status === SuccessStatus.SUCCESS) {
 				successMessage = result.message;
-				newProduct = { name: '', description: '', price: 0, quantity: 0, folderId: '', recipe: [] };
+				
+				// If expending items on creation and we have a quantity > 0, produce the products
+				if (newProduct.expendItemsOnCreation && newProduct.quantity > 0 && newProduct.recipe.length > 0) {
+					try {
+						const productionResult = await trpc.dashboard.adjustProductQuantity.mutate({
+							productId: result.product.id,
+							adjustment: newProduct.quantity
+						});
+						
+						if (productionResult.status === SuccessStatus.SUCCESS) {
+							successMessage = `Product "${newProduct.name}" created and ${newProduct.quantity} units produced (ingredients consumed)!`;
+							
+							// Update the product quantity in the folders array
+							folders = folders.map((folder) => {
+								if (folder.id === targetFolderId) {
+									return {
+										...folder,
+										products: folder.products.map((product) =>
+											product.id === result.product.id
+												? { ...product, quantity: productionResult.newQuantity }
+												: product
+										)
+									};
+								}
+								return folder;
+							});
+						}
+					} catch (productionErr) {
+						// If production fails, still show success for creation but mention the production failure
+						error = `Product created but production failed: ${(productionErr as Error).message}`;
+					}
+				}
+				
+				newProduct = { name: '', description: '', price: 0, quantity: 0, folderId: '', recipe: [], expendItemsOnCreation: false };
 				showCreateProductForm = false;
 				showAdvancedProductFields = false;
 
@@ -740,8 +774,8 @@
 							class="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-colors"
 							disabled={isCreatingItem}
 						>
-							<option value="">Select folder</option>
-							{#each folders as folder (folder.id)}
+							<option value="">Select an item folder</option>
+							{#each folders.filter(f => f.type === 'ITEM') as folder}
 								<option value={folder.id}>{folder.name}</option>
 							{/each}
 						</select>
@@ -970,6 +1004,27 @@
 						</div>
 					</div>
 
+					<!-- Expend Items Option -->
+					{#if newProduct.recipe.length > 0 && newProduct.quantity > 0}
+						<div class="mb-4">
+							<div class="flex items-center">
+								<input
+									id="expendItemsOnCreation"
+									type="checkbox"
+									bind:checked={newProduct.expendItemsOnCreation}
+									class="h-4 w-4 text-purple-600 focus:ring-purple-500 border-gray-300 rounded"
+									disabled={isCreatingProduct}
+								/>
+								<label for="expendItemsOnCreation" class="ml-2 block text-sm text-gray-700">
+									Expend recipe items when creating (consumes {newProduct.quantity} × recipe quantities from inventory)
+								</label>
+							</div>
+							<p class="text-xs text-gray-500 mt-1 ml-6">
+								When enabled, the required ingredients will be immediately consumed from inventory based on the initial quantity.
+							</p>
+						</div>
+					{/if}
+
 					<!-- Recipe Section -->
 					<div class="mb-4">
 						<h4 class="text-md font-medium text-gray-900 mb-3">Recipe (Optional)</h4>
@@ -1043,7 +1098,7 @@
 						onclick={() => {
 							showCreateProductForm = false;
 							showAdvancedProductFields = false;
-							newProduct = { name: '', description: '', price: 0, quantity: 0, folderId: '', recipe: [] };
+							newProduct = { name: '', description: '', price: 0, quantity: 0, folderId: '', recipe: [], expendItemsOnCreation: false };
 						}}
 						class="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-purple-500 transition-colors"
 						disabled={isCreatingProduct}
@@ -1152,19 +1207,49 @@
 						<div class="px-6 py-4 bg-gray-50 border-b border-gray-200">
 							<div class="flex items-center justify-between">
 								<div class="flex items-center">
-									<svg
-										class="h-6 w-6 text-yellow-500 mr-3"
-										fill="none"
-										stroke="currentColor"
-										viewBox="0 0 24 24"
-									>
-										<path
-											stroke-linecap="round"
-											stroke-linejoin="round"
-											stroke-width="2"
-											d="M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-6l-2-2H5a2 2 0 00-2 2z"
-										/>
-									</svg>
+									{#if folder.type === 'PRODUCT'}
+										<!-- Product folder with star -->
+										<div class="relative mr-3">
+											<svg
+												class="h-6 w-6 text-purple-500"
+												fill="none"
+												stroke="currentColor"
+												viewBox="0 0 24 24"
+											>
+												<path
+													stroke-linecap="round"
+													stroke-linejoin="round"
+													stroke-width="2"
+													d="M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-6l-2-2H5a2 2 0 00-2 2z"
+												/>
+											</svg>
+											<!-- Star icon overlay -->
+											<svg
+												class="absolute top-0.5 left-1.5 h-3 w-3 text-yellow-400"
+												fill="currentColor"
+												viewBox="0 0 20 20"
+											>
+												<path
+													d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z"
+												/>
+											</svg>
+										</div>
+									{:else}
+										<!-- Item folder (default yellow) -->
+										<svg
+											class="h-6 w-6 text-yellow-500 mr-3"
+											fill="none"
+											stroke="currentColor"
+											viewBox="0 0 24 24"
+										>
+											<path
+												stroke-linecap="round"
+												stroke-linejoin="round"
+												stroke-width="2"
+												d="M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-6l-2-2H5a2 2 0 00-2 2z"
+											/>
+										</svg>
+									{/if}
 									<div>
 										<h3 class="text-lg font-medium text-gray-900" data-testid="folder-name">
 											{folder.name}
