@@ -62,7 +62,6 @@ test.describe('Dashboard - Edit Item Modal', () => {
 
     await dashboard.updateItemDetails(updateData);
     await dashboard.submitItemUpdate();
-    await dashboard.closeEditModal();
 
     // Verify success message
     await dashboard.waitForSuccessMessage();

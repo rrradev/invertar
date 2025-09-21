@@ -11,11 +11,11 @@ export default class Dashboard extends BasePage {
     dashboardTitle: Locator;
     createFolderButton: Locator;
     createItemButton: Locator;
-    
+
     // Forms
     createFolderForm: Locator;
     createItemForm: Locator;
-    
+
     // Form inputs
     folderNameInput: Locator;
     itemNameInput: Locator;
@@ -23,17 +23,17 @@ export default class Dashboard extends BasePage {
     itemPriceInput: Locator;
     itemQuantityInput: Locator;
     itemFolderSelect: Locator;
-    
+
     // Form buttons
     submitFolderButton: Locator;
     cancelFolderButton: Locator;
     submitItemButton: Locator;
     cancelItemButton: Locator;
     toggleAdvancedFieldsButton: Locator;
-    
+
     // Advanced fields
     advancedFieldsContainer: Locator;
-    
+
     // Edit Item Modal
     editItemModal: Locator;
     editItemModalTitle: Locator;
@@ -51,36 +51,36 @@ export default class Dashboard extends BasePage {
     updateItemButton: Locator;
     deleteItemButton: Locator;
     closeEditModalBtn: Locator;
-    
+
     // Delete Confirmation Modal
     deleteConfirmationModal: Locator;
     deleteConfirmationTitle: Locator;
     confirmDeleteButton: Locator;
     cancelDeleteButton: Locator;
-    
+
     // Content areas
     foldersContainer: Locator;
     loadingState: Locator;
     emptyState: Locator;
     emptyFolderState: Locator;
-    
+
     // Messages
     errorMessage: ErrorMessage;
     successMessage: SuccessMessage;
 
     constructor(page: Page) {
         super(page);
-        
+
         this.header = Header.from(page);
         // Page elements
         this.dashboardTitle = page.getByTestId('dashboard-title');
         this.createFolderButton = page.getByTestId('create-folder-button');
         this.createItemButton = page.getByTestId('create-item-button');
-        
+
         // Forms
         this.createFolderForm = page.getByTestId('create-folder-form');
         this.createItemForm = page.getByTestId('create-item-form');
-        
+
         // Form inputs
         this.folderNameInput = page.locator('#folderName');
         this.itemNameInput = page.locator('#itemName');
@@ -88,17 +88,17 @@ export default class Dashboard extends BasePage {
         this.itemPriceInput = page.locator('#itemPrice');
         this.itemQuantityInput = page.locator('#itemQuantity');
         this.itemFolderSelect = page.locator('#itemFolder');
-        
+
         // Form buttons
         this.submitFolderButton = page.getByTestId('submit-folder-button');
         this.cancelFolderButton = page.getByTestId('cancel-folder-button');
         this.submitItemButton = page.getByTestId('submit-item-button');
         this.cancelItemButton = page.getByTestId('cancel-item-button');
         this.toggleAdvancedFieldsButton = page.getByTestId('toggle-advanced-fields');
-        
+
         // Advanced fields
         this.advancedFieldsContainer = page.getByTestId('advanced-fields-container');
-        
+
         // Edit Item Modal
         this.editItemModal = page.locator('.fixed.inset-0.bg-gray-600.bg-opacity-50');
         this.editItemModalTitle = page.getByTestId('edit-modal-title');
@@ -116,19 +116,19 @@ export default class Dashboard extends BasePage {
         this.updateItemButton = page.getByTestId('update-item-button');
         this.deleteItemButton = page.getByTestId('delete-item-button');
         this.closeEditModalBtn = page.getByLabel('Close modal');
-        
+
         // Delete Confirmation Modal
         this.deleteConfirmationModal = page.locator('.fixed.inset-0.bg-gray-600.bg-opacity-50').nth(1);
         this.deleteConfirmationTitle = page.getByTestId('delete-confirmation-title');
         this.confirmDeleteButton = page.getByTestId('confirm-delete-button');
         this.cancelDeleteButton = page.getByTestId('cancel-delete-button');
-        
+
         // Content areas
         this.foldersContainer = page.getByTestId('folders-container');
         this.loadingState = page.getByTestId('loading-state');
         this.emptyState = page.getByTestId('empty-state');
         this.emptyFolderState = page.getByTestId('empty-folder-state');
-        
+
         // Messages
         this.errorMessage = ErrorMessage.from(page);
         this.successMessage = SuccessMessage.from(page);
@@ -172,22 +172,22 @@ export default class Dashboard extends BasePage {
         await this.submitItemButton.click();
     }
 
-    async createAdvancedItem(data: { 
-        name: string; 
-        folder: Folder; 
-        description?: string; 
-        price?: number; 
-        quantity?: number; 
+    async createAdvancedItem(data: {
+        name: string;
+        folder: Folder;
+        description?: string;
+        price?: number;
+        quantity?: number;
     }) {
         await this.openCreateItemForm();
         await this.itemNameInput.fill(data.name);
         await this.itemFolderSelect.selectOption(await data.folder.getFolderId());
-        
+
         // Show advanced fields if needed
         if (data.description || data.price || data.quantity) {
             await this.toggleAdvancedFieldsButton.click();
             await expect(this.advancedFieldsContainer).toBeVisible();
-            
+
             if (data.description) {
                 await this.itemDescriptionInput.fill(data.description);
             }
@@ -198,7 +198,7 @@ export default class Dashboard extends BasePage {
                 await this.itemQuantityInput.fill(data.quantity.toString());
             }
         }
-        
+
         await this.submitItemButton.click();
     }
 
@@ -219,7 +219,7 @@ export default class Dashboard extends BasePage {
         ]);
     }
 
-    async getFolderByName(name: string) : Promise<Folder> {
+    async getFolderByName(name: string): Promise<Folder> {
         return new Folder(this.page.getByTestId('folder-item').filter({ hasText: name }));
     }
 
@@ -311,8 +311,13 @@ export default class Dashboard extends BasePage {
 
     async submitItemUpdate() {
         await this.updateItemButton.click();
-        await this.page.waitForTimeout(500); // Wait briefly for update to process
-        await expect(this.updateItemButton).toBeEnabled();
+        
+        const safePromises = [
+            expect(this.errorMessage.$).toBeVisible().catch(() => undefined),
+            expect(this.editItemModal).not.toBeVisible().catch(() => undefined),
+        ];
+
+        await Promise.race(safePromises);
     }
 
     async isUpdateButtonEnabled() {
