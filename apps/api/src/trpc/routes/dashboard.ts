@@ -519,7 +519,7 @@ export const dashboardRouter = router({
 
         // Calculate total cost from recipe
         for (const recipeItem of input.recipe) {
-          const item = items.find(i => i.id === recipeItem.itemId);
+          const item = items.find((i: any) => i.id === recipeItem.itemId);
           if (item) {
             totalCost += item.cost * recipeItem.quantity;
           }
@@ -573,7 +573,7 @@ export const dashboardRouter = router({
           },
         });
 
-        recipeData = recipeItems.map(ri => ({
+        recipeData = recipeItems.map((ri: any) => ({
           itemId: ri.item.id,
           itemName: ri.item.name,
           itemCost: ri.item.cost,
@@ -658,7 +658,7 @@ export const dashboardRouter = router({
 
           // Calculate total cost from new recipe
           for (const recipeItem of input.recipe) {
-            const item = items.find(i => i.id === recipeItem.itemId);
+            const item = items.find((i: any) => i.id === recipeItem.itemId);
             if (item) {
               totalCost += item.cost * recipeItem.quantity;
             }
@@ -777,19 +777,22 @@ export const dashboardRouter = router({
         });
       }
 
+      // Track updated items for response
+      let updatedItems: { id: string; name: string; newQuantity: number }[] = [];
+
       // If increasing product quantity (producing), check if we have enough ingredients
       if (input.adjustment > 0 && product.productItems.length > 0) {
-        const requiredItems = product.productItems.map(pi => ({
+        const requiredItems = product.productItems.map((pi: any) => ({
           id: pi.item.id,
           name: pi.item.name,
           required: pi.quantity * input.adjustment,
           available: pi.item.quantity,
         }));
 
-        const insufficientItems = requiredItems.filter(item => item.available < item.required);
+        const insufficientItems = requiredItems.filter((item: any) => item.available < item.required);
         
         if (insufficientItems.length > 0) {
-          const itemNames = insufficientItems.map(item => 
+          const itemNames = insufficientItems.map((item: any) => 
             `${item.name} (need ${item.required}, have ${item.available})`
           ).join(', ');
           
@@ -799,13 +802,20 @@ export const dashboardRouter = router({
           });
         }
 
-        // Deduct ingredients from inventory
+        // Deduct ingredients from inventory and track updated quantities
         for (const pi of product.productItems) {
-          await prisma.item.update({
+          const updatedItem = await prisma.item.update({
             where: { id: pi.item.id },
             data: {
               quantity: { decrement: pi.quantity * input.adjustment },
             },
+            select: { id: true, name: true, quantity: true },
+          });
+          
+          updatedItems.push({
+            id: updatedItem.id,
+            name: updatedItem.name,
+            newQuantity: updatedItem.quantity,
           });
         }
       }
@@ -823,6 +833,7 @@ export const dashboardRouter = router({
         status: SuccessStatus.SUCCESS,
         message: `Product "${product.name}" quantity adjusted by ${input.adjustment}. New quantity: ${newQuantity}`,
         newQuantity: updatedProduct.quantity,
+        updatedItems: updatedItems,
       };
     }),
 });

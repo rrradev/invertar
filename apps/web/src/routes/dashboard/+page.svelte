@@ -229,19 +229,28 @@
 						if (productionResult.status === SuccessStatus.SUCCESS) {
 							successMessage = `Product "${productName}" created and ${productQuantity} units produced (ingredients consumed)!`;
 							
-							// Update the product quantity in the folders array
+							// Update the product quantity and any consumed items in the folders array
 							folders = folders.map((folder) => {
+								let updatedFolder = { ...folder };
+								
+								// Update product quantity
 								if (folder.id === targetFolderId) {
-									return {
-										...folder,
-										products: folder.products.map((product) =>
-											product.id === result.product.id
-												? { ...product, quantity: productionResult.newQuantity }
-												: product
-										)
-									};
+									updatedFolder.products = folder.products.map((product) =>
+										product.id === result.product.id
+											? { ...product, quantity: productionResult.newQuantity }
+											: product
+									);
 								}
-								return folder;
+								
+								// Update consumed item quantities if this folder contains items
+								if (folder.type === 'ITEM' && productionResult.updatedItems && productionResult.updatedItems.length > 0) {
+									updatedFolder.items = folder.items.map((item) => {
+										const updatedItem = productionResult.updatedItems.find(ui => ui.id === item.id);
+										return updatedItem ? { ...item, quantity: updatedItem.newQuantity } : item;
+									});
+								}
+								
+								return updatedFolder;
 							});
 						}
 					} catch (productionErr) {
