@@ -198,17 +198,6 @@
 			if (result.status === SuccessStatus.SUCCESS) {
 				successMessage = result.message;
 				
-				// Add the new product to the corresponding folder first
-				folders = folders.map((folder) => {
-					if (folder.id === targetFolderId) {
-						return {
-							...folder,
-							products: [result.product as Product, ...folder.products]
-						};
-					}
-					return folder;
-				});
-				
 				// If expending items on creation and we have a quantity > 0, produce the products
 				if (newProduct.expendItemsOnCreation && newProduct.quantity > 0 && newProduct.recipe.length > 0) {
 					try {
@@ -220,16 +209,12 @@
 						if (productionResult.status === SuccessStatus.SUCCESS) {
 							successMessage = `Product "${newProduct.name}" created and ${newProduct.quantity} units produced (ingredients consumed)!`;
 							
-							// Update the product quantity in the folders array
+							// Update the product quantity in the folders array first
 							folders = folders.map((folder) => {
 								if (folder.id === targetFolderId) {
 									return {
 										...folder,
-										products: folder.products.map((product) =>
-											product.id === result.product.id
-												? { ...product, quantity: productionResult.newQuantity }
-												: product
-										)
+										products: [{ ...result.product, quantity: productionResult.newQuantity } as Product, ...folder.products]
 									};
 								}
 								return folder;
@@ -238,9 +223,31 @@
 					} catch (productionErr) {
 						// If production fails, still show success for creation but mention the production failure
 						error = `Product created but production failed: ${(productionErr as Error).message}`;
+						// Add the product with the original quantity
+						folders = folders.map((folder) => {
+							if (folder.id === targetFolderId) {
+								return {
+									...folder,
+									products: [result.product as Product, ...folder.products]
+								};
+							}
+							return folder;
+						});
 					}
+				} else {
+					// No expend items, just add the product normally
+					folders = folders.map((folder) => {
+						if (folder.id === targetFolderId) {
+							return {
+								...folder,
+								products: [result.product as Product, ...folder.products]
+							};
+						}
+						return folder;
+					});
 				}
 				
+				// Reset form state and close form
 				newProduct = { name: '', description: '', price: 0, quantity: 0, folderId: '', recipe: [], expendItemsOnCreation: false };
 				showCreateProductForm = false;
 				showAdvancedProductFields = false;
