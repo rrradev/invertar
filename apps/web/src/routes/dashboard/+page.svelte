@@ -25,18 +25,12 @@
 		id: string;
 		name: string;
 		description: string | null;
-		cost: number; // Calculated from recipe
+		cost: number; // Manually entered cost
 		price: number; // Selling price
 		quantity: number;
 		createdAt: string;
 		updatedAt: string;
 		lastModifiedBy: string;
-		recipe: {
-			itemId: string;
-			itemName: string;
-			itemCost: number;
-			quantity: number;
-		}[];
 	}
 
 	interface Folder {
@@ -91,11 +85,10 @@
 	let newProduct = $state({
 		name: '',
 		description: '',
+		cost: 0,
 		price: 0,
 		quantity: 0,
-		folderId: '',
-		recipe: [] as { itemId: string; quantity: number }[],
-		expendItemsOnCreation: false
+		folderId: ''
 	});
 
 	async function createFolder() {
@@ -185,23 +178,19 @@
 			successMessage = '';
 
 			const targetFolderId = newProduct.folderId;
-			const shouldExpendItems = newProduct.expendItemsOnCreation;
-			const productQuantity = newProduct.quantity;
-			const productName = newProduct.name.trim();
-			const hasRecipe = newProduct.recipe.length > 0;
 
 			const result = await trpc.dashboard.createProduct.mutate({
-				name: productName,
+				name: newProduct.name.trim(),
 				description: newProduct.description.trim() || undefined,
+				cost: newProduct.cost || undefined,
 				price: newProduct.price || undefined,
-				quantity: shouldExpendItems ? 0 : (productQuantity || undefined), // Start with 0 if expending items
-				folderId: targetFolderId,
-				recipe: newProduct.recipe
+				quantity: newProduct.quantity || undefined,
+				folderId: newProduct.folderId
 			});
 
 			if (result.status === SuccessStatus.SUCCESS) {
-				// Reset form state first
-				newProduct = { name: '', description: '', price: 0, quantity: 0, folderId: '', recipe: [], expendItemsOnCreation: false };
+				// Reset form state
+				newProduct = { name: '', description: '', cost: 0, price: 0, quantity: 0, folderId: '' };
 				showCreateProductForm = false;
 				showAdvancedProductFields = false;
 				
@@ -217,47 +206,6 @@
 				});
 				
 				successMessage = result.message;
-				
-				// If expending items on creation and we have a quantity > 0, produce the products
-				if (shouldExpendItems && productQuantity > 0 && hasRecipe) {
-					try {
-						const productionResult = await trpc.dashboard.adjustProductQuantity.mutate({
-							productId: result.product.id,
-							adjustment: productQuantity
-						});
-						
-						if (productionResult.status === SuccessStatus.SUCCESS) {
-							successMessage = `Product "${productName}" created and ${productQuantity} units produced (ingredients consumed)!`;
-							
-							// Update the product quantity and any consumed items in the folders array
-							folders = folders.map((folder) => {
-								let updatedFolder = { ...folder };
-								
-								// Update product quantity
-								if (folder.id === targetFolderId) {
-									updatedFolder.products = folder.products.map((product) =>
-										product.id === result.product.id
-											? { ...product, quantity: productionResult.newQuantity }
-											: product
-									);
-								}
-								
-								// Update consumed item quantities if this folder contains items
-								if (folder.type === 'ITEM' && productionResult.updatedItems && productionResult.updatedItems.length > 0) {
-									updatedFolder.items = folder.items.map((item) => {
-										const updatedItem = productionResult.updatedItems.find(ui => ui.id === item.id);
-										return updatedItem ? { ...item, quantity: updatedItem.newQuantity } : item;
-									});
-								}
-								
-								return updatedFolder;
-							});
-						}
-					} catch (productionErr) {
-						// If production fails, still show success for creation but mention the production failure
-						error = `Product created but production failed: ${(productionErr as Error).message}`;
-					}
-				}
 			}
 		} catch (err: unknown) {
 			error = (err as Error).message || 'Failed to create product';
@@ -973,7 +921,7 @@
 				</div>
 
 				{#if showAdvancedProductFields}
-					<div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
+					<div class="grid grid-cols-1 md:grid-cols-4 gap-4 mb-4">
 						<div>
 							<label for="productDescription" class="block text-sm font-medium text-gray-700 mb-2"
 								>Description</label
@@ -983,6 +931,21 @@
 								type="text"
 								bind:value={newProduct.description}
 								placeholder="Enter description (optional)"
+								class="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-purple-500 focus:border-purple-500 transition-colors"
+								disabled={isCreatingProduct}
+							/>
+						</div>
+						<div>
+							<label for="productCost" class="block text-sm font-medium text-gray-700 mb-2"
+								>Cost</label
+							>
+							<input
+								id="productCost"
+								type="number"
+								min="0"
+								step="0.01"
+								bind:value={newProduct.cost}
+								placeholder="0.00"
 								class="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-purple-500 focus:border-purple-500 transition-colors"
 								disabled={isCreatingProduct}
 							/>
@@ -1017,94 +980,6 @@
 							/>
 						</div>
 					</div>
-
-					<!-- Expend Items Option -->
-					{#if newProduct.recipe.length > 0 && newProduct.quantity > 0}
-						<div class="mb-4">
-							<div class="flex items-center">
-								<input
-									id="expendItemsOnCreation"
-									type="checkbox"
-									bind:checked={newProduct.expendItemsOnCreation}
-									class="h-4 w-4 text-purple-600 focus:ring-purple-500 border-gray-300 rounded"
-									disabled={isCreatingProduct}
-								/>
-								<label for="expendItemsOnCreation" class="ml-2 block text-sm text-gray-700">
-									Expend recipe items when creating (consumes {newProduct.quantity} × recipe quantities from inventory)
-								</label>
-							</div>
-							<p class="text-xs text-gray-500 mt-1 ml-6">
-								When enabled, the required ingredients will be immediately consumed from inventory based on the initial quantity.
-							</p>
-						</div>
-					{/if}
-
-					<!-- Recipe Section -->
-					<div class="mb-4">
-						<h4 class="text-md font-medium text-gray-900 mb-3">Recipe (Optional)</h4>
-						<p class="text-sm text-gray-600 mb-3">
-							Define which items are needed to produce this product. When you produce this product, the required items will be consumed from inventory.
-						</p>
-						
-						{#each newProduct.recipe as recipeItem, index}
-							<div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-3 p-3 border border-gray-200 rounded-lg">
-								<div class="md:col-span-2">
-									<label class="block text-sm font-medium text-gray-700 mb-1">Item</label>
-									<select
-										bind:value={recipeItem.itemId}
-										class="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-purple-500 focus:border-purple-500 transition-colors"
-										disabled={isCreatingProduct}
-									>
-										<option value="">Select an item</option>
-										{#each folders.filter(f => f.type === 'ITEM') as folder}
-											<optgroup label={folder.name}>
-												{#each folder.items as item}
-													<option value={item.id}>{item.name} (${formatPrice(item.cost)} each, {item.quantity} in stock)</option>
-												{/each}
-											</optgroup>
-										{/each}
-									</select>
-								</div>
-								<div class="flex items-end gap-2">
-									<div class="flex-1">
-										<label class="block text-sm font-medium text-gray-700 mb-1">Quantity</label>
-										<input
-											type="number"
-											min="1"
-											bind:value={recipeItem.quantity}
-											placeholder="1"
-											class="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-purple-500 focus:border-purple-500 transition-colors"
-											disabled={isCreatingProduct}
-										/>
-									</div>
-									<button
-										type="button"
-										onclick={() => {
-											newProduct.recipe = newProduct.recipe.filter((_, i) => i !== index);
-										}}
-										class="px-3 py-2 text-sm font-medium text-red-600 hover:text-red-800 border border-red-300 rounded-md hover:bg-red-50 transition-colors"
-										disabled={isCreatingProduct}
-									>
-										Remove
-									</button>
-								</div>
-							</div>
-						{/each}
-
-						<button
-							type="button"
-							onclick={() => {
-								newProduct.recipe = [...newProduct.recipe, { itemId: '', quantity: 1 }];
-							}}
-							class="inline-flex items-center px-3 py-2 text-sm font-medium text-purple-600 hover:text-purple-800 border border-purple-300 rounded-md hover:bg-purple-50 transition-colors"
-							disabled={isCreatingProduct}
-						>
-							<svg class="h-4 w-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-								<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
-							</svg>
-							Add Ingredient
-						</button>
-					</div>
 				{/if}
 
 				<div class="flex justify-end space-x-3">
@@ -1112,7 +987,7 @@
 						onclick={() => {
 							showCreateProductForm = false;
 							showAdvancedProductFields = false;
-							newProduct = { name: '', description: '', price: 0, quantity: 0, folderId: '', recipe: [], expendItemsOnCreation: false };
+							newProduct = { name: '', description: '', cost: 0, price: 0, quantity: 0, folderId: '' };
 						}}
 						class="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-purple-500 transition-colors"
 						disabled={isCreatingProduct}
@@ -1466,11 +1341,6 @@
 												<th
 													class="px-6 py-3 text-left text-xs font-medium text-purple-700 uppercase tracking-wider"
 												>
-													Recipe
-												</th>
-												<th
-													class="px-6 py-3 text-left text-xs font-medium text-purple-700 uppercase tracking-wider"
-												>
 													Last Modified
 												</th>
 												<th
@@ -1517,18 +1387,6 @@
 														<div class="text-sm font-semibold text-gray-900">
 															{formatPrice(product.price * product.quantity)}
 														</div>
-													</td>
-													<td class="px-6 py-4 whitespace-nowrap">
-														{#if product.recipe.length > 0}
-															<div class="text-xs text-gray-600">
-																{product.recipe.length} ingredient{product.recipe.length !== 1 ? 's' : ''}
-															</div>
-															<div class="text-xs text-gray-500">
-																{product.recipe.map(r => `${r.quantity}x ${r.itemName}`).join(', ').slice(0, 30)}{product.recipe.map(r => `${r.quantity}x ${r.itemName}`).join(', ').length > 30 ? '...' : ''}
-															</div>
-														{:else}
-															<div class="text-xs text-gray-400">No recipe</div>
-														{/if}
 													</td>
 													<td class="px-6 py-4 whitespace-nowrap">
 														<div class="text-sm text-gray-900">{formatDate(product.updatedAt)}</div>

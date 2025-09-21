@@ -44,17 +44,6 @@ export const dashboardRouter = router({
                   username: true,
                 },
               },
-              productItems: {
-                include: {
-                  item: {
-                    select: {
-                      id: true,
-                      name: true,
-                      cost: true,
-                    },
-                  },
-                },
-              },
             },
             orderBy: {
               createdAt: 'desc',
@@ -98,12 +87,6 @@ export const dashboardRouter = router({
           createdAt: product.createdAt.toISOString(),
           updatedAt: product.updatedAt.toISOString(),
           lastModifiedBy: product.lastModifiedBy.username,
-          recipe: product.productItems.map((pi: any) => ({
-            itemId: pi.item.id,
-            itemName: pi.item.name,
-            itemCost: pi.item.cost,
-            quantity: pi.quantity,
-          })),
         })),
       }));
 
@@ -498,40 +481,12 @@ export const dashboardRouter = router({
         });
       }
 
-      // Validate recipe items if provided
-      let totalCost = 0;
-      if (input.recipe && input.recipe.length > 0) {
-        const itemIds = input.recipe.map(r => r.itemId);
-        const items = await prisma.item.findMany({
-          where: {
-            id: { in: itemIds },
-            folder: { organizationId: ctx.user!.organizationId },
-          },
-          select: { id: true, cost: true },
-        });
-
-        if (items.length !== itemIds.length) {
-          throw new TRPCError({
-            code: "NOT_FOUND",
-            message: "One or more recipe items not found in your organization."
-          });
-        }
-
-        // Calculate total cost from recipe
-        for (const recipeItem of input.recipe) {
-          const item = items.find((i: any) => i.id === recipeItem.itemId);
-          if (item) {
-            totalCost += item.cost * recipeItem.quantity;
-          }
-        }
-      }
-
       // Create product
       const newProduct = await prisma.product.create({
         data: {
           name: input.name,
           description: input.description,
-          cost: totalCost,
+          cost: input.cost ?? 0,
           price: input.price ?? 0,
           quantity: input.quantity ?? 0,
           folderId: input.folderId,
@@ -546,41 +501,6 @@ export const dashboardRouter = router({
         },
       });
 
-      // Create recipe items if provided
-      if (input.recipe && input.recipe.length > 0) {
-        await prisma.productItem.createMany({
-          data: input.recipe.map(r => ({
-            productId: newProduct.id,
-            itemId: r.itemId,
-            quantity: r.quantity,
-          })),
-        });
-      }
-
-      // Get recipe data for response (if any)
-      let recipeData: { itemId: string; itemName: string; itemCost: number; quantity: number }[] = [];
-      if (input.recipe && input.recipe.length > 0) {
-        const recipeItems = await prisma.productItem.findMany({
-          where: { productId: newProduct.id },
-          include: {
-            item: {
-              select: { 
-                id: true, 
-                name: true, 
-                cost: true 
-              },
-            },
-          },
-        });
-
-        recipeData = recipeItems.map((ri: any) => ({
-          itemId: ri.item.id,
-          itemName: ri.item.name,
-          itemCost: ri.item.cost,
-          quantity: ri.quantity,
-        }));
-      }
-
       return {
         status: SuccessStatus.SUCCESS,
         message: `Product "${input.name}" created successfully!`,
@@ -594,7 +514,6 @@ export const dashboardRouter = router({
           createdAt: newProduct.createdAt.toISOString(),
           updatedAt: newProduct.updatedAt.toISOString(),
           lastModifiedBy: newProduct.lastModifiedBy.username,
-          recipe: recipeData,
         },
       };
     }),
@@ -610,7 +529,6 @@ export const dashboardRouter = router({
           folder: {
             select: { organizationId: true },
           },
-          productItems: true,
         },
       });
 
@@ -628,59 +546,12 @@ export const dashboardRouter = router({
         });
       }
 
-      let totalCost = product.cost;
-
-      // Update recipe if provided
-      if (input.recipe !== undefined) {
-        // Delete existing recipe items
-        await prisma.productItem.deleteMany({
-          where: { productId: input.productId },
-        });
-
-        totalCost = 0;
-        if (input.recipe.length > 0) {
-          // Validate new recipe items
-          const itemIds = input.recipe.map(r => r.itemId);
-          const items = await prisma.item.findMany({
-            where: {
-              id: { in: itemIds },
-              folder: { organizationId: ctx.user!.organizationId },
-            },
-            select: { id: true, cost: true },
-          });
-
-          if (items.length !== itemIds.length) {
-            throw new TRPCError({
-              code: "NOT_FOUND",
-              message: "One or more recipe items not found in your organization."
-            });
-          }
-
-          // Calculate total cost from new recipe
-          for (const recipeItem of input.recipe) {
-            const item = items.find((i: any) => i.id === recipeItem.itemId);
-            if (item) {
-              totalCost += item.cost * recipeItem.quantity;
-            }
-          }
-
-          // Create new recipe items
-          await prisma.productItem.createMany({
-            data: input.recipe.map(r => ({
-              productId: input.productId,
-              itemId: r.itemId,
-              quantity: r.quantity,
-            })),
-          });
-        }
-      }
-
       const updatedProduct = await prisma.product.update({
         where: { id: input.productId },
         data: {
           name: input.name,
           description: input.description,
-          cost: totalCost,
+          cost: input.cost ?? 0,
           price: input.price ?? 0,
           lastModifiedById: ctx.user!.id,
         },
@@ -744,13 +615,6 @@ export const dashboardRouter = router({
           folder: {
             select: { organizationId: true },
           },
-          productItems: {
-            include: {
-              item: {
-                select: { id: true, name: true, quantity: true },
-              },
-            },
-          },
         },
       });
 
@@ -777,49 +641,6 @@ export const dashboardRouter = router({
         });
       }
 
-      // Track updated items for response
-      let updatedItems: { id: string; name: string; newQuantity: number }[] = [];
-
-      // If increasing product quantity (producing), check if we have enough ingredients
-      if (input.adjustment > 0 && product.productItems.length > 0) {
-        const requiredItems = product.productItems.map((pi: any) => ({
-          id: pi.item.id,
-          name: pi.item.name,
-          required: pi.quantity * input.adjustment,
-          available: pi.item.quantity,
-        }));
-
-        const insufficientItems = requiredItems.filter((item: any) => item.available < item.required);
-        
-        if (insufficientItems.length > 0) {
-          const itemNames = insufficientItems.map((item: any) => 
-            `${item.name} (need ${item.required}, have ${item.available})`
-          ).join(', ');
-          
-          throw new TRPCError({
-            code: "BAD_REQUEST",
-            message: `Insufficient ingredients to produce ${input.adjustment} units: ${itemNames}`
-          });
-        }
-
-        // Deduct ingredients from inventory and track updated quantities
-        for (const pi of product.productItems) {
-          const updatedItem = await prisma.item.update({
-            where: { id: pi.item.id },
-            data: {
-              quantity: { decrement: pi.quantity * input.adjustment },
-            },
-            select: { id: true, name: true, quantity: true },
-          });
-          
-          updatedItems.push({
-            id: updatedItem.id,
-            name: updatedItem.name,
-            newQuantity: updatedItem.quantity,
-          });
-        }
-      }
-
       // Update product quantity
       const updatedProduct = await prisma.product.update({
         where: { id: input.productId },
@@ -833,7 +654,6 @@ export const dashboardRouter = router({
         status: SuccessStatus.SUCCESS,
         message: `Product "${product.name}" quantity adjusted by ${input.adjustment}. New quantity: ${newQuantity}`,
         newQuantity: updatedProduct.quantity,
-        updatedItems: updatedItems,
       };
     }),
 });

@@ -16,13 +16,10 @@ export const createItemInput = z.object({
 export const createProductInput = z.object({
   name: z.string().trim().min(1, "Product name is required").max(100, "Product name too long"),
   description: z.string().trim().optional(),
+  cost: z.number().min(0, "Cost cannot be negative").optional().default(0),
   price: z.number().min(0, "Price cannot be negative").optional().default(0),
   quantity: z.number().int().min(0, "Quantity cannot be negative").optional().default(0),
   folderId: z.string().min(1, "Folder ID is required"),
-  recipe: z.array(z.object({
-    itemId: z.string().min(1, "Item ID is required"),
-    quantity: z.number().int().min(1, "Recipe item quantity must be at least 1"),
-  })).optional().default([]),
 });
 
 export const updateFolderInput = z.object({
@@ -43,11 +40,8 @@ export const updateProductInput = z.object({
   productId: z.string().min(1, "Product ID is required"),
   name: z.string().trim().min(1, "Product name is required").max(100, "Product name too long"),
   description: z.string().trim().optional(),
+  cost: z.number().min(0, "Cost cannot be negative").optional().default(0),
   price: z.number().min(0, "Price cannot be negative").optional().default(0),
-  recipe: z.array(z.object({
-    itemId: z.string().min(1, "Item ID is required"),
-    quantity: z.number().int().min(1, "Recipe item quantity must be at least 1"),
-  })).optional(),
 });
 
 export const deleteFolderInput = z.object({
