@@ -198,6 +198,17 @@
 			if (result.status === SuccessStatus.SUCCESS) {
 				successMessage = result.message;
 				
+				// Add the new product to the corresponding folder first
+				folders = folders.map((folder) => {
+					if (folder.id === targetFolderId) {
+						return {
+							...folder,
+							products: [result.product as Product, ...folder.products]
+						};
+					}
+					return folder;
+				});
+				
 				// If expending items on creation and we have a quantity > 0, produce the products
 				if (newProduct.expendItemsOnCreation && newProduct.quantity > 0 && newProduct.recipe.length > 0) {
 					try {
@@ -233,17 +244,6 @@
 				newProduct = { name: '', description: '', price: 0, quantity: 0, folderId: '', recipe: [], expendItemsOnCreation: false };
 				showCreateProductForm = false;
 				showAdvancedProductFields = false;
-
-				// Add the new product to the corresponding folder
-				folders = folders.map((folder) => {
-					if (folder.id === targetFolderId) {
-						return {
-							...folder,
-							products: [result.product as Product, ...folder.products]
-						};
-					}
-					return folder;
-				});
 			}
 		} catch (err: unknown) {
 			error = (err as Error).message || 'Failed to create product';
@@ -603,7 +603,7 @@
 								stroke-linecap="round"
 								stroke-linejoin="round"
 								stroke-width="2"
-								d="M12 6v6m0 0v6m0-6h6m-6 0H6"
+								d="M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-6l-2-2H5a2 2 0 00-2 2z"
 							/>
 						</svg>
 						Create Folder
@@ -618,7 +618,7 @@
 								stroke-linecap="round"
 								stroke-linejoin="round"
 								stroke-width="2"
-								d="M12 6v6m0 0v6m0-6h6m-6 0H6"
+								d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"
 							/>
 						</svg>
 						Create Item
@@ -1188,7 +1188,7 @@
 								stroke-linecap="round"
 								stroke-linejoin="round"
 								stroke-width="2"
-								d="M12 6v6m0 0v6m0-6h6m-6 0H6"
+								d="M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-6l-2-2H5a2 2 0 00-2 2z"
 							/>
 						</svg>
 						Create Folder
@@ -1208,36 +1208,24 @@
 							<div class="flex items-center justify-between">
 								<div class="flex items-center">
 									{#if folder.type === 'PRODUCT'}
-										<!-- Product folder with star -->
-										<div class="relative mr-3">
-											<svg
-												class="h-6 w-6 text-purple-500"
-												fill="none"
-												stroke="currentColor"
-												viewBox="0 0 24 24"
-											>
-												<path
-													stroke-linecap="round"
-													stroke-linejoin="round"
-													stroke-width="2"
-													d="M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-6l-2-2H5a2 2 0 00-2 2z"
-												/>
-											</svg>
-											<!-- Star icon overlay -->
-											<svg
-												class="absolute top-0.5 left-1.5 h-3 w-3 text-yellow-400"
-												fill="currentColor"
-												viewBox="0 0 20 20"
-											>
-												<path
-													d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z"
-												/>
-											</svg>
-										</div>
-									{:else}
-										<!-- Item folder (default yellow) -->
+										<!-- Product folder (purple) -->
 										<svg
-											class="h-6 w-6 text-yellow-500 mr-3"
+											class="h-6 w-6 text-purple-500 mr-3"
+											fill="none"
+											stroke="currentColor"
+											viewBox="0 0 24 24"
+										>
+											<path
+												stroke-linecap="round"
+												stroke-linejoin="round"
+												stroke-width="2"
+												d="M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-6l-2-2H5a2 2 0 00-2 2z"
+											/>
+										</svg>
+									{:else}
+										<!-- Item folder (blue) -->
+										<svg
+											class="h-6 w-6 text-blue-500 mr-3"
 											fill="none"
 											stroke="currentColor"
 											viewBox="0 0 24 24"
