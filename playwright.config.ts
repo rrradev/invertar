@@ -45,6 +45,7 @@ export default defineConfig({
     {
       name: 'Mobile Safari',
       use: { ...devices['iPhone 15'] },
+      grepInvert: /@chromium-only/, // skip tests tagged with @chromium-only
     },
   ],
 });

@@ -4,9 +4,89 @@
 		<meta charset="utf-8" />
 		<link rel="icon" href="%sveltekit.assets%/favicon.svg" />
 		<meta name="viewport" content="width=device-width, initial-scale=1" />
+		<style>
+			/* Critical CSS for loading indicator - loaded before body content */
+			@keyframes spin {
+				0% {
+					transform: rotate(0deg);
+				}
+				100% {
+					transform: rotate(360deg);
+				}
+			}
+
+			/* Hidden state for smooth transition */
+			#initial-loading.hidden {
+				opacity: 0;
+				transition: opacity 0.3s ease-out;
+				pointer-events: none;
+			}
+		</style>
 		%sveltekit.head%
 	</head>
 	<body data-sveltekit-preload-data="hover">
+		<!-- Initial loading overlay - shows immediately with inline styles -->
+		<div
+			id="initial-loading"
+			style="
+				position: fixed;
+				top: 0;
+				left: 0;
+				width: 100%;
+				height: 100%;
+				background: rgba(255, 255, 255, 0.95);
+				display: flex;
+				align-items: center;
+				justify-content: center;
+				z-index: 9999;
+				font-family:
+					-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+			"
+		>
+			<div style="display: flex; flex-direction: column; align-items: center; gap: 16px">
+				<div
+					style="
+						width: 40px;
+						height: 40px;
+						border: 3px solid #e5e7eb;
+						border-top: 3px solid #4f46e5;
+						border-radius: 50%;
+						animation: spin 1s linear infinite;
+					"
+				></div>
+				<div style="text-align: center">
+					<div style="color: #374151; font-size: 18px; font-weight: 500; margin: 0 0 4px 0">
+						Loading Invertar...
+					</div>
+					<div style="color: #6b7280; font-size: 14px; margin: 0">
+						Please wait while we initialize the application
+					</div>
+				</div>
+			</div>
+		</div>
+
 		<div>%sveltekit.body%</div>
+
+		<script>
+			// Hide the loading overlay function
+			function hideLoading() {
+				var loadingEl = document.getElementById('initial-loading');
+				if (loadingEl) {
+					loadingEl.classList.add('hidden');
+					// Remove the element after transition completes
+					setTimeout(function () {
+						if (loadingEl && loadingEl.parentNode) {
+							loadingEl.parentNode.removeChild(loadingEl);
+						}
+					}, 300);
+				}
+			}
+
+			// Global function that can be called by SvelteKit when ready
+			window.__hideInitialLoading = hideLoading;
+
+			// Fallback: hide after maximum 20 seconds to prevent infinite loading
+			setTimeout(hideLoading, 20000);
+		</script>
 	</body>
 </html>

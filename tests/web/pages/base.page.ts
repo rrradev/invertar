@@ -57,4 +57,12 @@ export default abstract class BasePage {
         }
     }
 
+    async setDelay(url: string | RegExp | ((url: URL) => boolean), ms: number) {
+        await this.page.route(url, async (route) => {
+            // Delay by the specified ms before continuing
+            await new Promise(r => setTimeout(r, ms));
+            await route.continue();
+        });
+    }
+
 }

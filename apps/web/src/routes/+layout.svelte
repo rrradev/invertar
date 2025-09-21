@@ -1,16 +1,24 @@
 <script lang="ts">
 	import '../app.css';
 	import { navigating } from '$app/stores';
-	import { user } from '$lib/stores/user';
-	import type { LayoutData } from './$types';
+	import { onMount } from 'svelte';
 
 	interface LayoutProps {
-		data: LayoutData;
 		// eslint-disable-next-line @typescript-eslint/no-explicit-any
 		children: any;
 	}
 
-	let { data, children }: LayoutProps = $props();
+	let { children }: LayoutProps = $props();
+
+	onMount(() => {
+		// Hide the initial loading indicator when the Svelte app has mounted
+		// This ensures we only hide it after the actual SvelteKit app is running
+		setTimeout(() => {
+			if (window.__hideInitialLoading) {
+				window.__hideInitialLoading();
+			}
+		}, 100);
+	});
 </script>
 
 <!-- Navigation Loading Overlay -->

@@ -38,9 +38,6 @@ export const trpc = createTRPCProxyClient<AppRouter>({
 									throw new Error('Refresh token expired or invalid');
 								}
 
-								// Token refreshed successfully - reset user store to trigger fresh profile call
-								user.reset();
-
 								isRefreshing = false;
 								refreshQueue.forEach((resolve) => resolve());
 								refreshQueue = [];

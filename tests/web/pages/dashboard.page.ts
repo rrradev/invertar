@@ -138,8 +138,8 @@ export default class Dashboard extends BasePage {
         await this.goto('/dashboard');
     }
 
-    async shouldBeVisible() {
-        await expect(this.dashboardTitle).toBeVisible();
+    async shouldBeVisible(timeout = 5000) {
+        await expect(this.dashboardTitle).toBeVisible({ timeout });
         await expect(this.createFolderButton).toBeVisible();
         await expect(this.createItemButton).toBeVisible();
     }

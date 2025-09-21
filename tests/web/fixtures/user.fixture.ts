@@ -3,6 +3,8 @@ import Login from '../pages/login.page';
 import Dashboard from '../pages/dashboard.page';
 import { faker } from '@faker-js/faker';
 import Folder from '../pages/components/dashboard/folder.component';
+import { getToken } from '../../api/e2e/config/config';
+import { UserRole } from '@repo/types/users';
 
 const org = process.env.ADMIN_ORGANIZATION!;
 const username = process.env.ADMIN_USERNAME!;
@@ -12,6 +14,7 @@ type MyFixtures = {
     dashboard: Dashboard;
     folder: Folder;
     randomItemName: string;
+    accessToken: string;
 };
 
 export const test = base.extend<MyFixtures>({
@@ -41,6 +44,11 @@ export const test = base.extend<MyFixtures>({
     randomItemName: async ({ }, use) => {
         const itemName = faker.commerce.productName() + '-' + Date.now();
         await use(itemName);
+    },
+
+    accessToken: async ({ }, use) => {
+        const token = await getToken(UserRole.USER);
+        await use(token);
     }
 });
 
