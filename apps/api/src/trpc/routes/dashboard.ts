@@ -557,6 +557,30 @@ export const dashboardRouter = router({
         });
       }
 
+      // Get recipe data for response (if any)
+      let recipeData: { itemId: string; itemName: string; itemCost: number; quantity: number }[] = [];
+      if (input.recipe && input.recipe.length > 0) {
+        const recipeItems = await prisma.productItem.findMany({
+          where: { productId: newProduct.id },
+          include: {
+            item: {
+              select: { 
+                id: true, 
+                name: true, 
+                cost: true 
+              },
+            },
+          },
+        });
+
+        recipeData = recipeItems.map(ri => ({
+          itemId: ri.item.id,
+          itemName: ri.item.name,
+          itemCost: ri.item.cost,
+          quantity: ri.quantity,
+        }));
+      }
+
       return {
         status: SuccessStatus.SUCCESS,
         message: `Product "${input.name}" created successfully!`,
@@ -570,6 +594,7 @@ export const dashboardRouter = router({
           createdAt: newProduct.createdAt.toISOString(),
           updatedAt: newProduct.updatedAt.toISOString(),
           lastModifiedBy: newProduct.lastModifiedBy.username,
+          recipe: recipeData,
         },
       };
     }),

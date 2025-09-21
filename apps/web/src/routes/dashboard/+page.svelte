@@ -184,7 +184,7 @@
 			error = '';
 			successMessage = '';
 
-			const targetFolderId = newProduct.folderId; // Store before resetting
+			const targetFolderId = newProduct.folderId;
 			const shouldExpendItems = newProduct.expendItemsOnCreation;
 			const productQuantity = newProduct.quantity;
 			const productName = newProduct.name.trim();
@@ -200,9 +200,7 @@
 			});
 
 			if (result.status === SuccessStatus.SUCCESS) {
-				successMessage = result.message;
-				
-				// Reset form state first (like createItem does)
+				// Reset form state first
 				newProduct = { name: '', description: '', price: 0, quantity: 0, folderId: '', recipe: [], expendItemsOnCreation: false };
 				showCreateProductForm = false;
 				showAdvancedProductFields = false;
@@ -217,6 +215,8 @@
 					}
 					return folder;
 				});
+				
+				successMessage = result.message;
 				
 				// If expending items on creation and we have a quantity > 0, produce the products
 				if (shouldExpendItems && productQuantity > 0 && hasRecipe) {
