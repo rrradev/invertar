@@ -589,6 +589,21 @@
 						</svg>
 						Create Item
 					</button>
+					<button
+						onclick={() => (showCreateProductForm = !showCreateProductForm)}
+						class="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-purple-500 transition-all duration-200"
+						data-testid="create-product-button"
+					>
+						<svg class="h-5 w-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+							<path
+								stroke-linecap="round"
+								stroke-linejoin="round"
+								stroke-width="2"
+								d="M19.428 15.428a2 2 0 00-1.022-.547l-2.387-.477a6 6 0 00-3.86.517l-.318.158a6 6 0 01-3.86.517L6.05 15.21a2 2 0 00-1.806.547M8 4h8l-1 1v5.172a2 2 0 00.586 1.414l5 5c1.26 1.26.367 3.414-1.415 3.414H4.828c-1.782 0-2.674-2.154-1.414-3.414l5-5A2 2 0 009 10.172V5L8 4z"
+							/>
+						</svg>
+						Create Product
+					</button>
 				</div>
 			</div>
 		</div>
@@ -777,15 +792,15 @@
 							/>
 						</div>
 						<div>
-							<label for="itemPrice" class="block text-sm font-medium text-gray-700 mb-2"
-								>Price</label
+							<label for="itemCost" class="block text-sm font-medium text-gray-700 mb-2"
+								>Cost</label
 							>
 							<input
-								id="itemPrice"
+								id="itemCost"
 								type="number"
 								min="0"
 								step="0.01"
-								bind:value={newItem.price}
+								bind:value={newItem.cost}
 								placeholder="0.00"
 								class="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-colors"
 								disabled={isCreatingItem}
@@ -813,7 +828,7 @@
 						onclick={() => {
 							showCreateItemForm = false;
 							showAdvancedItemFields = false;
-							newItem = { name: '', description: '', price: 0, quantity: 0, folderId: '' };
+							newItem = { name: '', description: '', cost: 0, quantity: 0, folderId: '' };
 						}}
 						class="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 transition-colors"
 						disabled={isCreatingItem}
@@ -850,6 +865,221 @@
 							Creating...
 						{:else}
 							Create Item
+						{/if}
+					</button>
+				</div>
+			</div>
+		{/if}
+
+		<!-- Create Product Form -->
+		{#if showCreateProductForm}
+			<div
+				class="mb-8 bg-white rounded-lg shadow-sm border border-gray-200 p-6"
+				data-testid="create-product-form"
+			>
+				<h3 class="text-lg font-medium text-gray-900 mb-4">Create New Product</h3>
+
+				<!-- Essential Fields -->
+				<div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+					<div>
+						<label for="productName" class="block text-sm font-medium text-gray-700 mb-2"
+							>Product Name <span class="text-red-500">*</span></label
+						>
+						<input
+							id="productName"
+							type="text"
+							bind:value={newProduct.name}
+							placeholder="Enter product name"
+							class="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-purple-500 focus:border-purple-500 transition-colors"
+							disabled={isCreatingProduct}
+						/>
+					</div>
+					<div>
+						<label for="productFolder" class="block text-sm font-medium text-gray-700 mb-2"
+							>Product Folder <span class="text-red-500">*</span></label
+						>
+						<select
+							id="productFolder"
+							bind:value={newProduct.folderId}
+							class="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-purple-500 focus:border-purple-500 transition-colors"
+							disabled={isCreatingProduct}
+						>
+							<option value="">Select a product folder</option>
+							{#each folders.filter(f => f.type === 'PRODUCT') as folder}
+								<option value={folder.id}>{folder.name}</option>
+							{/each}
+						</select>
+					</div>
+				</div>
+
+				<!-- Toggle Advanced Fields -->
+				<div class="mb-4">
+					<button
+						type="button"
+						onclick={() => (showAdvancedProductFields = !showAdvancedProductFields)}
+						class="text-sm text-purple-600 hover:text-purple-800 font-medium transition-colors"
+						disabled={isCreatingProduct}
+					>
+						{showAdvancedProductFields ? '− Hide' : '+ Show'} Advanced Fields
+					</button>
+				</div>
+
+				{#if showAdvancedProductFields}
+					<div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
+						<div>
+							<label for="productDescription" class="block text-sm font-medium text-gray-700 mb-2"
+								>Description</label
+							>
+							<input
+								id="productDescription"
+								type="text"
+								bind:value={newProduct.description}
+								placeholder="Enter description (optional)"
+								class="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-purple-500 focus:border-purple-500 transition-colors"
+								disabled={isCreatingProduct}
+							/>
+						</div>
+						<div>
+							<label for="productPrice" class="block text-sm font-medium text-gray-700 mb-2"
+								>Selling Price</label
+							>
+							<input
+								id="productPrice"
+								type="number"
+								min="0"
+								step="0.01"
+								bind:value={newProduct.price}
+								placeholder="0.00"
+								class="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-purple-500 focus:border-purple-500 transition-colors"
+								disabled={isCreatingProduct}
+							/>
+						</div>
+						<div>
+							<label for="productQuantity" class="block text-sm font-medium text-gray-700 mb-2"
+								>Initial Quantity</label
+							>
+							<input
+								id="productQuantity"
+								type="number"
+								min="0"
+								bind:value={newProduct.quantity}
+								placeholder="0"
+								class="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-purple-500 focus:border-purple-500 transition-colors"
+								disabled={isCreatingProduct}
+							/>
+						</div>
+					</div>
+
+					<!-- Recipe Section -->
+					<div class="mb-4">
+						<h4 class="text-md font-medium text-gray-900 mb-3">Recipe (Optional)</h4>
+						<p class="text-sm text-gray-600 mb-3">
+							Define which items are needed to produce this product. When you produce this product, the required items will be consumed from inventory.
+						</p>
+						
+						{#each newProduct.recipe as recipeItem, index}
+							<div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-3 p-3 border border-gray-200 rounded-lg">
+								<div class="md:col-span-2">
+									<label class="block text-sm font-medium text-gray-700 mb-1">Item</label>
+									<select
+										bind:value={recipeItem.itemId}
+										class="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-purple-500 focus:border-purple-500 transition-colors"
+										disabled={isCreatingProduct}
+									>
+										<option value="">Select an item</option>
+										{#each folders.filter(f => f.type === 'ITEM') as folder}
+											<optgroup label={folder.name}>
+												{#each folder.items as item}
+													<option value={item.id}>{item.name} (${formatPrice(item.cost)} each, {item.quantity} in stock)</option>
+												{/each}
+											</optgroup>
+										{/each}
+									</select>
+								</div>
+								<div class="flex items-end gap-2">
+									<div class="flex-1">
+										<label class="block text-sm font-medium text-gray-700 mb-1">Quantity</label>
+										<input
+											type="number"
+											min="1"
+											bind:value={recipeItem.quantity}
+											placeholder="1"
+											class="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-purple-500 focus:border-purple-500 transition-colors"
+											disabled={isCreatingProduct}
+										/>
+									</div>
+									<button
+										type="button"
+										onclick={() => {
+											newProduct.recipe = newProduct.recipe.filter((_, i) => i !== index);
+										}}
+										class="px-3 py-2 text-sm font-medium text-red-600 hover:text-red-800 border border-red-300 rounded-md hover:bg-red-50 transition-colors"
+										disabled={isCreatingProduct}
+									>
+										Remove
+									</button>
+								</div>
+							</div>
+						{/each}
+
+						<button
+							type="button"
+							onclick={() => {
+								newProduct.recipe = [...newProduct.recipe, { itemId: '', quantity: 1 }];
+							}}
+							class="inline-flex items-center px-3 py-2 text-sm font-medium text-purple-600 hover:text-purple-800 border border-purple-300 rounded-md hover:bg-purple-50 transition-colors"
+							disabled={isCreatingProduct}
+						>
+							<svg class="h-4 w-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+								<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
+							</svg>
+							Add Ingredient
+						</button>
+					</div>
+				{/if}
+
+				<div class="flex justify-end space-x-3">
+					<button
+						onclick={() => {
+							showCreateProductForm = false;
+							showAdvancedProductFields = false;
+							newProduct = { name: '', description: '', price: 0, quantity: 0, folderId: '', recipe: [] };
+						}}
+						class="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-purple-500 transition-colors"
+						disabled={isCreatingProduct}
+						data-testid="cancel-product-button"
+					>
+						Cancel
+					</button>
+					<button
+						onclick={createProduct}
+						disabled={isCreatingProduct}
+						class="px-4 py-2 text-sm font-medium text-white bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 rounded-md focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-purple-500 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200"
+						data-testid="submit-product-button"
+					>
+						{#if isCreatingProduct}
+							<svg
+								class="animate-spin -ml-1 mr-2 h-4 w-4 text-white inline"
+								fill="none"
+								viewBox="0 0 24 24"
+							>
+								<circle
+									class="opacity-25"
+									cx="12"
+									cy="12"
+									r="10"
+									stroke="currentColor"
+									stroke-width="4"
+								></circle>
+								<path
+									class="opacity-75"
+									fill="currentColor"
+									d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+								></path>
+							</svg>
+							Creating...
+						{:else}
+							Create Product
 						{/if}
 					</button>
 				</div>
