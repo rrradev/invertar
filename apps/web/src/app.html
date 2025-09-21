@@ -4,6 +4,24 @@
 		<meta charset="utf-8" />
 		<link rel="icon" href="%sveltekit.assets%/favicon.svg" />
 		<meta name="viewport" content="width=device-width, initial-scale=1" />
+		<style>
+			/* Critical CSS for loading indicator - loaded before body content */
+			@keyframes spin {
+				0% {
+					transform: rotate(0deg);
+				}
+				100% {
+					transform: rotate(360deg);
+				}
+			}
+
+			/* Hidden state for smooth transition */
+			#initial-loading.hidden {
+				opacity: 0;
+				transition: opacity 0.3s ease-out;
+				pointer-events: none;
+			}
+		</style>
 		%sveltekit.head%
 	</head>
 	<body data-sveltekit-preload-data="hover">
@@ -48,25 +66,6 @@
 		</div>
 
 		<div>%sveltekit.body%</div>
-
-		<style>
-			/* Keyframe animation for spinner - must be in CSS */
-			@keyframes spin {
-				0% {
-					transform: rotate(0deg);
-				}
-				100% {
-					transform: rotate(360deg);
-				}
-			}
-
-			/* Hidden state for smooth transition */
-			#initial-loading.hidden {
-				opacity: 0;
-				transition: opacity 0.3s ease-out;
-				pointer-events: none;
-			}
-		</style>
 
 		<script>
 			// Hide the loading overlay function
