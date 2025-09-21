@@ -213,12 +213,17 @@
 			return;
 		}
 
+		let updateItemTriggered = false;
+		let updateItemSuccessful = false;
+		let adjustQuantityTriggered = false;
+		let adjustItemQuantitySuccessful = false;
 		try {
 			isUpdatingItem = true;
 			error = '';
 			successMessage = '';
 
 			// First update the item details
+			updateItemTriggered = true;
 			const updateResult = await trpc.dashboard.updateItem.mutate({
 				itemId: editingItem.id,
 				name: editingItem.name.trim(),
@@ -227,6 +232,7 @@
 			});
 
 			if (updateResult.status === SuccessStatus.SUCCESS) {
+				updateItemSuccessful = true;
 				// Update the item in the folders array with new details
 				folders = folders.map((folder) => ({
 					...folder,
@@ -238,12 +244,14 @@
 				// If quantity has changed, update it separately
 				if (quantityInput !== editingItem.quantity) {
 					const quantityAdjustment = quantityInput - editingItem.quantity;
+					adjustQuantityTriggered = true;
 					const quantityResult = await trpc.dashboard.adjustItemQuantity.mutate({
 						itemId: editingItem.id,
 						adjustment: quantityAdjustment
 					});
-
+					
 					if (quantityResult.status === SuccessStatus.SUCCESS) {
+						adjustItemQuantitySuccessful = true;
 						// Update the quantity in the folders array and editingItem
 						folders = folders.map((folder) => ({
 							...folder,
@@ -267,6 +275,12 @@
 			error = (err as Error).message || 'Failed to update item. Please try again.';
 		} finally {
 			isUpdatingItem = false;
+			// Only close modal if update succeeded
+			if (updateItemTriggered && !updateItemSuccessful) return;
+			// If quantity adjustment was triggered, it must succeed to close modal
+			if (adjustQuantityTriggered && !adjustItemQuantitySuccessful) return;
+			// All required actions succeeded — safe to close modal
+			closeEditModal();
 		}
 	}
 
