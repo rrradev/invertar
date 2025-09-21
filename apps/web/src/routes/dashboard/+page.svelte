@@ -249,7 +249,7 @@
 						itemId: editingItem.id,
 						adjustment: quantityAdjustment
 					});
-					
+
 					if (quantityResult.status === SuccessStatus.SUCCESS) {
 						adjustItemQuantitySuccessful = true;
 						// Update the quantity in the folders array and editingItem
