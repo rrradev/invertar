@@ -31,6 +31,7 @@ model User {
   // Back-relations for lastModifiedBy
   modifiedFolders   Folder[]     @relation("FolderLastModifiedBy")
   modifiedItems     Item[]       @relation("ItemLastModifiedBy")
+  modifiedProducts  Product[]    @relation("ProductLastModifiedBy")
 
   createdAt         DateTime     @default(now())
   updatedAt         DateTime     @updatedAt
@@ -45,12 +46,19 @@ enum UserRole {
   SUPER_ADMIN
 }
 
+enum FolderType {
+  ITEM
+  PRODUCT
+}
+
 model Folder {
-  id               String   @id @default(cuid())
+  id               String     @id @default(cuid())
   name             String
+  type             FolderType @default(ITEM)
   organizationId   String
   organization     Organization @relation(fields: [organizationId], references: [id])
   items            Item[]
+  products         Product[]
   photos           Photo[]
 
   lastModifiedById String
@@ -64,14 +72,38 @@ model Item {
   id               String   @id @default(cuid())
   name             String
   description      String?
-  price            Float
+  cost             Float    @default(0) // Renamed from price
   quantity         Int      @default(0)
   folderId         String
   folder           Folder   @relation(fields: [folderId], references: [id])
   photos           Photo[]
+  
+  // Product recipe relationships
+  productItems     ProductItem[]
 
   lastModifiedById String
   lastModifiedBy   User     @relation("ItemLastModifiedBy", fields: [lastModifiedById], references: [id])
+
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+}
+
+model Product {
+  id               String   @id @default(cuid())
+  name             String
+  description      String?
+  cost             Float    @default(0) // Calculated from recipe items
+  price            Float    @default(0) // Selling price
+  quantity         Int      @default(0)
+  folderId         String
+  folder           Folder   @relation(fields: [folderId], references: [id])
+  photos           Photo[]
+  
+  // Product recipe items
+  productItems     ProductItem[]
+
+  lastModifiedById String
+  lastModifiedBy   User     @relation("ProductLastModifiedBy", fields: [lastModifiedById], references: [id])
 
   createdAt        DateTime @default(now())
   updatedAt        DateTime @updatedAt
@@ -81,8 +113,25 @@ model Photo {
   id        String   @id @default(cuid())
   url       String
   itemId    String?  // Photo belongs either to an item
-  folderId  String?  // or to a folder
+  folderId  String?  // or to a folder  
+  productId String?  // or to a product
   item      Item?    @relation(fields: [itemId], references: [id])
   folder    Folder?  @relation(fields: [folderId], references: [id])
+  product   Product? @relation(fields: [productId], references: [id])
   createdAt DateTime @default(now())
+}
+
+model ProductItem {
+  id        String  @id @default(cuid())
+  productId String
+  itemId    String
+  quantity  Int     @default(1) // How many of this item is needed for one product
+  
+  product   Product @relation(fields: [productId], references: [id], onDelete: Cascade)
+  item      Item    @relation(fields: [itemId], references: [id], onDelete: Cascade)
+  
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  
+  @@unique([productId, itemId])
 }
