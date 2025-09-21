@@ -14,48 +14,87 @@
 		id: string;
 		name: string;
 		description: string | null;
-		price: number;
+		cost: number; // Renamed from price
 		quantity: number;
 		createdAt: string;
 		updatedAt: string;
 		lastModifiedBy: string;
 	}
 
+	interface Product {
+		id: string;
+		name: string;
+		description: string | null;
+		cost: number; // Calculated from recipe
+		price: number; // Selling price
+		quantity: number;
+		createdAt: string;
+		updatedAt: string;
+		lastModifiedBy: string;
+		recipe: {
+			itemId: string;
+			itemName: string;
+			itemCost: number;
+			quantity: number;
+		}[];
+	}
+
 	interface Folder {
 		id: string;
 		name: string;
+		type: 'ITEM' | 'PRODUCT';
 		createdAt: string;
 		updatedAt: string;
 		lastModifiedBy: string;
 		items: Item[];
+		products: Product[];
 	}
 
 	let folders = $state((data.folders as Folder[]) || []);
 	let isCreatingFolder = $state(false);
 	let isCreatingItem = $state(false);
+	let isCreatingProduct = $state(false);
 	let showCreateFolderForm = $state(false);
 	let showCreateItemForm = $state(false);
+	let showCreateProductForm = $state(false);
 	let showAdvancedItemFields = $state(false);
+	let showAdvancedProductFields = $state(false);
 	let showEditItemModal = $state(false);
+	let showEditProductModal = $state(false);
 	let showDeleteConfirmation = $state(false);
 	let editingItem: Item | null = $state(null);
+	let editingProduct: Product | null = $state(null);
 	let originalItem: Item | null = $state(null); // Store original values to detect changes
+	let originalProduct: Product | null = $state(null);
 	let isUpdatingItem = $state(false);
+	let isUpdatingProduct = $state(false);
 	let isDeletingItem = $state(false);
+	let isDeletingProduct = $state(false);
 	let quantityInput = $state(0);
+	let productQuantityInput = $state(0);
 	let error = $state('');
 	let successMessage = $state('');
 
 	let newFolder = $state({
-		name: ''
+		name: '',
+		type: 'ITEM' as 'ITEM' | 'PRODUCT'
 	});
 
 	let newItem = $state({
 		name: '',
 		description: '',
-		price: 0,
+		cost: 0, // Renamed from price
 		quantity: 0,
 		folderId: ''
+	});
+
+	let newProduct = $state({
+		name: '',
+		description: '',
+		price: 0,
+		quantity: 0,
+		folderId: '',
+		recipe: [] as { itemId: string; quantity: number }[]
 	});
 
 	async function createFolder() {
@@ -70,12 +109,13 @@
 			successMessage = '';
 
 			const result = await trpc.dashboard.createFolder.mutate({
-				name: newFolder.name.trim()
+				name: newFolder.name.trim(),
+				type: newFolder.type
 			});
 
 			if (result.status === SuccessStatus.SUCCESS) {
 				successMessage = result.message;
-				newFolder = { name: '' };
+				newFolder = { name: '', type: 'ITEM' };
 				showCreateFolderForm = false;
 
 				// Add the new folder to the existing folders array
@@ -104,14 +144,14 @@
 			const result = await trpc.dashboard.createItem.mutate({
 				name: newItem.name.trim(),
 				description: newItem.description.trim() || undefined,
-				price: newItem.price || undefined,
+				cost: newItem.cost || undefined, // Renamed from price
 				quantity: newItem.quantity || undefined,
 				folderId: targetFolderId
 			});
 
 			if (result.status === SuccessStatus.SUCCESS) {
 				successMessage = result.message;
-				newItem = { name: '', description: '', price: 0, quantity: 0, folderId: '' };
+				newItem = { name: '', description: '', cost: 0, quantity: 0, folderId: '' };
 				showCreateItemForm = false;
 
 				// Add the new item to the corresponding folder
@@ -129,6 +169,52 @@
 			error = (err as Error).message || 'Failed to create item';
 		} finally {
 			isCreatingItem = false;
+		}
+	}
+
+	async function createProduct() {
+		if (!newProduct.name.trim() || !newProduct.folderId) {
+			error = 'Product name and folder selection are required';
+			return;
+		}
+
+		try {
+			isCreatingProduct = true;
+			error = '';
+			successMessage = '';
+
+			const targetFolderId = newProduct.folderId; // Store before resetting
+
+			const result = await trpc.dashboard.createProduct.mutate({
+				name: newProduct.name.trim(),
+				description: newProduct.description.trim() || undefined,
+				price: newProduct.price || undefined,
+				quantity: newProduct.quantity || undefined,
+				folderId: targetFolderId,
+				recipe: newProduct.recipe
+			});
+
+			if (result.status === SuccessStatus.SUCCESS) {
+				successMessage = result.message;
+				newProduct = { name: '', description: '', price: 0, quantity: 0, folderId: '', recipe: [] };
+				showCreateProductForm = false;
+				showAdvancedProductFields = false;
+
+				// Add the new product to the corresponding folder
+				folders = folders.map((folder) => {
+					if (folder.id === targetFolderId) {
+						return {
+							...folder,
+							products: [result.product as Product, ...folder.products]
+						};
+					}
+					return folder;
+				});
+			}
+		} catch (err: unknown) {
+			error = (err as Error).message || 'Failed to create product';
+		} finally {
+			isCreatingProduct = false;
 		}
 	}
 
@@ -150,11 +236,19 @@
 	}
 
 	function getTotalValue(items: Item[]) {
-		return items.reduce((sum, item) => sum + item.price * item.quantity, 0);
+		return items.reduce((sum, item) => sum + item.cost * item.quantity, 0); // Use cost instead of price
 	}
 
 	function getTotalItems(items: Item[]) {
 		return items.reduce((sum, item) => sum + item.quantity, 0);
+	}
+
+	function getProductTotalValue(products: Product[]) {
+		return products.reduce((sum, product) => sum + product.price * product.quantity, 0); // Use price for products
+	}
+
+	function getTotalProducts(products: Product[]) {
+		return products.reduce((sum, product) => sum + product.quantity, 0);
 	}
 
 	function openEditModal(item: Item) {
@@ -162,9 +256,13 @@
 		originalItem = { ...item }; // Store a copy of the original item
 		quantityInput = item.quantity;
 		showEditItemModal = true;
-		showDeleteConfirmation = false;
-		error = '';
-		successMessage = '';
+	}
+
+	function openEditProductModal(product: Product) {
+		editingProduct = product;
+		originalProduct = { ...product }; // Store a copy of the original product
+		productQuantityInput = product.quantity;
+		showEditProductModal = true;
 	}
 
 	function closeEditModal() {
@@ -178,11 +276,30 @@
 		error = '';
 	}
 
+	function closeEditProductModal() {
+		showEditProductModal = false;
+		showDeleteConfirmation = false;
+		editingProduct = null;
+		originalProduct = null;
+		productQuantityInput = 0;
+		isUpdatingProduct = false;
+		isDeletingProduct = false;
+		error = '';
+	}
+
 	function adjustQuantityBy(amount: number) {
 		if (!editingItem) return;
 		const newQuantity = quantityInput + amount;
 		if (newQuantity >= 0) {
 			quantityInput = newQuantity;
+		}
+	}
+
+	function adjustProductQuantityBy(amount: number) {
+		if (!editingProduct) return;
+		const newQuantity = productQuantityInput + amount;
+		if (newQuantity >= 0) {
+			productQuantityInput = newQuantity;
 		}
 	}
 
@@ -192,8 +309,19 @@
 		return (
 			editingItem.name !== originalItem.name ||
 			editingItem.description !== originalItem.description ||
-			editingItem.price !== originalItem.price ||
+			editingItem.cost !== originalItem.cost || // Updated to use cost
 			quantityInput !== originalItem.quantity
+		);
+	}
+
+	function hasProductChanges(): boolean {
+		if (!editingProduct || !originalProduct) return false;
+
+		return (
+			editingProduct.name !== originalProduct.name ||
+			editingProduct.description !== originalProduct.description ||
+			editingProduct.price !== originalProduct.price ||
+			productQuantityInput !== originalProduct.quantity
 		);
 	}
 
@@ -228,7 +356,7 @@
 				itemId: editingItem.id,
 				name: editingItem.name.trim(),
 				description: editingItem.description?.trim() || undefined,
-				price: editingItem.price || 0
+				cost: editingItem.cost || 0 // Renamed from price
 			});
 
 			if (updateResult.status === SuccessStatus.SUCCESS) {
@@ -315,6 +443,107 @@
 			isDeletingItem = false;
 		}
 	}
+
+	async function updateProduct() {
+		if (!editingProduct) return;
+
+		if (!editingProduct.name.trim()) {
+			error = 'Product name is required';
+			return;
+		}
+
+		let updateProductTriggered = false;
+		let updateProductSuccessful = false;
+		let adjustQuantityTriggered = false;
+		let adjustProductQuantitySuccessful = false;
+		try {
+			isUpdatingProduct = true;
+			error = '';
+			successMessage = '';
+
+			// First update the product details
+			updateProductTriggered = true;
+			const updateResult = await trpc.dashboard.updateProduct.mutate({
+				productId: editingProduct.id,
+				name: editingProduct.name.trim(),
+				description: editingProduct.description?.trim() || undefined,
+				price: editingProduct.price || 0
+			});
+
+			if (updateResult.status === SuccessStatus.SUCCESS) {
+				updateProductSuccessful = true;
+				// Update the product in the folders array with new details
+				folders = folders.map((folder) => ({
+					...folder,
+					products: folder.products.map((product) =>
+						product.id === editingProduct.id ? { ...product, ...editingProduct } : product
+					)
+				}));
+
+				// If quantity has changed, update it separately
+				if (productQuantityInput !== editingProduct.quantity) {
+					const quantityAdjustment = productQuantityInput - editingProduct.quantity;
+					adjustQuantityTriggered = true;
+					const quantityResult = await trpc.dashboard.adjustProductQuantity.mutate({
+						productId: editingProduct.id,
+						adjustment: quantityAdjustment
+					});
+
+					if (quantityResult.status === SuccessStatus.SUCCESS) {
+						adjustProductQuantitySuccessful = true;
+						// Update the product quantity in the folders array
+						folders = folders.map((folder) => ({
+							...folder,
+							products: folder.products.map((product) =>
+								product.id === editingProduct.id
+									? { ...product, quantity: quantityResult.newQuantity }
+									: product
+							)
+						}));
+					}
+				}
+
+				closeEditProductModal();
+			}
+		} catch (err: unknown) {
+			console.error('Error updating product:', err);
+			error = (err as Error).message || 'Failed to update product. Please try again.';
+		} finally {
+			isUpdatingProduct = false;
+		}
+	}
+
+	async function deleteProduct() {
+		if (!editingProduct) return;
+
+		try {
+			isDeletingProduct = true;
+			showDeleteConfirmation = false; // Close confirmation dialog
+			error = '';
+			successMessage = '';
+
+			const result = await trpc.dashboard.deleteProduct.mutate({
+				productId: editingProduct.id
+			});
+
+			if (result.status === SuccessStatus.SUCCESS) {
+				successMessage = result.message;
+
+				// Remove the product from the folders array
+				folders = folders.map((folder) => ({
+					...folder,
+					products: folder.products.filter((product) => product.id !== editingProduct.id)
+				}));
+
+				closeEditProductModal();
+			}
+		} catch (err: unknown) {
+			console.error('Error deleting product:', err);
+			error = (err as Error).message || 'Failed to delete product. Please try again.';
+		} finally {
+			isDeletingProduct = false;
+		}
+	}
 </script>
 
 <div class="min-h-screen bg-gray-50">
@@ -390,10 +619,10 @@
 				data-testid="create-folder-form"
 			>
 				<h3 class="text-lg font-medium text-gray-900 mb-4">Create New Folder</h3>
-				<div class="flex items-end space-x-4">
-					<div class="flex-1">
+				<div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+					<div>
 						<label for="folderName" class="block text-sm font-medium text-gray-700 mb-2"
-							>Folder Name</label
+							>Folder Name <span class="text-red-500">*</span></label
 						>
 						<input
 							id="folderName"
@@ -404,47 +633,61 @@
 							disabled={isCreatingFolder}
 						/>
 					</div>
-					<div class="flex space-x-3">
-						<button
-							onclick={() => (showCreateFolderForm = false)}
-							class="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 transition-colors"
-							disabled={isCreatingFolder}
-							data-testid="cancel-folder-button"
+					<div>
+						<label for="folderType" class="block text-sm font-medium text-gray-700 mb-2"
+							>Folder Type <span class="text-red-500">*</span></label
 						>
-							Cancel
-						</button>
-						<button
-							onclick={createFolder}
+						<select
+							id="folderType"
+							bind:value={newFolder.type}
+							class="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-green-500 focus:border-green-500 transition-colors"
 							disabled={isCreatingFolder}
-							class="px-4 py-2 text-sm font-medium text-white bg-gradient-to-r from-green-600 to-green-700 hover:from-green-700 hover:to-green-800 rounded-md focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200"
-							data-testid="submit-folder-button"
 						>
-							{#if isCreatingFolder}
-								<svg
-									class="animate-spin -ml-1 mr-2 h-4 w-4 text-white inline"
-									fill="none"
-									viewBox="0 0 24 24"
-								>
-									<circle
-										class="opacity-25"
-										cx="12"
-										cy="12"
-										r="10"
-										stroke="currentColor"
-										stroke-width="4"
-									></circle>
-									<path
-										class="opacity-75"
-										fill="currentColor"
-										d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
-									></path>
-								</svg>
-								Creating...
-							{:else}
-								Create Folder
-							{/if}
-						</button>
+							<option value="ITEM">Item Folder (for inventory items)</option>
+							<option value="PRODUCT">Product Folder (for finished products)</option>
+						</select>
 					</div>
+				</div>
+				<div class="flex justify-end space-x-3">
+					<button
+						onclick={() => (showCreateFolderForm = false)}
+						class="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 transition-colors"
+						disabled={isCreatingFolder}
+						data-testid="cancel-folder-button"
+					>
+						Cancel
+					</button>
+					<button
+						onclick={createFolder}
+						disabled={isCreatingFolder}
+						class="px-4 py-2 text-sm font-medium text-white bg-gradient-to-r from-green-600 to-green-700 hover:from-green-700 hover:to-green-800 rounded-md focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200"
+						data-testid="submit-folder-button"
+					>
+						{#if isCreatingFolder}
+							<svg
+								class="animate-spin -ml-1 mr-2 h-4 w-4 text-white inline"
+								fill="none"
+								viewBox="0 0 24 24"
+							>
+								<circle
+									class="opacity-25"
+									cx="12"
+									cy="12"
+									r="10"
+									stroke="currentColor"
+									stroke-width="4"
+								></circle>
+								<path
+									class="opacity-75"
+									fill="currentColor"
+									d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+								></path>
+							</svg>
+							Creating...
+						{:else}
+							Create Folder
+						{/if}
+					</button>
 				</div>
 			</div>
 		{/if}
