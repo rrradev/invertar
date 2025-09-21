@@ -103,8 +103,8 @@
 			// Global function that can be called by SvelteKit when ready
 			window.__hideInitialLoading = hideLoading;
 
-			// Fallback: hide after maximum 12 seconds to prevent infinite loading
-			setTimeout(hideLoading, 12000);
+			// Fallback: hide after maximum 20 seconds to prevent infinite loading
+			setTimeout(hideLoading, 20000);
 		</script>
 	</body>
 </html>
