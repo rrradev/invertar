@@ -1175,144 +1175,307 @@
 									</div>
 								</div>
 								<div class="text-right">
-									<div class="text-sm text-gray-500" data-testid="folder-stats">
-										{folder.items.length} items • {getTotalItems(folder.items)} total quantity
-									</div>
-									<div class="text-lg font-semibold text-gray-900" data-testid="folder-total-value">
-										{formatPrice(getTotalValue(folder.items))}
-									</div>
+									{#if folder.type === 'ITEM'}
+										<div class="text-sm text-gray-500" data-testid="folder-stats">
+											{folder.items.length} items • {getTotalItems(folder.items)} total quantity
+										</div>
+										<div class="text-lg font-semibold text-gray-900" data-testid="folder-total-value">
+											{formatPrice(getTotalValue(folder.items))} total cost
+										</div>
+									{:else if folder.type === 'PRODUCT'}
+										<div class="text-sm text-gray-500" data-testid="folder-stats">
+											{folder.products.length} products • {getTotalProducts(folder.products)} total quantity
+										</div>
+										<div class="text-lg font-semibold text-gray-900" data-testid="folder-total-value">
+											{formatPrice(getProductTotalValue(folder.products))} total value
+										</div>
+									{/if}
 								</div>
 							</div>
 						</div>
 
-						<!-- Items List -->
-						{#if folder.items.length === 0}
-							<div class="px-6 py-8 text-center" data-testid="empty-folder-state">
-								<svg
-									class="mx-auto h-8 w-8 text-gray-400"
-									fill="none"
-									stroke="currentColor"
-									viewBox="0 0 24 24"
-								>
-									<path
-										stroke-linecap="round"
-										stroke-linejoin="round"
-										stroke-width="2"
-										d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"
-									/>
-								</svg>
-								<p class="mt-2 text-sm text-gray-500">No items in this folder yet</p>
-							</div>
-						{:else}
-							<div class="overflow-x-auto">
-								<table class="min-w-full divide-y divide-gray-200" data-testid="items-table">
-									<thead class="bg-gray-50">
-										<tr>
-											<th
-												class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
-											>
-												Item
-											</th>
-											<th
-												class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
-											>
-												Description
-											</th>
-											<th
-												class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
-											>
-												Price
-											</th>
-											<th
-												class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
-											>
-												Quantity
-											</th>
-											<th
-												class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
-											>
-												Total Value
-											</th>
-											<th
-												class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
-											>
-												Last Modified
-											</th>
-											<th
-												class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
-											>
-												Actions
-											</th>
-										</tr>
-									</thead>
-									<tbody class="bg-white divide-y divide-gray-200">
-										{#each folder.items as item (item.id)}
-											<tr
-												class="hover:bg-gray-50 transition-colors"
-												data-testid="item-row"
-												data-item-id={item.id}
-											>
-												<td class="px-6 py-4 whitespace-nowrap">
-													<div class="flex items-center">
-														<div
-															class="h-8 w-8 bg-gradient-to-r from-indigo-600 to-cyan-600 rounded-lg flex items-center justify-center mr-3"
-														>
-															<span class="text-xs font-medium text-white">
-																{item.name.charAt(0).toUpperCase()}
-															</span>
-														</div>
-														<div class="text-sm font-medium text-gray-900">{item.name}</div>
-													</div>
-												</td>
-												<td class="px-6 py-4 whitespace-nowrap">
-													<div class="text-sm text-gray-900">
-														{item.description || '—'}
-													</div>
-												</td>
-												<td class="px-6 py-4 whitespace-nowrap">
-													<div class="text-sm text-gray-900">{formatPrice(item.price)}</div>
-												</td>
-												<td class="px-6 py-4 whitespace-nowrap">
-													<div class="text-sm text-gray-900">{item.quantity}</div>
-												</td>
-												<td class="px-6 py-4 whitespace-nowrap">
-													<div class="text-sm font-semibold text-gray-900">
-														{formatPrice(item.price * item.quantity)}
-													</div>
-												</td>
-												<td class="px-6 py-4 whitespace-nowrap">
-													<div class="text-sm text-gray-900">{formatDate(item.updatedAt)}</div>
-													<div class="text-xs text-gray-500">by {item.lastModifiedBy}</div>
-												</td>
-												<td class="px-6 py-4 whitespace-nowrap">
-													<button
-														onclick={() => openEditModal(item)}
-														class="inline-flex items-center justify-center w-8 h-8 text-gray-400 hover:text-indigo-600 rounded-full hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-indigo-500 transition-colors"
-														aria-label="Edit item"
-														data-testid="edit-item-button"
-														data-item-id={item.id}
-													>
-														<!-- Pencil Icon -->
-														<svg
-															class="w-4 h-4"
-															fill="none"
-															stroke="currentColor"
-															viewBox="0 0 24 24"
-														>
-															<path
-																stroke-linecap="round"
-																stroke-linejoin="round"
-																stroke-width="2"
-																d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"
-															/>
-														</svg>
-													</button>
-												</td>
+						<!-- Content List (Items or Products) -->
+						{#if folder.type === 'ITEM'}
+							{#if folder.items.length === 0}
+								<div class="px-6 py-8 text-center" data-testid="empty-folder-state">
+									<svg
+										class="mx-auto h-8 w-8 text-gray-400"
+										fill="none"
+										stroke="currentColor"
+										viewBox="0 0 24 24"
+									>
+										<path
+											stroke-linecap="round"
+											stroke-linejoin="round"
+											stroke-width="2"
+											d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"
+										/>
+									</svg>
+									<p class="mt-2 text-sm text-gray-500">No items in this folder yet</p>
+								</div>
+							{:else}
+								<div class="overflow-x-auto">
+									<table class="min-w-full divide-y divide-gray-200" data-testid="items-table">
+										<thead class="bg-gray-50">
+											<tr>
+												<th
+													class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
+												>
+													Item
+												</th>
+												<th
+													class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
+												>
+													Description
+												</th>
+												<th
+													class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
+												>
+													Cost
+												</th>
+												<th
+													class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
+												>
+													Quantity
+												</th>
+												<th
+													class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
+												>
+													Total Value
+												</th>
+												<th
+													class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
+												>
+													Last Modified
+												</th>
+												<th
+													class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
+												>
+													Actions
+												</th>
 											</tr>
-										{/each}
-									</tbody>
-								</table>
-							</div>
+										</thead>
+										<tbody class="bg-white divide-y divide-gray-200">
+											{#each folder.items as item (item.id)}
+												<tr
+													class="hover:bg-gray-50 transition-colors"
+													data-testid="item-row"
+													data-item-id={item.id}
+												>
+													<td class="px-6 py-4 whitespace-nowrap">
+														<div class="flex items-center">
+															<div
+																class="h-8 w-8 bg-gradient-to-r from-indigo-600 to-cyan-600 rounded-lg flex items-center justify-center mr-3"
+															>
+																<span class="text-xs font-medium text-white">
+																	{item.name.charAt(0).toUpperCase()}
+																</span>
+															</div>
+															<div class="text-sm font-medium text-gray-900">{item.name}</div>
+														</div>
+													</td>
+													<td class="px-6 py-4 whitespace-nowrap">
+														<div class="text-sm text-gray-900">
+															{item.description || '—'}
+														</div>
+													</td>
+													<td class="px-6 py-4 whitespace-nowrap">
+														<div class="text-sm text-gray-900">{formatPrice(item.cost)}</div>
+													</td>
+													<td class="px-6 py-4 whitespace-nowrap">
+														<div class="text-sm text-gray-900">{item.quantity}</div>
+													</td>
+													<td class="px-6 py-4 whitespace-nowrap">
+														<div class="text-sm font-semibold text-gray-900">
+															{formatPrice(item.cost * item.quantity)}
+														</div>
+													</td>
+													<td class="px-6 py-4 whitespace-nowrap">
+														<div class="text-sm text-gray-900">{formatDate(item.updatedAt)}</div>
+														<div class="text-xs text-gray-500">by {item.lastModifiedBy}</div>
+													</td>
+													<td class="px-6 py-4 whitespace-nowrap">
+														<button
+															onclick={() => openEditModal(item)}
+															class="inline-flex items-center justify-center w-8 h-8 text-gray-400 hover:text-indigo-600 rounded-full hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-indigo-500 transition-colors"
+															aria-label="Edit item"
+															data-testid="edit-item-button"
+															data-item-id={item.id}
+														>
+															<svg
+																class="w-4 h-4"
+																fill="none"
+																stroke="currentColor"
+																viewBox="0 0 24 24"
+															>
+																<path
+																	stroke-linecap="round"
+																	stroke-linejoin="round"
+																	stroke-width="2"
+																	d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"
+																/>
+															</svg>
+														</button>
+													</td>
+												</tr>
+											{/each}
+										</tbody>
+									</table>
+								</div>
+							{/if}
+						{:else if folder.type === 'PRODUCT'}
+							{#if folder.products.length === 0}
+								<div class="px-6 py-8 text-center" data-testid="empty-folder-state">
+									<svg
+										class="mx-auto h-8 w-8 text-gray-400"
+										fill="none"
+										stroke="currentColor"
+										viewBox="0 0 24 24"
+									>
+										<path
+											stroke-linecap="round"
+											stroke-linejoin="round"
+											stroke-width="2"
+											d="M19.428 15.428a2 2 0 00-1.022-.547l-2.387-.477a6 6 0 00-3.86.517l-.318.158a6 6 0 01-3.86.517L6.05 15.21a2 2 0 00-1.806.547M8 4h8l-1 1v5.172a2 2 0 00.586 1.414l5 5c1.26 1.26.367 3.414-1.415 3.414H4.828c-1.782 0-2.674-2.154-1.414-3.414l5-5A2 2 0 009 10.172V5L8 4z"
+										/>
+									</svg>
+									<p class="mt-2 text-sm text-gray-500">No products in this folder yet</p>
+								</div>
+							{:else}
+								<div class="overflow-x-auto">
+									<table class="min-w-full divide-y divide-gray-200" data-testid="products-table">
+										<thead class="bg-purple-50">
+											<tr>
+												<th
+													class="px-6 py-3 text-left text-xs font-medium text-purple-700 uppercase tracking-wider"
+												>
+													Product
+												</th>
+												<th
+													class="px-6 py-3 text-left text-xs font-medium text-purple-700 uppercase tracking-wider"
+												>
+													Description
+												</th>
+												<th
+													class="px-6 py-3 text-left text-xs font-medium text-purple-700 uppercase tracking-wider"
+												>
+													Cost
+												</th>
+												<th
+													class="px-6 py-3 text-left text-xs font-medium text-purple-700 uppercase tracking-wider"
+												>
+													Price
+												</th>
+												<th
+													class="px-6 py-3 text-left text-xs font-medium text-purple-700 uppercase tracking-wider"
+												>
+													Quantity
+												</th>
+												<th
+													class="px-6 py-3 text-left text-xs font-medium text-purple-700 uppercase tracking-wider"
+												>
+													Total Value
+												</th>
+												<th
+													class="px-6 py-3 text-left text-xs font-medium text-purple-700 uppercase tracking-wider"
+												>
+													Recipe
+												</th>
+												<th
+													class="px-6 py-3 text-left text-xs font-medium text-purple-700 uppercase tracking-wider"
+												>
+													Last Modified
+												</th>
+												<th
+													class="px-6 py-3 text-left text-xs font-medium text-purple-700 uppercase tracking-wider"
+												>
+													Actions
+												</th>
+											</tr>
+										</thead>
+										<tbody class="bg-white divide-y divide-gray-200">
+											{#each folder.products as product (product.id)}
+												<tr
+													class="hover:bg-purple-25 transition-colors"
+													data-testid="product-row"
+													data-product-id={product.id}
+												>
+													<td class="px-6 py-4 whitespace-nowrap">
+														<div class="flex items-center">
+															<div
+																class="h-8 w-8 bg-gradient-to-r from-purple-600 to-pink-600 rounded-lg flex items-center justify-center mr-3"
+															>
+																<span class="text-xs font-medium text-white">
+																	{product.name.charAt(0).toUpperCase()}
+																</span>
+															</div>
+															<div class="text-sm font-medium text-gray-900">{product.name}</div>
+														</div>
+													</td>
+													<td class="px-6 py-4 whitespace-nowrap">
+														<div class="text-sm text-gray-900">
+															{product.description || '—'}
+														</div>
+													</td>
+													<td class="px-6 py-4 whitespace-nowrap">
+														<div class="text-sm text-gray-900">{formatPrice(product.cost)}</div>
+													</td>
+													<td class="px-6 py-4 whitespace-nowrap">
+														<div class="text-sm font-medium text-gray-900">{formatPrice(product.price)}</div>
+													</td>
+													<td class="px-6 py-4 whitespace-nowrap">
+														<div class="text-sm text-gray-900">{product.quantity}</div>
+													</td>
+													<td class="px-6 py-4 whitespace-nowrap">
+														<div class="text-sm font-semibold text-gray-900">
+															{formatPrice(product.price * product.quantity)}
+														</div>
+													</td>
+													<td class="px-6 py-4 whitespace-nowrap">
+														{#if product.recipe.length > 0}
+															<div class="text-xs text-gray-600">
+																{product.recipe.length} ingredient{product.recipe.length !== 1 ? 's' : ''}
+															</div>
+															<div class="text-xs text-gray-500">
+																{product.recipe.map(r => `${r.quantity}x ${r.itemName}`).join(', ').slice(0, 30)}{product.recipe.map(r => `${r.quantity}x ${r.itemName}`).join(', ').length > 30 ? '...' : ''}
+															</div>
+														{:else}
+															<div class="text-xs text-gray-400">No recipe</div>
+														{/if}
+													</td>
+													<td class="px-6 py-4 whitespace-nowrap">
+														<div class="text-sm text-gray-900">{formatDate(product.updatedAt)}</div>
+														<div class="text-xs text-gray-500">by {product.lastModifiedBy}</div>
+													</td>
+													<td class="px-6 py-4 whitespace-nowrap">
+														<button
+															onclick={() => openEditProductModal(product)}
+															class="inline-flex items-center justify-center w-8 h-8 text-gray-400 hover:text-purple-600 rounded-full hover:bg-purple-100 focus:outline-none focus:ring-2 focus:ring-purple-500 transition-colors"
+															aria-label="Edit product"
+															data-testid="edit-product-button"
+															data-product-id={product.id}
+														>
+															<svg
+																class="w-4 h-4"
+																fill="none"
+																stroke="currentColor"
+																viewBox="0 0 24 24"
+															>
+																<path
+																	stroke-linecap="round"
+																	stroke-linejoin="round"
+																	stroke-width="2"
+																	d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"
+																/>
+															</svg>
+														</button>
+													</td>
+												</tr>
+											{/each}
+										</tbody>
+									</table>
+								</div>
+							{/if}
 						{/if}
 					</div>
 				{/each}
