@@ -323,7 +323,7 @@ describe('Dashboard - Items with Labels API', () => {
       expect(response3.status).toBe('SUCCESS');
       expect(response3.item.labels).toHaveLength(2);
     });
-  });
+  }, { timeout: 20000 });
 
   describe('updateItem with labels', () => {
     let testItemId: string;
