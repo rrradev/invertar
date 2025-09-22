@@ -232,8 +232,14 @@
 		return items.reduce((sum, item) => sum + item.price * item.quantity, 0);
 	}
 
-	function getTotalItems(items: Item[]) {
-		return items.reduce((sum, item) => sum + item.quantity, 0);
+	function getTotalItemsByUnit(items: Item[]): Record<string, string> {
+		if (!items || items.length === 0) return {};
+
+		return items.reduce<Record<string, string>>((totals, item) => {
+			const prev = totals[item.unit] ? parseFloat(totals[item.unit]) : 0;
+			totals[item.unit] = (prev + item.quantity).toFixed(2); // rounds to 2 decimals
+			return totals;
+		}, {});
 	}
 
 	function openEditModal(item: Item) {
@@ -271,7 +277,8 @@
 
 		return (
 			editingItem.name !== originalItem.name ||
-			(editingItem.description !== originalItem.description || originalItem.description === null) ||
+			editingItem.description !== originalItem.description ||
+			originalItem.description === null ||
 			editingItem.price !== originalItem.price ||
 			editingItem.cost !== originalItem.cost ||
 			editingItem.unit !== originalItem.unit ||
@@ -754,8 +761,7 @@
 							/>
 						</div>
 						<div>
-							<label for="itemCost" class="block text-sm font-medium text-gray-700 mb-2"
-								>Cost (optional)</label
+							<label for="itemCost" class="block text-sm font-medium text-gray-700 mb-2">Cost</label
 							>
 							<input
 								id="itemCost"
@@ -962,7 +968,11 @@
 								</div>
 								<div class="text-right">
 									<div class="text-sm text-gray-500" data-testid="folder-stats">
-										{folder.items.length} items • {getTotalItems(folder.items)} total quantity
+										{folder.items.length} items •
+										{Object.entries(getTotalItemsByUnit(folder.items))
+											.map(([unit, total]) => (total ? `${total} ${unit}` : ''))
+											.filter(Boolean)
+											.join(' • ')}
 									</div>
 									<div class="text-lg font-semibold text-gray-900" data-testid="folder-total-value">
 										{formatPrice(getTotalValue(folder.items))}
@@ -1225,7 +1235,7 @@
 					<div class="grid grid-cols-1 md:grid-cols-3 gap-4">
 						<div>
 							<label for="editItemCost" class="block text-sm font-medium text-gray-700 mb-2">
-								Cost (optional)
+								Cost
 							</label>
 							<input
 								id="editItemCost"
@@ -1294,7 +1304,9 @@
 										class="font-bold {quantityChange > 0 ? 'text-green-600' : 'text-red-600'}"
 										data-testid="quantity-change"
 									>
-										{quantityChange > 0 ? ` + ${Math.round(quantityChange * 100) / 100}` : ` - ${Math.abs(Math.round(quantityChange * 100) / 100)}`}
+										{quantityChange > 0
+											? ` + ${Math.round(quantityChange * 100) / 100}`
+											: ` - ${Math.abs(Math.round(quantityChange * 100) / 100)}`}
 									</span>
 									<span class="text-gray-600"> → </span>
 									<span

@@ -12,7 +12,7 @@ import {
   adjustItemQuantityInput
 } from '@repo/types/schemas/dashboard';
 import { SuccessStatus } from '@repo/types/trpc';
-import { generateItemHashId } from '@repo/utils';
+import { generateItemHashId } from '@repo/utils/items';
 
 export const dashboardRouter = router({
   // Get all folders and their items for the user's organization
