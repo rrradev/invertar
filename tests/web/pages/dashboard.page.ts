@@ -37,9 +37,6 @@ export default class Dashboard extends BasePage {
     cancelItemButton: Locator;
     submitLabelButton: Locator;
     cancelLabelButton: Locator;
-    cancelFolderButton: Locator;
-    submitItemButton: Locator;
-    cancelItemButton: Locator;
     toggleAdvancedFieldsButton: Locator;
 
     // Advanced fields
