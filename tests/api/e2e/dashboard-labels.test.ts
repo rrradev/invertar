@@ -6,11 +6,11 @@ import { UserRole } from '@repo/types/users/roles';
 
 describe('Dashboard - Labels API', () => {
   let userToken: string;
-  let adminToken: string;
+  let superAdmin: string;
 
   beforeEach(async () => {
     userToken = await getToken(UserRole.USER);
-    adminToken = await getToken(UserRole.ADMIN);
+    superAdmin = await getToken(UserRole.SUPER_ADMIN);
   });
 
   describe('createLabel endpoint', () => {
@@ -49,8 +49,8 @@ describe('Dashboard - Labels API', () => {
         userToken
       );
 
-      expect(response.error.data.code).toBe('BAD_REQUEST');
-      expect(response.error.message).toContain('Invalid color format');
+      expect(response.data.code).toBe('BAD_REQUEST');
+      expect(response.message).toContain('Invalid color format');
     });
 
     it('should prevent duplicate label names within organization', async () => {
@@ -72,8 +72,8 @@ describe('Dashboard - Labels API', () => {
         userToken
       );
 
-      expect(response.error.data.code).toBe('CONFLICT');
-      expect(response.error.message).toContain('Label with this name already exists');
+      expect(response.data.code).toBe('CONFLICT');
+      expect(response.message).toContain('Label with this name already exists');
     });
 
     it('should allow same label name in different organizations', async () => {
@@ -92,7 +92,7 @@ describe('Dashboard - Labels API', () => {
         'POST',
         'dashboard.createLabel',
         { name: labelName, color: '#33FF57' },
-        adminToken
+        superAdmin
       );
 
       expect(response1.status).toBe('SUCCESS');
@@ -114,7 +114,7 @@ describe('Dashboard - Labels API', () => {
         '' // empty token
       );
 
-      expect(response.error.data.code).toBe('UNAUTHORIZED');
+      expect(response.data.code).toBe('UNAUTHORIZED');
     });
 
     it('should validate label name length', async () => {
@@ -125,8 +125,8 @@ describe('Dashboard - Labels API', () => {
         userToken
       );
 
-      expect(response.error.data.code).toBe('BAD_REQUEST');
-      expect(response.error.message).toContain('Label name is required');
+      expect(response.data.code).toBe('BAD_REQUEST');
+      expect(response.message).toContain('Label name is required');
     });
 
     it('should validate maximum label name length', async () => {
@@ -139,8 +139,8 @@ describe('Dashboard - Labels API', () => {
         userToken
       );
 
-      expect(response.error.data.code).toBe('BAD_REQUEST');
-      expect(response.error.message).toContain('Label name too long');
+      expect(response.data.code).toBe('BAD_REQUEST');
+      expect(response.message).toContain('Label name too long');
     });
   });
 
@@ -208,7 +208,7 @@ describe('Dashboard - Labels API', () => {
         'POST',
         'dashboard.createLabel',
         { name: `admin-label-${faker.string.alphanumeric(8)}`, color: '#33FF57' },
-        adminToken
+        superAdmin
       );
 
       const userResponse = await req<SuccessResponse<{ labels: any[] }>>( 
@@ -222,7 +222,7 @@ describe('Dashboard - Labels API', () => {
         'GET',
         'dashboard.getLabels',
         {},
-        adminToken
+        superAdmin
       );
 
       // User should only see their label
@@ -244,7 +244,7 @@ describe('Dashboard - Labels API', () => {
         '' // empty token
       );
 
-      expect(response.error.data.code).toBe('UNAUTHORIZED');
+      expect(response.data.code).toBe('UNAUTHORIZED');
     });
   });
 });

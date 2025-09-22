@@ -143,8 +143,8 @@ describe('Dashboard - Items with Labels API', () => {
         userToken
       );
 
-      expect(response.error.data.code).toBe('BAD_REQUEST');
-      expect(response.error.message).toContain('Items can have at most 2 labels');
+      expect(response.data.code).toBe('BAD_REQUEST');
+      expect(response.message).toContain('Items can have at most 2 labels');
     });
 
     it('should reject item with non-existent label', async () => {
@@ -166,8 +166,8 @@ describe('Dashboard - Items with Labels API', () => {
         userToken
       );
 
-      expect(response.error.data.code).toBe('NOT_FOUND');
-      expect(response.error.message).toContain('One or more labels not found');
+      expect(response.data.code).toBe('NOT_FOUND');
+      expect(response.message).toContain('One or more labels not found');
     });
 
     it('should enforce uniqueness constraint based on name and labels', async () => {
@@ -209,8 +209,8 @@ describe('Dashboard - Items with Labels API', () => {
         userToken
       );
 
-      expect(secondResponse.error.data.code).toBe('CONFLICT');
-      expect(secondResponse.error.message).toContain('An item with this name and labels already exists');
+      expect(secondResponse.data.code).toBe('CONFLICT');
+      expect(secondResponse.message).toContain('An item with this name and labels already exists');
     });
 
     it('should allow items with same name but different labels', async () => {
@@ -463,8 +463,8 @@ describe('Dashboard - Items with Labels API', () => {
         userToken
       );
 
-      expect(response.error.data.code).toBe('CONFLICT');
-      expect(response.error.message).toContain('An item with this name and labels already exists');
+      expect(response.data.code).toBe('CONFLICT');
+      expect(response.message).toContain('An item with this name and labels already exists');
     });
   });
 });
