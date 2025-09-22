@@ -12,6 +12,7 @@ model Organization {
   name      String    @unique
   users     User[]
   folders   Folder[]
+  labels    Label[]
   createdAt DateTime  @default(now())
   updatedAt DateTime  @updatedAt
 }
@@ -72,23 +73,51 @@ model Folder {
   updatedAt        DateTime @updatedAt
 }
 
+model Label {
+  id             String   @id @default(cuid())
+  name           String
+  color          String   // Hex color code (e.g., #FF5733)
+  organizationId String
+  organization   Organization @relation(fields: [organizationId], references: [id])
+  items          ItemLabel[] // Many-to-many relation with items
+
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  @@unique([organizationId, name]) // Unique name per organization
+}
+
+model ItemLabel {
+  id      String @id @default(cuid())
+  itemId  String
+  labelId String
+  item    Item   @relation(fields: [itemId], references: [id], onDelete: Cascade)
+  label   Label  @relation(fields: [labelId], references: [id], onDelete: Cascade)
+
+  @@unique([itemId, labelId]) // Prevent duplicate label assignments
+}
+
 model Item {
-  id               String   @id @default(cuid())
+  id               String      @id @default(cuid())
   name             String
   description      String?
   price            Float
   cost             Float?
-  quantity         Float    @default(0)
-  unit             Unit     @default(PCS)
+  quantity         Float       @default(0)
+  unit             Unit        @default(PCS)
   folderId         String
-  folder           Folder   @relation(fields: [folderId], references: [id])
+  folder           Folder      @relation(fields: [folderId], references: [id])
   photos           Photo[]
+  labels           ItemLabel[] // Many-to-many relation with labels
+  hashId           String      // Hash of name + sorted label names for uniqueness
 
   lastModifiedById String
-  lastModifiedBy   User     @relation("ItemLastModifiedBy", fields: [lastModifiedById], references: [id])
+  lastModifiedBy   User        @relation("ItemLastModifiedBy", fields: [lastModifiedById], references: [id])
 
-  createdAt        DateTime @default(now())
-  updatedAt        DateTime @updatedAt
+  createdAt        DateTime    @default(now())
+  updatedAt        DateTime    @updatedAt
+
+  @@unique([folderId, hashId]) // Unique hash per folder to ensure item uniqueness within folder
 }
 
 model Photo {

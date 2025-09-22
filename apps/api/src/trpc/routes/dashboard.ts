@@ -4,6 +4,7 @@ import { prisma } from "@repo/db";
 import {
   createFolderInput,
   createItemInput,
+  createLabelInput,
   updateFolderInput,
   updateItemInput,
   deleteFolderInput,
@@ -11,6 +12,7 @@ import {
   adjustItemQuantityInput
 } from '@repo/types/schemas/dashboard';
 import { SuccessStatus } from '@repo/types/trpc';
+import { generateItemHashId } from '@repo/utils';
 
 export const dashboardRouter = router({
   // Get all folders and their items for the user's organization
@@ -26,6 +28,17 @@ export const dashboardRouter = router({
               lastModifiedBy: {
                 select: {
                   username: true,
+                },
+              },
+              labels: {
+                include: {
+                  label: {
+                    select: {
+                      id: true,
+                      name: true,
+                      color: true,
+                    },
+                  },
                 },
               },
             },
@@ -56,6 +69,12 @@ export const dashboardRouter = router({
           description: item.description,
           price: item.price,
           quantity: item.quantity,
+          unit: item.unit,
+          labels: item.labels.map((itemLabel: any) => ({
+            id: itemLabel.label.id,
+            name: itemLabel.label.name,
+            color: itemLabel.label.color,
+          })),
           createdAt: item.createdAt.toISOString(),
           updatedAt: item.updatedAt.toISOString(),
           lastModifiedBy: item.lastModifiedBy.username,
@@ -140,21 +159,108 @@ export const dashboardRouter = router({
         });
       }
 
-      const newItem = await prisma.item.create({
-        data: {
-          name: input.name,
-          description: input.description,
-          price: input.price ?? 0,
-          cost: input.cost,
-          quantity: input.quantity ?? 0,
-          unit: input.unit ?? 'PCS',
-          folderId: input.folderId,
-          lastModifiedById: ctx.user!.id,
+      // Validate labels if provided
+      let labelNames: string[] = [];
+      if (input.labelIds && input.labelIds.length > 0) {
+        if (input.labelIds.length > 2) {
+          throw new TRPCError({
+            code: "BAD_REQUEST",
+            message: "Items can have at most 2 labels."
+          });
+        }
+
+        const labels = await prisma.label.findMany({
+          where: {
+            id: { in: input.labelIds },
+            organizationId: ctx.user!.organizationId,
+          },
+          select: { id: true, name: true },
+        });
+
+        if (labels.length !== input.labelIds.length) {
+          throw new TRPCError({
+            code: "NOT_FOUND",
+            message: "One or more labels not found."
+          });
+        }
+
+        labelNames = labels.map(label => label.name);
+      }
+
+      // Generate hash for uniqueness validation
+      const hashId = generateItemHashId(input.name, labelNames);
+
+      // Check for existing item with same hash in the folder
+      const existingItem = await prisma.item.findUnique({
+        where: {
+          folderId_hashId: {
+            folderId: input.folderId,
+            hashId: hashId,
+          },
         },
+      });
+
+      if (existingItem) {
+        throw new TRPCError({
+          code: "CONFLICT",
+          message: "An item with this name and labels already exists in this folder. Please add labels to make it unique."
+        });
+      }
+
+      // Create item and label associations in a transaction
+      const result = await prisma.$transaction(async (tx) => {
+        const newItem = await tx.item.create({
+          data: {
+            name: input.name,
+            description: input.description,
+            price: input.price ?? 0,
+            cost: input.cost,
+            quantity: input.quantity ?? 0,
+            unit: input.unit ?? 'PCS',
+            folderId: input.folderId,
+            hashId: hashId,
+            lastModifiedById: ctx.user!.id,
+          },
+          include: {
+            lastModifiedBy: {
+              select: {
+                username: true,
+              },
+            },
+          },
+        });
+
+        // Create label associations
+        if (input.labelIds && input.labelIds.length > 0) {
+          await tx.itemLabel.createMany({
+            data: input.labelIds.map(labelId => ({
+              itemId: newItem.id,
+              labelId: labelId,
+            })),
+          });
+        }
+
+        return newItem;
+      });
+
+      // Fetch the created item with labels for response
+      const itemWithLabels = await prisma.item.findUnique({
+        where: { id: result.id },
         include: {
           lastModifiedBy: {
             select: {
               username: true,
+            },
+          },
+          labels: {
+            include: {
+              label: {
+                select: {
+                  id: true,
+                  name: true,
+                  color: true,
+                },
+              },
             },
           },
         },
@@ -164,16 +270,21 @@ export const dashboardRouter = router({
         status: SuccessStatus.SUCCESS,
         message: `Item "${input.name}" created successfully!`,
         item: {
-          id: newItem.id,
-          name: newItem.name,
-          description: newItem.description,
-          price: newItem.price,
-          cost: newItem.cost,
-          quantity: newItem.quantity,
-          unit: newItem.unit,
-          createdAt: newItem.createdAt.toISOString(),
-          updatedAt: newItem.updatedAt.toISOString(),
-          lastModifiedBy: newItem.lastModifiedBy.username,
+          id: itemWithLabels!.id,
+          name: itemWithLabels!.name,
+          description: itemWithLabels!.description,
+          price: itemWithLabels!.price,
+          cost: itemWithLabels!.cost,
+          quantity: itemWithLabels!.quantity,
+          unit: itemWithLabels!.unit,
+          labels: itemWithLabels!.labels.map(itemLabel => ({
+            id: itemLabel.label.id,
+            name: itemLabel.label.name,
+            color: itemLabel.label.color,
+          })),
+          createdAt: itemWithLabels!.createdAt.toISOString(),
+          updatedAt: itemWithLabels!.updatedAt.toISOString(),
+          lastModifiedBy: itemWithLabels!.lastModifiedBy.username,
         },
       };
     }),
@@ -414,6 +525,72 @@ export const dashboardRouter = router({
       return {
         status: SuccessStatus.SUCCESS,
         message: `Item "${item.name}" deleted successfully!`,
+      };
+    }),
+
+  // Get all labels for the user's organization
+  getLabels: protectedProcedure
+    .query(async ({ ctx }) => {
+      const labels = await prisma.label.findMany({
+        where: {
+          organizationId: ctx.user!.organizationId,
+        },
+        orderBy: {
+          name: 'asc',
+        },
+      });
+
+      return {
+        status: SuccessStatus.SUCCESS,
+        labels: labels.map(label => ({
+          id: label.id,
+          name: label.name,
+          color: label.color,
+          createdAt: label.createdAt.toISOString(),
+          updatedAt: label.updatedAt.toISOString(),
+        })),
+      };
+    }),
+
+  // Create a new label
+  createLabel: protectedProcedure
+    .input(createLabelInput)
+    .mutation(async ({ input, ctx }) => {
+      // Check if label name already exists in the organization
+      const existingLabel = await prisma.label.findUnique({
+        where: {
+          organizationId_name: {
+            organizationId: ctx.user!.organizationId,
+            name: input.name,
+          },
+        },
+      });
+
+      if (existingLabel) {
+        throw new TRPCError({
+          code: "CONFLICT",
+          message: "Label with this name already exists in your organization."
+        });
+      }
+
+      const newLabel = await prisma.label.create({
+        data: {
+          name: input.name,
+          color: input.color,
+          organizationId: ctx.user!.organizationId,
+        },
+      });
+
+      return {
+        status: SuccessStatus.SUCCESS,
+        message: `Label "${input.name}" created successfully!`,
+        label: {
+          id: newLabel.id,
+          name: newLabel.name,
+          color: newLabel.color,
+          createdAt: newLabel.createdAt.toISOString(),
+          updatedAt: newLabel.updatedAt.toISOString(),
+        },
       };
     }),
 });
