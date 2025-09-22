@@ -202,12 +202,21 @@
 		}
 	}
 
+	function adjustNewItemQuantityBy(amount: number) {
+		const newQuantity = newItem.quantity + amount;
+		if (newQuantity >= 0) {
+			// Round to 2 decimal places to avoid floating point precision issues
+			newItem.quantity = Math.round(newQuantity * 100) / 100;
+		}
+	}
+
 	function hasChanges(): boolean {
 		if (!editingItem || !originalItem) return false;
 
 		return (
 			editingItem.name !== originalItem.name ||
-			(editingItem.description !== originalItem.description || originalItem.description === null) ||
+			editingItem.description !== originalItem.description ||
+			originalItem.description === null ||
 			editingItem.price !== originalItem.price ||
 			editingItem.cost !== originalItem.cost ||
 			editingItem.unit !== originalItem.unit ||
@@ -590,16 +599,78 @@
 							<label for="itemQuantity" class="block text-sm font-medium text-gray-700 mb-2"
 								>Quantity</label
 							>
-							<input
-								id="itemQuantity"
-								type="number"
-								min="0"
-								step="0.01"
-								bind:value={newItem.quantity}
-								placeholder="0"
-								class="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-colors"
-								disabled={isCreatingItem}
-							/>
+							<div class="flex items-center space-x-2">
+								<!-- Decrease buttons -->
+								<button
+									type="button"
+									onclick={() => adjustNewItemQuantityBy(-10)}
+									disabled={isCreatingItem || newItem.quantity < 10}
+									class="px-3 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-indigo-500 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+									data-testid="create-item-decrease-10-button"
+								>
+									-10
+								</button>
+								<button
+									type="button"
+									onclick={() => adjustNewItemQuantityBy(-1)}
+									disabled={isCreatingItem || newItem.quantity < 1}
+									class="px-3 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-indigo-500 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+									data-testid="create-item-decrease-1-button"
+								>
+									-1
+								</button>
+								<button
+									type="button"
+									onclick={() => adjustNewItemQuantityBy(-0.1)}
+									disabled={isCreatingItem || newItem.quantity < 0.1}
+									class="px-2 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-indigo-500 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+									data-testid="create-item-decrease-01-button"
+								>
+									-0.1
+								</button>
+
+								<!-- Quantity Input Field -->
+								<input
+									id="itemQuantity"
+									type="number"
+									min="0"
+									step="0.01"
+									bind:value={newItem.quantity}
+									placeholder="0"
+									class="flex-1 px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-colors text-center"
+									disabled={isCreatingItem}
+									data-testid="create-item-quantity-input"
+								/>
+
+								<!-- Increase buttons -->
+								<button
+									type="button"
+									onclick={() => adjustNewItemQuantityBy(0.1)}
+									disabled={isCreatingItem}
+									class="px-2 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-indigo-500 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+									data-testid="create-item-increase-01-button"
+								>
+									+0.1
+								</button>
+								<button
+									type="button"
+									onclick={() => adjustNewItemQuantityBy(1)}
+									disabled={isCreatingItem}
+									class="px-3 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-indigo-500 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+									data-testid="create-item-increase-1-button"
+								>
+									+1
+								</button>
+								<button
+									type="button"
+									onclick={() => adjustNewItemQuantityBy(10)}
+									disabled={isCreatingItem}
+									class="px-3 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-indigo-500 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+									data-testid="create-item-increase-10-button"
+								>
+									+10
+								</button>
+							</div>
 						</div>
 						<div>
 							<label for="itemUnit" class="block text-sm font-medium text-gray-700 mb-2">Unit</label
@@ -1076,7 +1147,9 @@
 										class="font-bold {quantityChange > 0 ? 'text-green-600' : 'text-red-600'}"
 										data-testid="quantity-change"
 									>
-										{quantityChange > 0 ? ` + ${Math.round(quantityChange * 100) / 100}` : ` - ${Math.abs(Math.round(quantityChange * 100) / 100)}`}
+										{quantityChange > 0
+											? ` + ${Math.round(quantityChange * 100) / 100}`
+											: ` - ${Math.abs(Math.round(quantityChange * 100) / 100)}`}
 									</span>
 									<span class="text-gray-600"> → </span>
 									<span
