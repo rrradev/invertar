@@ -11,10 +11,12 @@ export default class Dashboard extends BasePage {
     dashboardTitle: Locator;
     createFolderButton: Locator;
     createItemButton: Locator;
+    createLabelButton: Locator;
 
     // Forms
     createFolderForm: Locator;
     createItemForm: Locator;
+    createLabelForm: Locator;
 
     // Form inputs
     folderNameInput: Locator;
@@ -25,9 +27,16 @@ export default class Dashboard extends BasePage {
     itemQuantityInput: Locator;
     itemUnitSelect: Locator;
     itemFolderSelect: Locator;
+    labelNameInput: Locator;
+    labelColorInput: Locator;
 
     // Form buttons
     submitFolderButton: Locator;
+    cancelFolderButton: Locator;
+    submitItemButton: Locator;
+    cancelItemButton: Locator;
+    submitLabelButton: Locator;
+    cancelLabelButton: Locator;
     cancelFolderButton: Locator;
     submitItemButton: Locator;
     cancelItemButton: Locator;
@@ -80,10 +89,12 @@ export default class Dashboard extends BasePage {
         this.dashboardTitle = page.getByTestId('dashboard-title');
         this.createFolderButton = page.getByTestId('create-folder-button');
         this.createItemButton = page.getByTestId('create-item-button');
+        this.createLabelButton = page.getByTestId('create-label-button');
 
         // Forms
         this.createFolderForm = page.getByTestId('create-folder-form');
         this.createItemForm = page.getByTestId('create-item-form');
+        this.createLabelForm = page.getByTestId('create-label-form');
 
         // Form inputs
         this.folderNameInput = page.locator('#folderName');
@@ -94,12 +105,16 @@ export default class Dashboard extends BasePage {
         this.itemQuantityInput = page.locator('#itemQuantity');
         this.itemUnitSelect = page.locator('#itemUnit');
         this.itemFolderSelect = page.locator('#itemFolder');
+        this.labelNameInput = page.locator('#labelName');
+        this.labelColorInput = page.locator('#labelColor');
 
         // Form buttons
         this.submitFolderButton = page.getByTestId('submit-folder-button');
         this.cancelFolderButton = page.getByTestId('cancel-folder-button');
         this.submitItemButton = page.getByTestId('submit-item-button');
         this.cancelItemButton = page.getByTestId('cancel-item-button');
+        this.submitLabelButton = page.getByTestId('submit-label-button');
+        this.cancelLabelButton = page.getByTestId('cancel-label-button');
         this.toggleAdvancedFieldsButton = page.getByTestId('toggle-advanced-fields');
 
         // Advanced fields
