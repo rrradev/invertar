@@ -207,8 +207,10 @@
 
 		return (
 			editingItem.name !== originalItem.name ||
-			editingItem.description !== originalItem.description ||
+			(editingItem.description !== originalItem.description || originalItem.description === null) ||
 			editingItem.price !== originalItem.price ||
+			editingItem.cost !== originalItem.cost ||
+			editingItem.unit !== originalItem.unit ||
 			quantityInput !== originalItem.quantity
 		);
 	}
@@ -1074,7 +1076,7 @@
 										class="font-bold {quantityChange > 0 ? 'text-green-600' : 'text-red-600'}"
 										data-testid="quantity-change"
 									>
-										{quantityChange > 0 ? ` + ${quantityChange}` : ` - ${Math.abs(quantityChange)}`}
+										{quantityChange > 0 ? ` + ${Math.round(quantityChange * 100) / 100}` : ` - ${Math.abs(Math.round(quantityChange * 100) / 100)}`}
 									</span>
 									<span class="text-gray-600"> → </span>
 									<span
