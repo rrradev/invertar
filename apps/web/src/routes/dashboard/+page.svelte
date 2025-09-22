@@ -11,6 +11,12 @@
 
 	let { data }: PageProps = $props();
 
+	interface Label {
+		id: string;
+		name: string;
+		color: string;
+	}
+
 	interface Item {
 		id: string;
 		name: string;
@@ -19,6 +25,7 @@
 		cost?: number | null;
 		quantity: number;
 		unit: Unit;
+		labels: Label[];
 		createdAt: string;
 		updatedAt: string;
 		lastModifiedBy: string;
@@ -34,10 +41,13 @@
 	}
 
 	let folders = $state((data.folders as Folder[]) || []);
+	let labels = $state<Label[]>([]);
 	let isCreatingFolder = $state(false);
 	let isCreatingItem = $state(false);
+	let isCreatingLabel = $state(false);
 	let showCreateFolderForm = $state(false);
 	let showCreateItemForm = $state(false);
+	let showCreateLabelForm = $state(false);
 	let showAdvancedItemFields = $state(false);
 	let showEditItemModal = $state(false);
 	let showDeleteConfirmation = $state(false);
@@ -53,6 +63,11 @@
 		name: ''
 	});
 
+	let newLabel = $state({
+		name: '',
+		color: '#3B82F6'
+	});
+
 	let newItem = $state({
 		name: '',
 		description: '',
@@ -60,8 +75,55 @@
 		cost: 0,
 		quantity: 0,
 		unit: Unit.PCS,
-		folderId: ''
+		folderId: '',
+		labelIds: [] as string[]
 	});
+
+	// Load labels when the component is initialized
+	async function loadLabels() {
+		try {
+			const result = await trpc.dashboard.getLabels.query();
+			if (result.status === SuccessStatus.SUCCESS) {
+				labels = result.labels as Label[];
+			}
+		} catch (err) {
+			console.error('Failed to load labels:', err);
+		}
+	}
+
+	// Load labels on mount
+	loadLabels();
+
+	async function createLabel() {
+		if (!newLabel.name.trim()) {
+			error = 'Label name is required';
+			return;
+		}
+
+		try {
+			isCreatingLabel = true;
+			error = '';
+			successMessage = '';
+
+			const result = await trpc.dashboard.createLabel.mutate({
+				name: newLabel.name.trim(),
+				color: newLabel.color
+			});
+
+			if (result.status === SuccessStatus.SUCCESS) {
+				successMessage = result.message;
+				newLabel = { name: '', color: '#3B82F6' };
+				showCreateLabelForm = false;
+
+				// Add the new label to the labels array
+				labels = [result.label as Label, ...labels];
+			}
+		} catch (err: unknown) {
+			error = (err as Error).message || 'Failed to create label';
+		} finally {
+			isCreatingLabel = false;
+		}
+	}
 
 	async function createFolder() {
 		if (!newFolder.name.trim()) {
@@ -113,7 +175,8 @@
 				cost: newItem.cost || undefined,
 				quantity: newItem.quantity || undefined,
 				unit: newItem.unit,
-				folderId: targetFolderId
+				folderId: targetFolderId,
+				labelIds: newItem.labelIds.length > 0 ? newItem.labelIds : undefined
 			});
 
 			if (result.status === SuccessStatus.SUCCESS) {
@@ -125,7 +188,8 @@
 					cost: 0,
 					quantity: 0,
 					unit: Unit.PCS,
-					folderId: ''
+					folderId: '',
+					labelIds: []
 				};
 				showCreateItemForm = false;
 
@@ -369,6 +433,21 @@
 						Create Folder
 					</button>
 					<button
+						onclick={() => (showCreateLabelForm = !showCreateLabelForm)}
+						class="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-emerald-500 transition-all duration-200"
+						data-testid="create-label-button"
+					>
+						<svg class="h-5 w-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+							<path
+								stroke-linecap="round"
+								stroke-linejoin="round"
+								stroke-width="2"
+								d="M7 7h.01M7 3h5c.512 0 1.024.195 1.414.586l7 7a2 2 0 010 2.828l-7 7a2 2 0 01-2.828 0l-7-7A1.994 1.994 0 013 12V7a4 4 0 014-4z"
+							/>
+						</svg>
+						Create Label
+					</button>
+					<button
 						onclick={() => (showCreateItemForm = !showCreateItemForm)}
 						class="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-gradient-to-r from-indigo-600 to-cyan-600 hover:from-indigo-700 hover:to-cyan-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 transition-all duration-200"
 						data-testid="create-item-button"
@@ -472,6 +551,89 @@
 			</div>
 		{/if}
 
+		<!-- Create Label Form -->
+		{#if showCreateLabelForm}
+			<div
+				class="mb-8 bg-white rounded-lg shadow-sm border border-gray-200 p-6"
+				data-testid="create-label-form"
+			>
+				<h3 class="text-lg font-medium text-gray-900 mb-4">Create New Label</h3>
+				<div class="flex items-end space-x-4">
+					<div class="flex-1">
+						<label for="labelName" class="block text-sm font-medium text-gray-700 mb-2"
+							>Label Name</label
+						>
+						<input
+							id="labelName"
+							type="text"
+							bind:value={newLabel.name}
+							placeholder="Enter label name"
+							class="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 transition-colors"
+							disabled={isCreatingLabel}
+						/>
+					</div>
+					<div class="flex-shrink-0">
+						<label for="labelColor" class="block text-sm font-medium text-gray-700 mb-2"
+							>Color</label
+						>
+						<div class="relative">
+							<input
+								id="labelColor"
+								type="color"
+								bind:value={newLabel.color}
+								class="h-10 w-16 rounded-md border border-gray-300 cursor-pointer focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500"
+								disabled={isCreatingLabel}
+							/>
+						</div>
+					</div>
+					<div class="flex space-x-3">
+						<button
+							onclick={() => {
+								showCreateLabelForm = false;
+								newLabel = { name: '', color: '#3B82F6' };
+							}}
+							class="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-emerald-500 transition-colors"
+							disabled={isCreatingLabel}
+							data-testid="cancel-label-button"
+						>
+							Cancel
+						</button>
+						<button
+							onclick={createLabel}
+							disabled={isCreatingLabel}
+							class="px-4 py-2 text-sm font-medium text-white bg-gradient-to-r from-emerald-600 to-emerald-700 hover:from-emerald-700 hover:to-emerald-800 rounded-md focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-emerald-500 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200"
+							data-testid="submit-label-button"
+						>
+							{#if isCreatingLabel}
+								<svg
+									class="animate-spin -ml-1 mr-2 h-4 w-4 text-white inline"
+									fill="none"
+									viewBox="0 0 24 24"
+								>
+									<circle
+										class="opacity-25"
+										cx="12"
+										cy="12"
+										r="10"
+										stroke="currentColor"
+										stroke-width="4"
+									></circle>
+									<path
+										class="opacity-75"
+										fill="currentColor"
+										d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+									></path>
+								</svg>
+								Creating...
+							{:else}
+								Create Label
+							{/if}
+						</button>
+					</div>
+				</div>
+			</div>
+		{/if}
+
 		<!-- Create Item Form -->
 		{#if showCreateItemForm}
 			<div
@@ -511,6 +673,41 @@
 							{/each}
 						</select>
 					</div>
+				</div>
+
+				<!-- Labels Selection -->
+				<div class="mb-4">
+					<label class="block text-sm font-medium text-gray-700 mb-2">Labels (max 2)</label>
+					<div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-2">
+						{#each labels as label (label.id)}
+							<label class="flex items-center space-x-2 p-2 border border-gray-200 rounded-md hover:bg-gray-50 cursor-pointer transition-colors">
+								<input
+									type="checkbox"
+									checked={newItem.labelIds.includes(label.id)}
+									disabled={isCreatingItem || (newItem.labelIds.length >= 2 && !newItem.labelIds.includes(label.id))}
+									onchange={(e) => {
+										const isChecked = e.target.checked;
+										if (isChecked) {
+											newItem.labelIds = [...newItem.labelIds, label.id];
+										} else {
+											newItem.labelIds = newItem.labelIds.filter(id => id !== label.id);
+										}
+									}}
+									class="rounded border-gray-300 text-indigo-600 focus:ring-indigo-500"
+								/>
+								<div class="flex items-center space-x-1">
+									<div
+										class="w-3 h-3 rounded-full border border-gray-300"
+										style="background-color: {label.color}"
+									></div>
+									<span class="text-sm text-gray-700">{label.name}</span>
+								</div>
+							</label>
+						{/each}
+					</div>
+					{#if labels.length === 0}
+						<p class="text-sm text-gray-500 mt-2">No labels available. Create labels first to assign them to items.</p>
+					{/if}
 				</div>
 
 				<!-- Optional Advanced Fields Toggle -->
@@ -630,7 +827,8 @@
 								cost: 0,
 								quantity: 0,
 								unit: Unit.PCS,
-								folderId: ''
+								folderId: '',
+								labelIds: []
 							};
 						}}
 						class="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 transition-colors"
@@ -804,6 +1002,11 @@
 											<th
 												class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
 											>
+												Labels
+											</th>
+											<th
+												class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
+											>
 												Description
 											</th>
 											<th
@@ -860,6 +1063,21 @@
 															</span>
 														</div>
 														<div class="text-sm font-medium text-gray-900">{item.name}</div>
+													</div>
+												</td>
+												<td class="px-6 py-4 whitespace-nowrap">
+													<div class="flex items-center space-x-1">
+														{#each item.labels as label (label.id)}
+															<span 
+																class="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium border"
+																style="background-color: {label.color}20; border-color: {label.color}40; color: {label.color}"
+															>
+																{label.name}
+															</span>
+														{/each}
+														{#if item.labels.length === 0}
+															<span class="text-sm text-gray-400">—</span>
+														{/if}
 													</div>
 												</td>
 												<td class="px-6 py-4 whitespace-nowrap">

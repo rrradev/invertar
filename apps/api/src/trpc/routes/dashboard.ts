@@ -356,6 +356,13 @@ export const dashboardRouter = router({
           folder: {
             select: { organizationId: true },
           },
+          labels: {
+            include: {
+              label: {
+                select: { name: true },
+              },
+            },
+          },
         },
       });
 
@@ -373,16 +380,100 @@ export const dashboardRouter = router({
         });
       }
 
-      const updatedItem = await prisma.item.update({
-        where: { id: input.itemId },
-        data: {
-          name: input.name,
-          description: input.description,
-          price: input.price ?? 0,
-          cost: input.cost,
-          unit: input.unit,
-          lastModifiedById: ctx.user!.id,
-        },
+      // Validate labels if provided
+      let labelNames: string[] = [];
+      if (input.labelIds !== undefined) {
+        if (input.labelIds.length > 2) {
+          throw new TRPCError({
+            code: "BAD_REQUEST",
+            message: "Items can have at most 2 labels."
+          });
+        }
+
+        if (input.labelIds.length > 0) {
+          const labels = await prisma.label.findMany({
+            where: {
+              id: { in: input.labelIds },
+              organizationId: ctx.user!.organizationId,
+            },
+            select: { id: true, name: true },
+          });
+
+          if (labels.length !== input.labelIds.length) {
+            throw new TRPCError({
+              code: "NOT_FOUND",
+              message: "One or more labels not found."
+            });
+          }
+
+          labelNames = labels.map(label => label.name);
+        }
+      } else {
+        // Keep existing labels if not specified
+        labelNames = item.labels.map(itemLabel => itemLabel.label.name);
+      }
+
+      // Generate new hash if name or labels changed
+      const currentLabelNames = item.labels.map(itemLabel => itemLabel.label.name);
+      const nameChanged = input.name !== item.name;
+      const labelsChanged = input.labelIds !== undefined;
+      
+      let newHashId = item.hashId;
+      if (nameChanged || labelsChanged) {
+        newHashId = generateItemHashId(input.name, labelNames);
+
+        // Check for conflicts with the new hash (excluding current item)
+        const existingItem = await prisma.item.findFirst({
+          where: {
+            folderId: item.folderId,
+            hashId: newHashId,
+            NOT: { id: input.itemId },
+          },
+        });
+
+        if (existingItem) {
+          throw new TRPCError({
+            code: "CONFLICT",
+            message: "An item with this name and labels already exists in this folder. Please modify labels to make it unique."
+          });
+        }
+      }
+
+      // Update item and labels in a transaction
+      const result = await prisma.$transaction(async (tx) => {
+        // Update item
+        const updatedItem = await tx.item.update({
+          where: { id: input.itemId },
+          data: {
+            name: input.name,
+            description: input.description,
+            price: input.price ?? 0,
+            cost: input.cost,
+            unit: input.unit,
+            hashId: newHashId,
+            lastModifiedById: ctx.user!.id,
+          },
+        });
+
+        // Update labels if specified
+        if (input.labelIds !== undefined) {
+          // Remove existing labels
+          await tx.itemLabel.deleteMany({
+            where: { itemId: input.itemId },
+          });
+
+          // Add new labels
+          if (input.labelIds.length > 0) {
+            await tx.itemLabel.createMany({
+              data: input.labelIds.map(labelId => ({
+                itemId: input.itemId,
+                labelId: labelId,
+              })),
+            });
+          }
+        }
+
+        return updatedItem;
       });
 
       return {
