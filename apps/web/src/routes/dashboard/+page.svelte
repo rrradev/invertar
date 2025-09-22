@@ -118,7 +118,15 @@
 
 			if (result.status === SuccessStatus.SUCCESS) {
 				successMessage = result.message;
-				newItem = { name: '', description: '', price: 0, cost: 0, quantity: 0, unit: Unit.PCS, folderId: '' };
+				newItem = {
+					name: '',
+					description: '',
+					price: 0,
+					cost: 0,
+					quantity: 0,
+					unit: Unit.PCS,
+					folderId: ''
+				};
 				showCreateItemForm = false;
 
 				// Add the new item to the corresponding folder
@@ -284,11 +292,13 @@
 			error = (err as Error).message || 'Failed to update item. Please try again.';
 		} finally {
 			isUpdatingItem = false;
-			// Only close modal if update succeeded
-			if (updateItemTriggered && !updateItemSuccessful) return;
-			// If quantity adjustment was triggered, it must succeed to close modal
-			if (adjustQuantityTriggered && !adjustItemQuantitySuccessful) return;
-			// All required actions succeeded — safe to close modal
+		}
+
+		// Only close modal if all required actions succeeded
+		const shouldCloseModal = (!updateItemTriggered || updateItemSuccessful) && 
+								(!adjustQuantityTriggered || adjustItemQuantitySuccessful);
+		
+		if (shouldCloseModal) {
 			closeEditModal();
 		}
 	}
@@ -588,8 +598,7 @@
 							/>
 						</div>
 						<div>
-							<label for="itemUnit" class="block text-sm font-medium text-gray-700 mb-2"
-								>Unit</label
+							<label for="itemUnit" class="block text-sm font-medium text-gray-700 mb-2">Unit</label
 							>
 							<select
 								id="itemUnit"
@@ -597,7 +606,7 @@
 								class="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-colors"
 								disabled={isCreatingItem}
 							>
-								{#each Object.values(Unit) as unit}
+								{#each Object.values(Unit) as unit (unit)}
 									<option value={unit}>{unit} - {UNIT_LABELS[unit]}</option>
 								{/each}
 							</select>
@@ -610,7 +619,15 @@
 						onclick={() => {
 							showCreateItemForm = false;
 							showAdvancedItemFields = false;
-							newItem = { name: '', description: '', price: 0, cost: 0, quantity: 0, unit: Unit.PCS, folderId: '' };
+							newItem = {
+								name: '',
+								description: '',
+								price: 0,
+								cost: 0,
+								quantity: 0,
+								unit: Unit.PCS,
+								folderId: ''
+							};
 						}}
 						class="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 transition-colors"
 						disabled={isCreatingItem}
@@ -1025,7 +1042,7 @@
 							disabled={isUpdatingItem || isDeletingItem}
 							data-testid="edit-item-unit"
 						>
-							{#each Object.values(Unit) as unit}
+							{#each Object.values(Unit) as unit (unit)}
 								<option value={unit}>{unit} - {UNIT_LABELS[unit]}</option>
 							{/each}
 						</select>
