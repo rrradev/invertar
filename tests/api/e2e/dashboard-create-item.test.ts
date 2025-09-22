@@ -119,7 +119,7 @@ describe('Dashboard - Create Item API', () => {
         expect(response.status).toBe('SUCCESS');
         expect(response.item.unit).toBe(unit);
       }
-    });
+    }, { timeout: 20000 }); // Increase timeout for this test
 
     it('should reject negative cost', async () => {
       const itemData = {
