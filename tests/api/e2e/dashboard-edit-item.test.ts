@@ -3,6 +3,7 @@ import { faker } from '@faker-js/faker';
 import { req, getToken } from './config/config';
 import { SuccessResponse, ErrorResponse } from '@repo/types/trpc/response';
 import { UserRole } from '@repo/types/users/roles';
+import { Unit } from '@repo/types/units';
 
 describe('Dashboard - Edit Item API', () => {
   let userToken: string;
@@ -28,7 +29,9 @@ describe('Dashboard - Edit Item API', () => {
       name: `test-item-${faker.string.alphanumeric(8)}`,
       description: faker.commerce.productDescription(),
       price: parseFloat(faker.commerce.price()),
-      quantity: faker.number.int({ min: 10, max: 100 }),
+      cost: parseFloat(faker.commerce.price()) * 0.7, // cost is typically lower than price
+      quantity: parseFloat((Math.random() * 100 + 1).toFixed(2)), // decimal quantity
+      unit: Unit.KG,
       folderId: testFolderId
     };
 
@@ -97,6 +100,66 @@ describe('Dashboard - Edit Item API', () => {
       expect(response.data.code).toBe('BAD_REQUEST');
     });
 
+    it('should update item with cost and unit fields', async () => {
+      const updateData = {
+        itemId: testItemId,
+        name: `updated-item-${faker.string.alphanumeric(8)}`,
+        description: 'Updated with cost and unit',
+        price: 150.50,
+        cost: 89.75,
+        unit: Unit.L
+      };
+
+      const response = await req<SuccessResponse<{message: string}>>(
+        'POST',
+        'dashboard.updateItem',
+        updateData,
+        userToken
+      );
+
+      expect(response.status).toBe('SUCCESS');
+      expect(response.message).toContain(`Item "${updateData.name}" updated successfully`);
+    });
+
+    it('should accept optional cost field', async () => {
+      const updateData = {
+        itemId: testItemId,
+        name: `updated-item-${faker.string.alphanumeric(8)}`,
+        description: 'No cost provided',
+        price: 75.25,
+        unit: Unit.PCS // cost field omitted
+      };
+
+      const response = await req<SuccessResponse<{message: string}>>(
+        'POST',
+        'dashboard.updateItem',
+        updateData,
+        userToken
+      );
+
+      expect(response.status).toBe('SUCCESS');
+      expect(response.message).toContain(`Item "${updateData.name}" updated successfully`);
+    });
+
+    it('should require valid cost (non-negative when provided)', async () => {
+      const updateData = {
+        itemId: testItemId,
+        name: 'Valid Name',
+        description: 'Valid description',
+        price: 50.00,
+        cost: -25.00 // Negative cost should fail
+      };
+
+      const response = await req<ErrorResponse>(
+        'POST',
+        'dashboard.updateItem',
+        updateData,
+        userToken
+      );
+
+      expect(response.data.code).toBe('BAD_REQUEST');
+    });
+
     it('should return NOT_FOUND for non-existent item', async () => {
       const updateData = {
         itemId: 'non-existent-id',
@@ -122,6 +185,24 @@ describe('Dashboard - Edit Item API', () => {
       const adjustmentData = {
         itemId: testItemId,
         adjustment: 25
+      };
+
+      const response = await req<SuccessResponse<{ message: string; newQuantity: number }>>(
+        'POST',
+        'dashboard.adjustItemQuantity',
+        adjustmentData,
+        userToken
+      );
+
+      expect(response.status).toBe('SUCCESS');
+      expect(response.message).toContain(`quantity adjusted by +${adjustmentData.adjustment}. New quantity: ${response.newQuantity}`);
+      expect(response.newQuantity).toBeGreaterThan(0);
+    });
+
+    it('should handle decimal quantity adjustments', async () => {
+      const adjustmentData = {
+        itemId: testItemId,
+        adjustment: 2.5 // Decimal adjustment
       };
 
       const response = await req<SuccessResponse<{ message: string; newQuantity: number }>>(
