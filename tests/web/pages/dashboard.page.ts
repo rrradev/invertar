@@ -21,7 +21,9 @@ export default class Dashboard extends BasePage {
     itemNameInput: Locator;
     itemDescriptionInput: Locator;
     itemPriceInput: Locator;
+    itemCostInput: Locator;
     itemQuantityInput: Locator;
+    itemUnitSelect: Locator;
     itemFolderSelect: Locator;
 
     // Form buttons
@@ -40,6 +42,8 @@ export default class Dashboard extends BasePage {
     editItemNameInput: Locator;
     editItemDescriptionInput: Locator;
     editItemPriceInput: Locator;
+    editItemCostInput: Locator;
+    editItemUnitSelect: Locator;
     quantityInput: Locator;
     currentQuantityLabel: Locator;
     quantityChangeLabel: Locator;
@@ -86,7 +90,9 @@ export default class Dashboard extends BasePage {
         this.itemNameInput = page.locator('#itemName');
         this.itemDescriptionInput = page.locator('#itemDescription');
         this.itemPriceInput = page.locator('#itemPrice');
+        this.itemCostInput = page.locator('#itemCost');
         this.itemQuantityInput = page.locator('#itemQuantity');
+        this.itemUnitSelect = page.locator('#itemUnit');
         this.itemFolderSelect = page.locator('#itemFolder');
 
         // Form buttons
@@ -105,6 +111,8 @@ export default class Dashboard extends BasePage {
         this.editItemNameInput = page.getByTestId('edit-item-name');
         this.editItemDescriptionInput = page.getByTestId('edit-item-description');
         this.editItemPriceInput = page.getByTestId('edit-item-price');
+        this.editItemCostInput = page.getByTestId('edit-item-cost');
+        this.editItemUnitSelect = page.getByTestId('edit-item-unit');
         this.quantityInput = page.getByTestId('quantity-input');
         this.currentQuantityLabel = page.getByTestId('current-quantity');
         this.quantityChangeLabel = page.getByTestId('quantity-change');
@@ -177,14 +185,16 @@ export default class Dashboard extends BasePage {
         folder: Folder;
         description?: string;
         price?: number;
+        cost?: number;
         quantity?: number;
+        unit?: string;
     }) {
         await this.openCreateItemForm();
         await this.itemNameInput.fill(data.name);
         await this.itemFolderSelect.selectOption(await data.folder.getFolderId());
 
         // Show advanced fields if needed
-        if (data.description || data.price || data.quantity) {
+        if (data.description || data.price || data.cost || data.quantity || data.unit) {
             await this.toggleAdvancedFieldsButton.click();
             await expect(this.advancedFieldsContainer).toBeVisible();
 
@@ -194,8 +204,14 @@ export default class Dashboard extends BasePage {
             if (data.price !== undefined) {
                 await this.itemPriceInput.fill(data.price.toString());
             }
+            if (data.cost !== undefined) {
+                await this.itemCostInput.fill(data.cost.toString());
+            }
             if (data.quantity !== undefined) {
                 await this.itemQuantityInput.fill(data.quantity.toString());
+            }
+            if (data.unit) {
+                await this.itemUnitSelect.selectOption(data.unit);
             }
         }
 
@@ -271,7 +287,7 @@ export default class Dashboard extends BasePage {
         await expect(this.editItemModal).not.toBeVisible();
     }
 
-    async updateItemDetails(data: { name?: string; description?: string; price?: number }) {
+    async updateItemDetails(data: { name?: string; description?: string; price?: number; cost?: number; unit?: string }) {
         if (data.name !== undefined) {
             await this.editItemNameInput.clear();
             await this.editItemNameInput.fill(data.name);
@@ -283,6 +299,13 @@ export default class Dashboard extends BasePage {
         if (data.price !== undefined) {
             await this.editItemPriceInput.clear();
             await this.editItemPriceInput.fill(data.price.toString());
+        }
+        if (data.cost !== undefined) {
+            await this.editItemCostInput.clear();
+            await this.editItemCostInput.fill(data.cost.toString());
+        }
+        if (data.unit !== undefined) {
+            await this.editItemUnitSelect.selectOption(data.unit);
         }
     }
 

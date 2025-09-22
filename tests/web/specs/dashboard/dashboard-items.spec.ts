@@ -1,5 +1,6 @@
 import { test, expect } from '../../fixtures/user.fixture';
 import { faker } from '@faker-js/faker';
+import { Unit } from '@repo/types/units';
 
 test.describe('Dashboard - Item Management', () => {
 
@@ -31,13 +32,15 @@ test.describe('Dashboard - Item Management', () => {
     await folder.shouldHaveItemWithName(randomItemName);
   });
 
-  test('should create an item with advanced fields', { tag: '@smoke' }, async ({ dashboard, folder, randomItemName }) => {
+  test('should create an item with advanced fields including cost and unit', { tag: '@smoke' }, async ({ dashboard, folder, randomItemName }) => {
     const itemData = {
       name: randomItemName,
       folder,
       description: faker.commerce.productDescription(),
       price: parseFloat(faker.commerce.price()),
-      quantity: faker.number.int({ min: 1, max: 100 })
+      cost: parseFloat((Math.random() * 50 + 10).toFixed(2)), // Random cost between 10-60
+      quantity: parseFloat((Math.random() * 100 + 1).toFixed(2)), // Decimal quantity
+      unit: Unit.KG
     };
 
     // Create item with all fields
@@ -52,7 +55,7 @@ test.describe('Dashboard - Item Management', () => {
     await dashboard.waitForFoldersToLoad();
 
     await folder.shouldHaveItemWithName(itemData.name);
-    const itemRow = await folder.getItemRowByName(itemData.name);
+    const itemRow = folder.getItemRowByName(itemData.name);
 
     await expect(itemRow).toBeVisible();
     await expect(itemRow).toContainText(itemData.description);
@@ -104,7 +107,7 @@ test.describe('Dashboard - Item Management', () => {
     expect(finalItemCount).toBe(initialItemCount);
   });
 
-  test('should validate advanced field types', async ({ dashboard, folder }) => {
+  test('should validate advanced field types including decimals', async ({ dashboard, folder }) => {
     await dashboard.openCreateItemForm();
     await dashboard.itemNameInput.fill('validation-test');
     await dashboard.itemFolderSelect.selectOption(await folder.getName());
@@ -116,9 +119,19 @@ test.describe('Dashboard - Item Management', () => {
     await dashboard.itemPriceInput.fill('123.45');
     expect(await dashboard.itemPriceInput.inputValue()).toBe('123.45');
 
-    // Test quantity field accepts integer values
-    await dashboard.itemQuantityInput.fill('50');
-    expect(await dashboard.itemQuantityInput.inputValue()).toBe('50');
+    // Test cost field accepts decimal values  
+    await dashboard.itemCostInput.fill('89.75');
+    expect(await dashboard.itemCostInput.inputValue()).toBe('89.75');
+
+    // Test quantity field accepts decimal values
+    await dashboard.itemQuantityInput.fill('12.5');
+    expect(await dashboard.itemQuantityInput.inputValue()).toBe('12.5');
+
+    // Test unit selector has options
+    const unitOptions = await dashboard.itemUnitSelect.locator('option').allTextContents();
+    expect(unitOptions.length).toBeGreaterThan(1);
+    expect(unitOptions.some(option => option.includes('PCS'))).toBe(true);
+    expect(unitOptions.some(option => option.includes('KG'))).toBe(true);
 
     await dashboard.cancelItemCreation();
   });

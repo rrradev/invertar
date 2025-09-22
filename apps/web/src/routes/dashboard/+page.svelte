@@ -1,6 +1,7 @@
 <script lang="ts">
 	import { trpc } from '$lib/trpc';
 	import { SuccessStatus } from '@repo/types/trpc/successStatus';
+	import { Unit, UNIT_LABELS } from '@repo/types/units';
 	import Header from '$lib/components/Header.svelte';
 	import type { PageData } from './$types';
 
@@ -15,7 +16,9 @@
 		name: string;
 		description: string | null;
 		price: number;
+		cost?: number | null;
 		quantity: number;
+		unit: Unit;
 		createdAt: string;
 		updatedAt: string;
 		lastModifiedBy: string;
@@ -54,7 +57,9 @@
 		name: '',
 		description: '',
 		price: 0,
+		cost: 0,
 		quantity: 0,
+		unit: Unit.PCS,
 		folderId: ''
 	});
 
@@ -105,13 +110,23 @@
 				name: newItem.name.trim(),
 				description: newItem.description.trim() || undefined,
 				price: newItem.price || undefined,
+				cost: newItem.cost || undefined,
 				quantity: newItem.quantity || undefined,
+				unit: newItem.unit,
 				folderId: targetFolderId
 			});
 
 			if (result.status === SuccessStatus.SUCCESS) {
 				successMessage = result.message;
-				newItem = { name: '', description: '', price: 0, quantity: 0, folderId: '' };
+				newItem = {
+					name: '',
+					description: '',
+					price: 0,
+					cost: 0,
+					quantity: 0,
+					unit: Unit.PCS,
+					folderId: ''
+				};
 				showCreateItemForm = false;
 
 				// Add the new item to the corresponding folder
@@ -182,7 +197,8 @@
 		if (!editingItem) return;
 		const newQuantity = quantityInput + amount;
 		if (newQuantity >= 0) {
-			quantityInput = newQuantity;
+			// Round to 2 decimal places to avoid floating point precision issues
+			quantityInput = Math.round(newQuantity * 100) / 100;
 		}
 	}
 
@@ -191,8 +207,10 @@
 
 		return (
 			editingItem.name !== originalItem.name ||
-			editingItem.description !== originalItem.description ||
+			(editingItem.description !== originalItem.description || originalItem.description === null) ||
 			editingItem.price !== originalItem.price ||
+			editingItem.cost !== originalItem.cost ||
+			editingItem.unit !== originalItem.unit ||
 			quantityInput !== originalItem.quantity
 		);
 	}
@@ -228,7 +246,9 @@
 				itemId: editingItem.id,
 				name: editingItem.name.trim(),
 				description: editingItem.description?.trim() || undefined,
-				price: editingItem.price || 0
+				price: editingItem.price || 0,
+				cost: editingItem.cost || undefined,
+				unit: editingItem.unit
 			});
 
 			if (updateResult.status === SuccessStatus.SUCCESS) {
@@ -275,11 +295,14 @@
 			error = (err as Error).message || 'Failed to update item. Please try again.';
 		} finally {
 			isUpdatingItem = false;
-			// Only close modal if update succeeded
-			if (updateItemTriggered && !updateItemSuccessful) return;
-			// If quantity adjustment was triggered, it must succeed to close modal
-			if (adjustQuantityTriggered && !adjustItemQuantitySuccessful) return;
-			// All required actions succeeded — safe to close modal
+		}
+
+		// Only close modal if all required actions succeeded
+		const shouldCloseModal =
+			(!updateItemTriggered || updateItemSuccessful) &&
+			(!adjustQuantityTriggered || adjustItemQuantitySuccessful);
+
+		if (shouldCloseModal) {
 			closeEditModal();
 		}
 	}
@@ -528,7 +551,22 @@
 								id="itemDescription"
 								type="text"
 								bind:value={newItem.description}
-								placeholder="Enter description (optional)"
+								placeholder="Enter description"
+								class="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-colors"
+								disabled={isCreatingItem}
+							/>
+						</div>
+						<div>
+							<label for="itemCost" class="block text-sm font-medium text-gray-700 mb-2"
+								>Cost (optional)</label
+							>
+							<input
+								id="itemCost"
+								type="number"
+								min="0"
+								step="0.01"
+								bind:value={newItem.cost}
+								placeholder="0.00"
 								class="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-colors"
 								disabled={isCreatingItem}
 							/>
@@ -556,11 +594,26 @@
 								id="itemQuantity"
 								type="number"
 								min="0"
+								step="0.01"
 								bind:value={newItem.quantity}
 								placeholder="0"
 								class="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-colors"
 								disabled={isCreatingItem}
 							/>
+						</div>
+						<div>
+							<label for="itemUnit" class="block text-sm font-medium text-gray-700 mb-2">Unit</label
+							>
+							<select
+								id="itemUnit"
+								bind:value={newItem.unit}
+								class="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-colors"
+								disabled={isCreatingItem}
+							>
+								{#each Object.values(Unit) as unit (unit)}
+									<option value={unit}>{unit} - {UNIT_LABELS[unit]}</option>
+								{/each}
+							</select>
 						</div>
 					</div>
 				{/if}
@@ -570,7 +623,15 @@
 						onclick={() => {
 							showCreateItemForm = false;
 							showAdvancedItemFields = false;
-							newItem = { name: '', description: '', price: 0, quantity: 0, folderId: '' };
+							newItem = {
+								name: '',
+								description: '',
+								price: 0,
+								cost: 0,
+								quantity: 0,
+								unit: Unit.PCS,
+								folderId: ''
+							};
 						}}
 						class="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 transition-colors"
 						disabled={isCreatingItem}
@@ -748,12 +809,22 @@
 											<th
 												class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
 											>
+												Cost
+											</th>
+											<th
+												class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
+											>
 												Price
 											</th>
 											<th
 												class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
 											>
 												Quantity
+											</th>
+											<th
+												class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
+											>
+												Unit
 											</th>
 											<th
 												class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
@@ -797,10 +868,18 @@
 													</div>
 												</td>
 												<td class="px-6 py-4 whitespace-nowrap">
+													<div class="text-sm text-gray-900">
+														{item.cost ? formatPrice(item.cost) : '-'}
+													</div>
+												</td>
+												<td class="px-6 py-4 whitespace-nowrap">
 													<div class="text-sm text-gray-900">{formatPrice(item.price)}</div>
 												</td>
 												<td class="px-6 py-4 whitespace-nowrap">
 													<div class="text-sm text-gray-900">{item.quantity}</div>
+												</td>
+												<td class="px-6 py-4 whitespace-nowrap">
+													<div class="text-sm text-gray-900">{item.unit}</div>
 												</td>
 												<td class="px-6 py-4 whitespace-nowrap">
 													<div class="text-sm font-semibold text-gray-900">
@@ -851,7 +930,7 @@
 <!-- Edit Item Modal -->
 {#if showEditItemModal && editingItem}
 	<div class="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full z-50">
-		<div class="relative top-20 mx-auto p-5 border w-full max-w-lg shadow-lg rounded-md bg-white">
+		<div class="relative top-20 mx-auto p-5 border w-full max-w-2xl shadow-lg rounded-md bg-white">
 			<div class="mt-3">
 				<div class="flex items-center justify-between mb-4">
 					<h3 class="text-lg font-medium text-gray-900" data-testid="edit-modal-title">
@@ -891,7 +970,8 @@
 				{/if}
 
 				<!-- Item Details Form -->
-				<div class="space-y-4">
+				<div class="space-y-6">
+					<!-- Name Field (at top) -->
 					<div>
 						<label for="editItemName" class="block text-sm font-medium text-gray-700 mb-2">
 							Item Name <span class="text-red-500">*</span>
@@ -907,6 +987,7 @@
 						/>
 					</div>
 
+					<!-- Description Field -->
 					<div>
 						<label for="editItemDescription" class="block text-sm font-medium text-gray-700 mb-2">
 							Description
@@ -915,28 +996,65 @@
 							id="editItemDescription"
 							type="text"
 							bind:value={editingItem.description}
-							placeholder="Enter description (optional)"
+							placeholder="Enter description"
 							class="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-colors"
 							disabled={isUpdatingItem || isDeletingItem}
 							data-testid="edit-item-description"
 						/>
 					</div>
 
-					<div>
-						<label for="editItemPrice" class="block text-sm font-medium text-gray-700 mb-2">
-							Price
-						</label>
-						<input
-							id="editItemPrice"
-							type="number"
-							min="0"
-							step="0.01"
-							bind:value={editingItem.price}
-							placeholder="0.00"
-							class="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-colors"
-							disabled={isUpdatingItem || isDeletingItem}
-							data-testid="edit-item-price"
-						/>
+					<!-- Grouped Fields (Cost, Price, Unit) -->
+					<div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+						<div>
+							<label for="editItemCost" class="block text-sm font-medium text-gray-700 mb-2">
+								Cost (optional)
+							</label>
+							<input
+								id="editItemCost"
+								type="number"
+								min="0"
+								step="0.01"
+								bind:value={editingItem.cost}
+								placeholder="0.00"
+								class="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-colors"
+								disabled={isUpdatingItem || isDeletingItem}
+								data-testid="edit-item-cost"
+							/>
+						</div>
+
+						<div>
+							<label for="editItemPrice" class="block text-sm font-medium text-gray-700 mb-2">
+								Price
+							</label>
+							<input
+								id="editItemPrice"
+								type="number"
+								min="0"
+								step="0.01"
+								bind:value={editingItem.price}
+								placeholder="0.00"
+								class="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-colors"
+								disabled={isUpdatingItem || isDeletingItem}
+								data-testid="edit-item-price"
+							/>
+						</div>
+
+						<div>
+							<label for="editItemUnit" class="block text-sm font-medium text-gray-700 mb-2">
+								Unit
+							</label>
+							<select
+								id="editItemUnit"
+								bind:value={editingItem.unit}
+								class="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-colors"
+								disabled={isUpdatingItem || isDeletingItem}
+								data-testid="edit-item-unit"
+							>
+								{#each Object.values(Unit) as unit (unit)}
+									<option value={unit}>{unit} - {UNIT_LABELS[unit]}</option>
+								{/each}
+							</select>
+						</div>
 					</div>
 
 					<!-- Quantity Section -->
@@ -958,7 +1076,7 @@
 										class="font-bold {quantityChange > 0 ? 'text-green-600' : 'text-red-600'}"
 										data-testid="quantity-change"
 									>
-										{quantityChange > 0 ? ` + ${quantityChange}` : ` - ${Math.abs(quantityChange)}`}
+										{quantityChange > 0 ? ` + ${Math.round(quantityChange * 100) / 100}` : ` - ${Math.abs(Math.round(quantityChange * 100) / 100)}`}
 									</span>
 									<span class="text-gray-600"> → </span>
 									<span
@@ -993,11 +1111,21 @@
 								>
 									-1
 								</button>
+								<button
+									type="button"
+									onclick={() => adjustQuantityBy(-0.1)}
+									disabled={isUpdatingItem || isDeletingItem || quantityInput < 0.1}
+									class="px-2 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-indigo-500 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+									data-testid="decrease-01-button"
+								>
+									-0.1
+								</button>
 
 								<!-- Quantity Input Field -->
 								<input
 									type="number"
 									min="0"
+									step="0.01"
 									bind:value={quantityInput}
 									class="flex-1 px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-colors text-center"
 									disabled={isUpdatingItem || isDeletingItem}
@@ -1005,6 +1133,15 @@
 								/>
 
 								<!-- Increase buttons -->
+								<button
+									type="button"
+									onclick={() => adjustQuantityBy(0.1)}
+									disabled={isUpdatingItem || isDeletingItem}
+									class="px-2 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-indigo-500 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+									data-testid="increase-01-button"
+								>
+									+0.1
+								</button>
 								<button
 									type="button"
 									onclick={() => adjustQuantityBy(1)}

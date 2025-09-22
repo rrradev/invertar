@@ -45,6 +45,18 @@ enum UserRole {
   SUPER_ADMIN
 }
 
+enum Unit {
+  PCS     // pieces 
+  KG      // kilograms
+  G       // grams
+  L       // liters
+  ML      // milliliters
+  M       // meters
+  CM      // centimeters
+  M2      // square meters
+  M3      // cubic meters
+}
+
 model Folder {
   id               String   @id @default(cuid())
   name             String
@@ -65,7 +77,9 @@ model Item {
   name             String
   description      String?
   price            Float
-  quantity         Int      @default(0)
+  cost             Float?
+  quantity         Float    @default(0)
+  unit             Unit     @default(PCS)
   folderId         String
   folder           Folder   @relation(fields: [folderId], references: [id])
   photos           Photo[]
