@@ -547,7 +547,7 @@
 								id="itemDescription"
 								type="text"
 								bind:value={newItem.description}
-								placeholder="Enter description (optional)"
+								placeholder="Enter description"
 								class="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-colors"
 								disabled={isCreatingItem}
 							/>
@@ -569,7 +569,7 @@
 						</div>
 						<div>
 							<label for="itemCost" class="block text-sm font-medium text-gray-700 mb-2"
-								>Cost (optional)</label
+								>Cost</label
 							>
 							<input
 								id="itemCost"
@@ -990,7 +990,7 @@
 							id="editItemDescription"
 							type="text"
 							bind:value={editingItem.description}
-							placeholder="Enter description (optional)"
+							placeholder="Enter description"
 							class="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-colors"
 							disabled={isUpdatingItem || isDeletingItem}
 							data-testid="edit-item-description"
@@ -1016,7 +1016,7 @@
 
 					<div>
 						<label for="editItemCost" class="block text-sm font-medium text-gray-700 mb-2">
-							Cost (optional)
+							Cost
 						</label>
 						<input
 							id="editItemCost"

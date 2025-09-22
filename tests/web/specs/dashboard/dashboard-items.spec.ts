@@ -55,7 +55,7 @@ test.describe('Dashboard - Item Management', () => {
     await dashboard.waitForFoldersToLoad();
 
     await folder.shouldHaveItemWithName(itemData.name);
-    const itemRow = await folder.getItemRowByName(itemData.name);
+    const itemRow = folder.getItemRowByName(itemData.name);
 
     await expect(itemRow).toBeVisible();
     await expect(itemRow).toContainText(itemData.description);
