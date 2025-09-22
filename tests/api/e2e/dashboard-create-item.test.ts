@@ -36,7 +36,7 @@ describe('Dashboard - Create Item API', () => {
         folderId: testFolderId
       };
 
-      const response = await req<SuccessResponse<{ item: any }>>(
+      const response = await req<SuccessResponse<{ message: string; item: any }>>(
         'POST',
         'dashboard.createItem',
         itemData,
@@ -63,7 +63,7 @@ describe('Dashboard - Create Item API', () => {
         // cost field omitted
       };
 
-      const response = await req<SuccessResponse<{ item: any }>>(
+      const response = await req<SuccessResponse<{ message: string; item: any }>>(
         'POST',
         'dashboard.createItem',
         itemData,
