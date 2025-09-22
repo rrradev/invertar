@@ -433,21 +433,6 @@
 						Create Folder
 					</button>
 					<button
-						onclick={() => (showCreateLabelForm = !showCreateLabelForm)}
-						class="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-emerald-500 transition-all duration-200"
-						data-testid="create-label-button"
-					>
-						<svg class="h-5 w-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-							<path
-								stroke-linecap="round"
-								stroke-linejoin="round"
-								stroke-width="2"
-								d="M7 7h.01M7 3h5c.512 0 1.024.195 1.414.586l7 7a2 2 0 010 2.828l-7 7a2 2 0 01-2.828 0l-7-7A1.994 1.994 0 013 12V7a4 4 0 014-4z"
-							/>
-						</svg>
-						Create Label
-					</button>
-					<button
 						onclick={() => (showCreateItemForm = !showCreateItemForm)}
 						class="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-gradient-to-r from-indigo-600 to-cyan-600 hover:from-indigo-700 hover:to-cyan-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 transition-all duration-200"
 						data-testid="create-item-button"
@@ -461,6 +446,21 @@
 							/>
 						</svg>
 						Create Item
+					</button>
+					<button
+						onclick={() => (showCreateLabelForm = !showCreateLabelForm)}
+						class="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-gradient-to-r from-purple-600 to-violet-600 hover:from-purple-700 hover:to-violet-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-purple-500 transition-all duration-200"
+						data-testid="create-label-button"
+					>
+						<svg class="h-5 w-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+							<path
+								stroke-linecap="round"
+								stroke-linejoin="round"
+								stroke-width="2"
+								d="M7 7h.01M7 3h5c.512 0 1.024.195 1.414.586l7 7a2 2 0 010 2.828l-7 7a2 2 0 01-2.828 0l-7-7A1.994 1.994 0 013 12V7a4 4 0 014-4z"
+							/>
+						</svg>
+						Create Label
 					</button>
 				</div>
 			</div>
@@ -568,7 +568,7 @@
 							type="text"
 							bind:value={newLabel.name}
 							placeholder="Enter label name"
-							class="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 transition-colors"
+							class="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-purple-500 focus:border-purple-500 transition-colors"
 							disabled={isCreatingLabel}
 						/>
 					</div>
@@ -581,7 +581,7 @@
 								id="labelColor"
 								type="color"
 								bind:value={newLabel.color}
-								class="h-10 w-16 rounded-md border border-gray-300 cursor-pointer focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500"
+								class="h-10 w-16 rounded-md border border-gray-300 cursor-pointer focus:ring-2 focus:ring-purple-500 focus:border-purple-500"
 								disabled={isCreatingLabel}
 							/>
 						</div>
@@ -592,7 +592,7 @@
 								showCreateLabelForm = false;
 								newLabel = { name: '', color: '#3B82F6' };
 							}}
-							class="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-emerald-500 transition-colors"
+							class="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-purple-500 transition-colors"
 							disabled={isCreatingLabel}
 							data-testid="cancel-label-button"
 						>
@@ -601,7 +601,7 @@
 						<button
 							onclick={createLabel}
 							disabled={isCreatingLabel}
-							class="px-4 py-2 text-sm font-medium text-white bg-gradient-to-r from-emerald-600 to-emerald-700 hover:from-emerald-700 hover:to-emerald-800 rounded-md focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-emerald-500 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200"
+							class="px-4 py-2 text-sm font-medium text-white bg-gradient-to-r from-purple-600 to-purple-700 hover:from-purple-700 hover:to-purple-800 rounded-md focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-purple-500 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200"
 							data-testid="submit-label-button"
 						>
 							{#if isCreatingLabel}

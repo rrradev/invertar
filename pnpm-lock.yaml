@@ -142,6 +142,9 @@ importers:
 
   apps/web:
     dependencies:
+      '@repo/types':
+        specifier: workspace:*
+        version: link:../../packages/types
       '@tanstack/svelte-query':
         specifier: ^5.83.1
         version: 5.83.1(svelte@5.38.1)

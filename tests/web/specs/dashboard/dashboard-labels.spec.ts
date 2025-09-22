@@ -22,8 +22,8 @@ test.describe('Dashboard - Labels UI', () => {
     const createLabelButton = dashboard.page.getByTestId('create-label-button');
     await expect(createLabelButton).toContainText('Create Label');
     
-    // Check that it has the expected emerald/teal gradient styling
-    await expect(createLabelButton).toHaveClass(/from-emerald-600.*to-teal-600/);
+    // Check that it has the expected purple gradient styling
+    await expect(createLabelButton).toHaveClass(/from-purple-600.*to-violet-600/);
   });
 
   test('should display create label button for admins', async () => {
@@ -127,7 +127,7 @@ test.describe('Dashboard - Labels UI', () => {
     
     // Check that buttons appear in correct order
     await expect(buttons.nth(0)).toHaveAttribute('data-testid', 'create-folder-button');
-    await expect(buttons.nth(1)).toHaveAttribute('data-testid', 'create-label-button');
-    await expect(buttons.nth(2)).toHaveAttribute('data-testid', 'create-item-button');
+    await expect(buttons.nth(1)).toHaveAttribute('data-testid', 'create-item-button');
+    await expect(buttons.nth(2)).toHaveAttribute('data-testid', 'create-label-button');
   });
 });
