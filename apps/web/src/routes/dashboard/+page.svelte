@@ -173,7 +173,7 @@
 	}
 
 	function openEditModal(item: Item) {
-		editingItem = item;
+		editingItem = { ...item }; // Create a copy to avoid mutating the original
 		originalItem = { ...item }; // Store a copy of the original item
 		quantityInput = item.quantity;
 		showEditItemModal = true;
@@ -247,7 +247,7 @@
 				name: editingItem.name.trim(),
 				description: editingItem.description?.trim() || undefined,
 				price: editingItem.price || 0,
-				cost: editingItem.cost || undefined,
+				cost: editingItem.cost ?? undefined,
 				unit: editingItem.unit
 			});
 

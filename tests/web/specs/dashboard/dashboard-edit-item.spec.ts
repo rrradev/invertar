@@ -293,4 +293,52 @@ test.describe('Dashboard - Edit Item Modal', () => {
     const itemRow = folder.getItemRowByName(randomItemName);
     await expect(itemRow).toContainText('130');
   });
+
+  test('should update item cost and unit correctly', { tag: '@smoke' }, async ({ dashboard, folder, randomItemName }) => {
+    // Create initial item with some basic data
+    await dashboard.createBasicItem(randomItemName, folder);
+    await dashboard.waitForSuccessMessage();
+
+    // Open edit modal
+    await dashboard.openEditModalForItem(randomItemName);
+
+    // Update cost and unit
+    const updateData = {
+      cost: 0, // Test setting cost to 0 (this was the bug!)
+      unit: 'KG'
+    };
+    
+    await dashboard.updateItemDetails(updateData);
+    await dashboard.submitItemUpdate();
+
+    // Verify success message
+    await dashboard.waitForSuccessMessage();
+    const successMessage = await dashboard.getSuccessMessageText();
+    expect(successMessage).toContain('updated successfully');
+
+    // Verify cost field shows 0.00 in the edit modal
+    await dashboard.openEditModalForItem(randomItemName);
+    await expect(dashboard.editItemCostInput).toHaveValue('0');
+    await expect(dashboard.editItemUnitSelect).toHaveValue('KG');
+    
+    // Verify unit is displayed in the table
+    await dashboard.closeEditModal();
+    const itemRow = folder.getItemRowByName(randomItemName);
+    await expect(itemRow).toContainText('KG');
+    
+    // Test updating cost to a positive number
+    await dashboard.openEditModalForItem(randomItemName);
+    await dashboard.updateItemDetails({ cost: 25.50, unit: 'L' });
+    await dashboard.submitItemUpdate();
+    await dashboard.waitForSuccessMessage();
+    
+    // Verify the positive cost and new unit
+    await dashboard.openEditModalForItem(randomItemName);
+    await expect(dashboard.editItemCostInput).toHaveValue('25.5');
+    await expect(dashboard.editItemUnitSelect).toHaveValue('L');
+    await dashboard.closeEditModal();
+    
+    const updatedItemRow = folder.getItemRowByName(randomItemName);
+    await expect(updatedItemRow).toContainText('L');
+  });
 });
