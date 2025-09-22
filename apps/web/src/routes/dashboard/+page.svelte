@@ -1,6 +1,7 @@
 <script lang="ts">
 	import { trpc } from '$lib/trpc';
 	import { SuccessStatus } from '@repo/types/trpc/successStatus';
+	import { Unit, UNIT_LABELS } from '@repo/types/units';
 	import Header from '$lib/components/Header.svelte';
 	import type { PageData } from './$types';
 
@@ -15,7 +16,9 @@
 		name: string;
 		description: string | null;
 		price: number;
+		cost?: number | null;
 		quantity: number;
+		unit: Unit;
 		createdAt: string;
 		updatedAt: string;
 		lastModifiedBy: string;
@@ -54,7 +57,9 @@
 		name: '',
 		description: '',
 		price: 0,
+		cost: 0,
 		quantity: 0,
+		unit: Unit.PCS,
 		folderId: ''
 	});
 
@@ -105,13 +110,15 @@
 				name: newItem.name.trim(),
 				description: newItem.description.trim() || undefined,
 				price: newItem.price || undefined,
+				cost: newItem.cost || undefined,
 				quantity: newItem.quantity || undefined,
+				unit: newItem.unit,
 				folderId: targetFolderId
 			});
 
 			if (result.status === SuccessStatus.SUCCESS) {
 				successMessage = result.message;
-				newItem = { name: '', description: '', price: 0, quantity: 0, folderId: '' };
+				newItem = { name: '', description: '', price: 0, cost: 0, quantity: 0, unit: Unit.PCS, folderId: '' };
 				showCreateItemForm = false;
 
 				// Add the new item to the corresponding folder
@@ -228,7 +235,9 @@
 				itemId: editingItem.id,
 				name: editingItem.name.trim(),
 				description: editingItem.description?.trim() || undefined,
-				price: editingItem.price || 0
+				price: editingItem.price || 0,
+				cost: editingItem.cost || undefined,
+				unit: editingItem.unit
 			});
 
 			if (updateResult.status === SuccessStatus.SUCCESS) {
@@ -549,6 +558,21 @@
 							/>
 						</div>
 						<div>
+							<label for="itemCost" class="block text-sm font-medium text-gray-700 mb-2"
+								>Cost (optional)</label
+							>
+							<input
+								id="itemCost"
+								type="number"
+								min="0"
+								step="0.01"
+								bind:value={newItem.cost}
+								placeholder="0.00"
+								class="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-colors"
+								disabled={isCreatingItem}
+							/>
+						</div>
+						<div>
 							<label for="itemQuantity" class="block text-sm font-medium text-gray-700 mb-2"
 								>Quantity</label
 							>
@@ -556,11 +580,27 @@
 								id="itemQuantity"
 								type="number"
 								min="0"
+								step="0.01"
 								bind:value={newItem.quantity}
 								placeholder="0"
 								class="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-colors"
 								disabled={isCreatingItem}
 							/>
+						</div>
+						<div>
+							<label for="itemUnit" class="block text-sm font-medium text-gray-700 mb-2"
+								>Unit</label
+							>
+							<select
+								id="itemUnit"
+								bind:value={newItem.unit}
+								class="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-colors"
+								disabled={isCreatingItem}
+							>
+								{#each Object.values(Unit) as unit}
+									<option value={unit}>{unit} - {UNIT_LABELS[unit]}</option>
+								{/each}
+							</select>
 						</div>
 					</div>
 				{/if}
@@ -570,7 +610,7 @@
 						onclick={() => {
 							showCreateItemForm = false;
 							showAdvancedItemFields = false;
-							newItem = { name: '', description: '', price: 0, quantity: 0, folderId: '' };
+							newItem = { name: '', description: '', price: 0, cost: 0, quantity: 0, unit: Unit.PCS, folderId: '' };
 						}}
 						class="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 transition-colors"
 						disabled={isCreatingItem}
@@ -753,7 +793,17 @@
 											<th
 												class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
 											>
+												Cost
+											</th>
+											<th
+												class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
+											>
 												Quantity
+											</th>
+											<th
+												class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
+											>
+												Unit
 											</th>
 											<th
 												class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
@@ -800,7 +850,15 @@
 													<div class="text-sm text-gray-900">{formatPrice(item.price)}</div>
 												</td>
 												<td class="px-6 py-4 whitespace-nowrap">
+													<div class="text-sm text-gray-900">
+														{item.cost ? formatPrice(item.cost) : '-'}
+													</div>
+												</td>
+												<td class="px-6 py-4 whitespace-nowrap">
 													<div class="text-sm text-gray-900">{item.quantity}</div>
+												</td>
+												<td class="px-6 py-4 whitespace-nowrap">
+													<div class="text-sm text-gray-900">{item.unit}</div>
 												</td>
 												<td class="px-6 py-4 whitespace-nowrap">
 													<div class="text-sm font-semibold text-gray-900">
@@ -939,6 +997,40 @@
 						/>
 					</div>
 
+					<div>
+						<label for="editItemCost" class="block text-sm font-medium text-gray-700 mb-2">
+							Cost (optional)
+						</label>
+						<input
+							id="editItemCost"
+							type="number"
+							min="0"
+							step="0.01"
+							bind:value={editingItem.cost}
+							placeholder="0.00"
+							class="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-colors"
+							disabled={isUpdatingItem || isDeletingItem}
+							data-testid="edit-item-cost"
+						/>
+					</div>
+
+					<div>
+						<label for="editItemUnit" class="block text-sm font-medium text-gray-700 mb-2">
+							Unit
+						</label>
+						<select
+							id="editItemUnit"
+							bind:value={editingItem.unit}
+							class="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-colors"
+							disabled={isUpdatingItem || isDeletingItem}
+							data-testid="edit-item-unit"
+						>
+							{#each Object.values(Unit) as unit}
+								<option value={unit}>{unit} - {UNIT_LABELS[unit]}</option>
+							{/each}
+						</select>
+					</div>
+
 					<!-- Quantity Section -->
 					<div>
 						<label class="block text-sm font-medium text-gray-700 mb-2"> Quantity </label>
@@ -998,6 +1090,7 @@
 								<input
 									type="number"
 									min="0"
+									step="0.01"
 									bind:value={quantityInput}
 									class="flex-1 px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-colors text-center"
 									disabled={isUpdatingItem || isDeletingItem}
