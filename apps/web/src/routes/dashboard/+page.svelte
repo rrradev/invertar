@@ -116,7 +116,9 @@
 		activeLabelSlot = slotIndex;
 		showLabelDropdown = true;
 		labelSearchQuery = '';
-		loadRecentLabels(); // Refresh recent labels when opening dropdown
+		// Refresh both label arrays when opening dropdown to ensure consistency
+		loadLabels();
+		loadRecentLabels();
 	}
 
 	// Close label dropdown
@@ -149,14 +151,21 @@
 
 	// Get filtered labels based on search query
 	function getFilteredLabels(): Label[] {
+		// Always exclude already selected labels first
+		const availableLabels = labels.filter(label => 
+			!newItem.selectedLabels.some(selectedLabel => selectedLabel?.id === label.id)
+		);
+		
 		if (!labelSearchQuery.trim()) {
-			return recentLabels;
+			// No search query: return recent labels that are also available (not selected)
+			return recentLabels.filter(label => 
+				!newItem.selectedLabels.some(selectedLabel => selectedLabel?.id === label.id)
+			);
 		}
 		
-		return labels.filter(label => 
-			label.name.toLowerCase().includes(labelSearchQuery.toLowerCase()) &&
-			// Exclude already selected labels
-			!newItem.selectedLabels.some(selectedLabel => selectedLabel?.id === label.id)
+		// With search query: search through all available labels
+		return availableLabels.filter(label => 
+			label.name.toLowerCase().includes(labelSearchQuery.toLowerCase())
 		);
 	}
 
@@ -183,6 +192,8 @@
 
 				// Add the new label to the labels array
 				labels = [result.label as Label, ...labels];
+				// Also refresh recent labels to include the newly created label
+				loadRecentLabels();
 			}
 		} catch (err: unknown) {
 			error = (err as Error).message || 'Failed to create label';
