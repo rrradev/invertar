@@ -208,7 +208,6 @@
 		return (
 			editingItem.name !== originalItem.name ||
 			editingItem.description !== originalItem.description ||
-			originalItem.description === null ||
 			editingItem.price !== originalItem.price ||
 			editingItem.cost !== originalItem.cost ||
 			editingItem.unit !== originalItem.unit ||
