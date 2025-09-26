@@ -314,7 +314,7 @@ describe('Dashboard - Labels API', () => {
         '' // empty token
       );
 
-      expect(response.error.data.code).toBe('UNAUTHORIZED');
+      expect(response.data.code).toBe('UNAUTHORIZED');
     });
   });
 });

@@ -354,7 +354,7 @@
 
 		return (
 			editingItem.name !== originalItem.name ||
-			(editingItem.description !== originalItem.description || originalItem.description === null) ||
+			(editingItem.description !== originalItem.description && editingItem.description !== "") ||
 			editingItem.price !== originalItem.price ||
 			editingItem.cost !== originalItem.cost ||
 			editingItem.unit !== originalItem.unit ||
@@ -760,7 +760,6 @@
 
 				<!-- Labels Selection -->
 				<div class="mb-4">
-					<label class="block text-sm font-medium text-gray-700 mb-2">Labels (max 2)</label>
 					<div class="flex space-x-4">
 						{#each [0, 1] as slotIndex}
 							<div class="relative">
@@ -810,6 +809,7 @@
 								<!-- Search Bar -->
 								<div class="p-3 border-b border-gray-200">
 									<input
+										name="labelSearch"
 										type="text"
 										bind:value={labelSearchQuery}
 										placeholder="Search labels..."
