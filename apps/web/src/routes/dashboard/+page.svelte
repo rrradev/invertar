@@ -788,6 +788,12 @@
 
 					<!-- Label Dropdown -->
 					{#if showLabelDropdown && activeLabelSlot !== null}
+						<!-- Background Overlay -->
+						<div 
+							class="fixed inset-0 z-[5]" 
+							onclick={closeLabelDropdown}
+						></div>
+						
 						<div class="relative mt-2">
 							<div class="absolute z-10 w-80 bg-white border border-gray-200 rounded-lg shadow-lg">
 								<!-- Search Bar -->

@@ -247,4 +247,74 @@ describe('Dashboard - Labels API', () => {
       expect(response.data.code).toBe('UNAUTHORIZED');
     });
   });
+
+  describe('getRecentLabels endpoint', () => {
+    it('should return recent labels ordered by updatedAt desc', async () => {
+      // Create multiple labels with slight delays to ensure different timestamps
+      const label1 = await req<SuccessResponse<{ label: any }>>( 
+        'POST',
+        'dashboard.createLabel',
+        { name: `recent-label-1-${faker.string.alphanumeric(6)}`, color: '#FF5733' },
+        userToken
+      );
+
+      // Small delay to ensure different timestamps
+      await new Promise(resolve => setTimeout(resolve, 10));
+
+      const label2 = await req<SuccessResponse<{ label: any }>>( 
+        'POST',
+        'dashboard.createLabel',
+        { name: `recent-label-2-${faker.string.alphanumeric(6)}`, color: '#33FF57' },
+        userToken
+      );
+
+      const response = await req<SuccessResponse<{ labels: any[] }>>( 
+        'GET',
+        'dashboard.getRecentLabels',
+        {},
+        userToken
+      );
+
+      expect(response.status).toBe('SUCCESS');
+      expect(Array.isArray(response.labels)).toBe(true);
+      
+      // Should return at most 7 labels
+      expect(response.labels.length).toBeLessThanOrEqual(7);
+      
+      // Find our created labels
+      const foundLabel1 = response.labels.find(l => l.id === label1.label.id);
+      const foundLabel2 = response.labels.find(l => l.id === label2.label.id);
+      
+      expect(foundLabel1).toBeDefined();
+      expect(foundLabel2).toBeDefined();
+      
+      // label2 should come before label1 (more recent)
+      const index1 = response.labels.findIndex(l => l.id === label1.label.id);
+      const index2 = response.labels.findIndex(l => l.id === label2.label.id);
+      expect(index2).toBeLessThan(index1);
+    });
+
+    it('should limit results to 7 labels', async () => {
+      const response = await req<SuccessResponse<{ labels: any[] }>>( 
+        'GET',
+        'dashboard.getRecentLabels',
+        {},
+        userToken
+      );
+
+      expect(response.status).toBe('SUCCESS');
+      expect(response.labels.length).toBeLessThanOrEqual(7);
+    });
+
+    it('should require authentication', async () => {
+      const response = await req<ErrorResponse>(
+        'GET',
+        'dashboard.getRecentLabels',
+        {},
+        '' // empty token
+      );
+
+      expect(response.error.data.code).toBe('UNAUTHORIZED');
+    });
+  });
 });
