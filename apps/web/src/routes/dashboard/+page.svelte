@@ -42,6 +42,7 @@
 
 	let folders = $state((data.folders as Folder[]) || []);
 	let labels = $state<Label[]>([]);
+	let recentLabels = $state<Label[]>([]);
 	let isCreatingFolder = $state(false);
 	let isCreatingItem = $state(false);
 	let isCreatingLabel = $state(false);
@@ -51,6 +52,9 @@
 	let showAdvancedItemFields = $state(false);
 	let showEditItemModal = $state(false);
 	let showDeleteConfirmation = $state(false);
+	let showLabelDropdown = $state(false);
+	let activeLabelSlot = $state<number | null>(null); // 0 or 1 for which label slot is being edited
+	let labelSearchQuery = $state('');
 	let editingItem: Item | null = $state(null);
 	let originalItem: Item | null = $state(null); // Store original values to detect changes
 	let isUpdatingItem = $state(false);
@@ -76,7 +80,7 @@
 		quantity: 0,
 		unit: Unit.PCS,
 		folderId: '',
-		labelIds: [] as string[]
+		selectedLabels: [null, null] as (Label | null)[] // Two slots for labels
 	});
 
 	// Load labels when the component is initialized
@@ -91,8 +95,70 @@
 		}
 	}
 
+	// Load recent labels for dropdown
+	async function loadRecentLabels() {
+		try {
+			const result = await trpc.dashboard.getRecentLabels.query();
+			if (result.status === SuccessStatus.SUCCESS) {
+				recentLabels = result.labels as Label[];
+			}
+		} catch (err) {
+			console.error('Failed to load recent labels:', err);
+		}
+	}
+
 	// Load labels on mount
 	loadLabels();
+	loadRecentLabels();
+
+	// Open label dropdown for a specific slot
+	function openLabelDropdown(slotIndex: number) {
+		activeLabelSlot = slotIndex;
+		showLabelDropdown = true;
+		labelSearchQuery = '';
+		loadRecentLabels(); // Refresh recent labels when opening dropdown
+	}
+
+	// Close label dropdown
+	function closeLabelDropdown() {
+		showLabelDropdown = false;
+		activeLabelSlot = null;
+		labelSearchQuery = '';
+	}
+
+	// Select a label for the active slot
+	function selectLabel(label: Label) {
+		if (activeLabelSlot !== null) {
+			// Check if this label is already selected in the other slot
+			const otherSlot = activeLabelSlot === 0 ? 1 : 0;
+			if (newItem.selectedLabels[otherSlot]?.id === label.id) {
+				error = 'This label is already selected. Please choose a different label.';
+				return;
+			}
+			
+			newItem.selectedLabels[activeLabelSlot] = label;
+			closeLabelDropdown();
+			error = ''; // Clear any existing error
+		}
+	}
+
+	// Remove a label from a slot
+	function removeLabel(slotIndex: number) {
+		newItem.selectedLabels[slotIndex] = null;
+	}
+
+	// Get filtered labels based on search query
+	function getFilteredLabels(): Label[] {
+		if (!labelSearchQuery.trim()) {
+			return recentLabels;
+		}
+		
+		return labels.filter(label => 
+			label.name.toLowerCase().includes(labelSearchQuery.toLowerCase()) &&
+			// Exclude already selected labels
+			!newItem.selectedLabels.some(selectedLabel => selectedLabel?.id === label.id)
+		);
+	}
 
 	async function createLabel() {
 		if (!newLabel.name.trim()) {
@@ -176,7 +242,7 @@
 				quantity: newItem.quantity || undefined,
 				unit: newItem.unit,
 				folderId: targetFolderId,
-				labelIds: newItem.labelIds.length > 0 ? newItem.labelIds : undefined
+				labelIds: newItem.selectedLabels.filter(label => label !== null).map(label => label!.id)
 			});
 
 			if (result.status === SuccessStatus.SUCCESS) {
@@ -189,7 +255,7 @@
 					quantity: 0,
 					unit: Unit.PCS,
 					folderId: '',
-					labelIds: []
+					selectedLabels: [null, null]
 				};
 				showCreateItemForm = false;
 
@@ -684,33 +750,93 @@
 				<!-- Labels Selection -->
 				<div class="mb-4">
 					<label class="block text-sm font-medium text-gray-700 mb-2">Labels (max 2)</label>
-					<div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-2">
-						{#each labels as label (label.id)}
-							<label class="flex items-center space-x-2 p-2 border border-gray-200 rounded-md hover:bg-gray-50 cursor-pointer transition-colors">
-								<input
-									type="checkbox"
-									checked={newItem.labelIds.includes(label.id)}
-									disabled={isCreatingItem || (newItem.labelIds.length >= 2 && !newItem.labelIds.includes(label.id))}
-									onchange={(e) => {
-										const isChecked = e.target.checked;
-										if (isChecked) {
-											newItem.labelIds = [...newItem.labelIds, label.id];
-										} else {
-											newItem.labelIds = newItem.labelIds.filter(id => id !== label.id);
-										}
-									}}
-									class="rounded border-gray-300 text-indigo-600 focus:ring-indigo-500"
-								/>
-								<div class="flex items-center space-x-1">
-									<div
-										class="w-3 h-3 rounded-full border border-gray-300"
-										style="background-color: {label.color}"
-									></div>
-									<span class="text-sm text-gray-700">{label.name}</span>
-								</div>
-							</label>
+					<div class="flex space-x-4">
+						{#each [0, 1] as slotIndex}
+							<div class="relative">
+								{#if newItem.selectedLabels[slotIndex]}
+									<!-- Selected Label -->
+									<button
+										type="button"
+										onclick={() => openLabelDropdown(slotIndex)}
+										disabled={isCreatingItem}
+										class="inline-flex items-center px-4 py-2 rounded-full text-sm font-medium border-2 transition-all duration-200 hover:shadow-md focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 disabled:opacity-50 disabled:cursor-not-allowed"
+										style="background-color: {newItem.selectedLabels[slotIndex]!.color}20; border-color: {newItem.selectedLabels[slotIndex]!.color}40; color: {newItem.selectedLabels[slotIndex]!.color}"
+									>
+										<div
+											class="w-3 h-3 rounded-full mr-2"
+											style="background-color: {newItem.selectedLabels[slotIndex]!.color}"
+										></div>
+										{newItem.selectedLabels[slotIndex]!.name}
+									</button>
+								{:else}
+									<!-- Empty Placeholder -->
+									<button
+										type="button"
+										onclick={() => openLabelDropdown(slotIndex)}
+										disabled={isCreatingItem}
+										class="inline-flex items-center px-6 py-3 rounded-full text-sm font-medium border-2 border-dashed border-gray-300 text-gray-500 hover:border-indigo-300 hover:text-indigo-600 transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 disabled:opacity-50 disabled:cursor-not-allowed"
+									>
+										<svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+											<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path>
+										</svg>
+										Add Label
+									</button>
+								{/if}
+							</div>
 						{/each}
 					</div>
+
+					<!-- Label Dropdown -->
+					{#if showLabelDropdown && activeLabelSlot !== null}
+						<div class="relative mt-2">
+							<div class="absolute z-10 w-80 bg-white border border-gray-200 rounded-lg shadow-lg">
+								<!-- Search Bar -->
+								<div class="p-3 border-b border-gray-200">
+									<input
+										type="text"
+										bind:value={labelSearchQuery}
+										placeholder="Search labels..."
+										class="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 text-sm"
+									/>
+								</div>
+								
+								<!-- Labels List -->
+								<div class="max-h-60 overflow-y-auto p-2">
+									{#each getFilteredLabels() as label (label.id)}
+										<button
+											type="button"
+											onclick={() => selectLabel(label)}
+											class="w-full flex items-center p-2 rounded-md hover:bg-gray-50 focus:outline-none focus:bg-gray-50 transition-colors"
+										>
+											<div
+												class="w-4 h-4 rounded-full mr-3 border border-gray-200"
+												style="background-color: {label.color}"
+											></div>
+											<span class="text-sm text-gray-900 flex-1 text-left">{label.name}</span>
+										</button>
+									{/each}
+									
+									{#if getFilteredLabels().length === 0}
+										<div class="p-3 text-sm text-gray-500 text-center">
+											{labelSearchQuery ? 'No labels found matching your search' : 'No recent labels available'}
+										</div>
+									{/if}
+								</div>
+								
+								<!-- Close Button -->
+								<div class="p-3 border-t border-gray-200">
+									<button
+										type="button"
+										onclick={closeLabelDropdown}
+										class="w-full px-3 py-2 text-sm font-medium text-gray-700 bg-gray-100 rounded-md hover:bg-gray-200 focus:outline-none focus:ring-2 focus:ring-indigo-500 transition-colors"
+									>
+										Close
+									</button>
+								</div>
+							</div>
+						</div>
+					{/if}
+
 					{#if labels.length === 0}
 						<p class="text-sm text-gray-500 mt-2">No labels available. Create labels first to assign them to items.</p>
 					{/if}
@@ -833,7 +959,8 @@
 								quantity: 0,
 								unit: Unit.PCS,
 								folderId: '',
-								labelIds: []
+								labelIds: [],
+								selectedLabels: [null, null]
 							};
 						}}
 						class="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 transition-colors"

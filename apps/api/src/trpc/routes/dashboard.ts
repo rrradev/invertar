@@ -643,6 +643,31 @@ export const dashboardRouter = router({
       };
     }),
 
+  // Get recent labels for the user's organization (for dropdown)
+  getRecentLabels: protectedProcedure
+    .query(async ({ ctx }) => {
+      const labels = await prisma.label.findMany({
+        where: {
+          organizationId: ctx.user!.organizationId,
+        },
+        orderBy: {
+          updatedAt: 'desc',
+        },
+        take: 7, // Limit to 7 most recent labels
+      });
+
+      return {
+        status: SuccessStatus.SUCCESS,
+        labels: labels.map(label => ({
+          id: label.id,
+          name: label.name,
+          color: label.color,
+          createdAt: label.createdAt.toISOString(),
+          updatedAt: label.updatedAt.toISOString(),
+        })),
+      };
+    }),
+
   // Create a new label
   createLabel: protectedProcedure
     .input(createLabelInput)
