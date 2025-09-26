@@ -320,8 +320,34 @@
 	}
 
 	function openEditModal(item: Item) {
-		editingItem = structuredClone(item); // Create a deep copy to avoid any reference sharing
-		originalItem = structuredClone(item); // Store a deep copy of the original item
+		// Create a deep copy manually to avoid structuredClone issues
+		editingItem = {
+			id: item.id,
+			name: item.name,
+			description: item.description,
+			price: item.price,
+			cost: item.cost,
+			quantity: item.quantity,
+			unit: item.unit,
+			labels: item.labels.map(label => ({ ...label })), // Deep copy labels array
+			createdAt: item.createdAt,
+			updatedAt: item.updatedAt,
+			lastModifiedBy: item.lastModifiedBy
+		};
+		// Store original values for change detection
+		originalItem = {
+			id: item.id,
+			name: item.name,
+			description: item.description,
+			price: item.price,
+			cost: item.cost,
+			quantity: item.quantity,
+			unit: item.unit,
+			labels: item.labels.map(label => ({ ...label })), // Deep copy labels array
+			createdAt: item.createdAt,
+			updatedAt: item.updatedAt,
+			lastModifiedBy: item.lastModifiedBy
+		};
 		quantityInput = item.quantity;
 		showEditItemModal = true;
 		showDeleteConfirmation = false;
