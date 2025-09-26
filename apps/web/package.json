@@ -60,6 +60,7 @@
 		"svelte"
 	],
 	"dependencies": {
+		"@repo/types": "workspace:*",
 		"@tanstack/svelte-query": "^5.83.1",
 		"@trpc/client": "^11.4.4",
 		"jwt-decode": "^4.0.0"

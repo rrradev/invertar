@@ -25,6 +25,8 @@ async function purgeAllTestUsers() {
 
         if (!org) continue;
 
+        await prisma.label.deleteMany({ where: { organizationId: org.id } });
+    
         for (const folder of org.folders) {
             await prisma.item.deleteMany({ where: { folderId: folder.id } });
         }
