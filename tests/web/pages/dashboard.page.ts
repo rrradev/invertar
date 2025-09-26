@@ -11,10 +11,12 @@ export default class Dashboard extends BasePage {
     dashboardTitle: Locator;
     createFolderButton: Locator;
     createItemButton: Locator;
+    createLabelButton: Locator;
 
     // Forms
     createFolderForm: Locator;
     createItemForm: Locator;
+    createLabelForm: Locator;
 
     // Form inputs
     folderNameInput: Locator;
@@ -25,12 +27,19 @@ export default class Dashboard extends BasePage {
     itemQuantityInput: Locator;
     itemUnitSelect: Locator;
     itemFolderSelect: Locator;
+    labelNameInput: Locator;
+    labelColorInput: Locator;
+    addLabel1Button: Locator;
+    addLabel2Button: Locator;
+    labelSearchInput: Locator;
 
     // Form buttons
     submitFolderButton: Locator;
     cancelFolderButton: Locator;
     submitItemButton: Locator;
     cancelItemButton: Locator;
+    submitLabelButton: Locator;
+    cancelLabelButton: Locator;
     toggleAdvancedFieldsButton: Locator;
 
     // Advanced fields
@@ -80,10 +89,12 @@ export default class Dashboard extends BasePage {
         this.dashboardTitle = page.getByTestId('dashboard-title');
         this.createFolderButton = page.getByTestId('create-folder-button');
         this.createItemButton = page.getByTestId('create-item-button');
+        this.createLabelButton = page.getByTestId('create-label-button');
 
         // Forms
         this.createFolderForm = page.getByTestId('create-folder-form');
         this.createItemForm = page.getByTestId('create-item-form');
+        this.createLabelForm = page.getByTestId('create-label-form');
 
         // Form inputs
         this.folderNameInput = page.locator('#folderName');
@@ -94,12 +105,19 @@ export default class Dashboard extends BasePage {
         this.itemQuantityInput = page.locator('#itemQuantity');
         this.itemUnitSelect = page.locator('#itemUnit');
         this.itemFolderSelect = page.locator('#itemFolder');
+        this.labelNameInput = page.locator('#labelName');
+        this.labelColorInput = page.locator('#labelColor');
+        this.addLabel1Button = page.getByRole('button', { name: 'Add Label' }).first();
+        this.addLabel2Button = page.getByRole('button', { name: 'Add Label' });
+        this.labelSearchInput = page.locator('[name="labelSearch"]');
 
         // Form buttons
         this.submitFolderButton = page.getByTestId('submit-folder-button');
         this.cancelFolderButton = page.getByTestId('cancel-folder-button');
         this.submitItemButton = page.getByTestId('submit-item-button');
         this.cancelItemButton = page.getByTestId('cancel-item-button');
+        this.submitLabelButton = page.getByTestId('submit-label-button');
+        this.cancelLabelButton = page.getByTestId('cancel-label-button');
         this.toggleAdvancedFieldsButton = page.getByTestId('toggle-advanced-fields');
 
         // Advanced fields
@@ -188,6 +206,7 @@ export default class Dashboard extends BasePage {
         cost?: number;
         quantity?: number;
         unit?: string;
+        labels?: string[];
     }) {
         await this.openCreateItemForm();
         await this.itemNameInput.fill(data.name);
@@ -212,6 +231,12 @@ export default class Dashboard extends BasePage {
             }
             if (data.unit) {
                 await this.itemUnitSelect.selectOption(data.unit);
+            }
+            if (data.labels?.[0]) {
+                await this.addLabel1(data.labels[0]);
+            }
+            if (data.labels?.[1]) {
+                await this.addLabel2(data.labels[1]);
             }
         }
 
@@ -334,7 +359,7 @@ export default class Dashboard extends BasePage {
 
     async submitItemUpdate() {
         await this.updateItemButton.click();
-        
+
         const safePromises = [
             expect(this.errorMessage.$).toBeVisible().catch(() => undefined),
             expect(this.editItemModal).not.toBeVisible().catch(() => undefined),
@@ -387,4 +412,19 @@ export default class Dashboard extends BasePage {
         }
         return null;
     }
+
+    async addLabel1(name: string) {
+        await this.addLabel1Button.click();
+        await this.labelSearchInput.click();
+        await this.labelSearchInput.pressSequentially(name, { delay: 50 });
+        await this.page.getByRole('button', { name }).click();
+    }
+
+    async addLabel2(name: string) {
+        await this.addLabel2Button.click();
+        await this.labelSearchInput.click();
+        await this.labelSearchInput.pressSequentially(name, { delay: 50 });
+        await this.page.getByRole('button', { name }).click();
+    }
+
 }

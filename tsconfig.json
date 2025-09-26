@@ -13,7 +13,9 @@
       "@repo/db": ["packages/db/"],
       "@repo/auth/*": ["packages/auth/src/*"],
       "@repo/auth": ["packages/auth/src/"],
-      "@repo/api": ["apps/api/src/"]
+      "@repo/api": ["apps/api/src/"],
+      "@repo/utils/*": ["packages/utils/src/*"],
+      "@repo/utils": ["packages/utils/src/"]
     }
   },
   "exclude": ["apps/web"]

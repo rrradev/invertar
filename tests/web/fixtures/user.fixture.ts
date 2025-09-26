@@ -3,18 +3,20 @@ import Login from '../pages/login.page';
 import Dashboard from '../pages/dashboard.page';
 import { faker } from '@faker-js/faker';
 import Folder from '../pages/components/dashboard/folder.component';
-import { getToken } from '../../api/e2e/config/config';
+import { getToken, req } from '../../api/e2e/config/config';
 import { UserRole } from '@repo/types/users';
 
-const org = process.env.ADMIN_ORGANIZATION!;
-const username = process.env.ADMIN_USERNAME!;
-const password = process.env.ADMIN_PASSWORD!;
+const org = process.env.USER_ORGANIZATION!;
+const username = process.env.USER_USERNAME!;
+const password = process.env.USER_PASSWORD!;
 
 type MyFixtures = {
     dashboard: Dashboard;
     folder: Folder;
     randomItemName: string;
     accessToken: string;
+    label1: string;
+    label2: string;
 };
 
 export const test = base.extend<MyFixtures>({
@@ -49,6 +51,28 @@ export const test = base.extend<MyFixtures>({
     accessToken: async ({ }, use) => {
         const token = await getToken(UserRole.USER);
         await use(token);
+    },
+
+    label1: async ({ }, use) => {         
+        const label = faker.commerce.productMaterial() + Date.now();
+         await req<any>(
+              'POST',
+              'dashboard.createLabel',
+              { name: label, color: faker.color.rgb() },
+              await getToken(UserRole.USER)
+            );
+            await use(label);
+    },
+
+    label2: async ({ }, use) => {
+        const label = faker.commerce.productMaterial() + Date.now();
+        await req<any>(
+            'POST',
+            'dashboard.createLabel',
+            { name: label, color: faker.color.rgb() },
+            await getToken(UserRole.USER)
+        );
+        await use(label);
     }
 });
 

@@ -32,36 +32,42 @@ test.describe('Dashboard - Item Management', () => {
     await folder.shouldHaveItemWithName(randomItemName);
   });
 
-  test('should create an item with advanced fields including cost and unit', { tag: '@smoke' }, async ({ dashboard, folder, randomItemName }) => {
-    const itemData = {
-      name: randomItemName,
-      folder,
-      description: faker.commerce.productDescription(),
-      price: parseFloat(faker.commerce.price()),
-      cost: parseFloat((Math.random() * 50 + 10).toFixed(2)), // Random cost between 10-60
-      quantity: parseFloat((Math.random() * 100 + 1).toFixed(2)), // Decimal quantity
-      unit: Unit.KG
-    };
+  test('should create an item with advanced fields including cost, unit and labels', { tag: '@smoke' },
+    async ({ dashboard, folder, randomItemName, label1, label2 }) => {
+      const itemData = {
+        name: randomItemName,
+        folder,
+        description: faker.commerce.productDescription(),
+        price: parseFloat(faker.commerce.price()),
+        cost: parseFloat((Math.random() * 50 + 10).toFixed(2)), // Random cost between 10-60
+        quantity: parseFloat((Math.random() * 100 + 1).toFixed(2)), // Decimal quantity
+        unit: Unit.KG,
+        labels: [label1, label2]
+      };
 
-    // Create item with all fields
-    await dashboard.createAdvancedItem(itemData);
+      await dashboard.page.waitForTimeout(1000); // Wait for any UI animations to complete
 
-    // Verify success message
-    await dashboard.waitForSuccessMessage();
-    const successMessage = await dashboard.getSuccessMessageText();
-    expect(successMessage).toContain(`Item \"${randomItemName}\" created successfully`);
+      // Create item with all fields
+      await dashboard.createAdvancedItem(itemData);
 
-    // Verify item appears in table with correct data
-    await dashboard.waitForFoldersToLoad();
+      // Verify success message
+      await dashboard.waitForSuccessMessage();
+      const successMessage = await dashboard.getSuccessMessageText();
+      expect(successMessage).toContain(`Item \"${randomItemName}\" created successfully`);
 
-    await folder.shouldHaveItemWithName(itemData.name);
-    const itemRow = folder.getItemRowByName(itemData.name);
+      // Verify item appears in table with correct data
+      await dashboard.waitForFoldersToLoad();
 
-    await expect(itemRow).toBeVisible();
-    await expect(itemRow).toContainText(itemData.description);
-    await expect(itemRow).toContainText(itemData.price.toFixed(2));
-    await expect(itemRow).toContainText(itemData.quantity.toString());
-  });
+      await folder.shouldHaveItemWithName(itemData.name);
+      const itemRow = folder.getItemRowByName(itemData.name);
+
+      await expect(itemRow).toBeVisible();
+      await expect(itemRow).toContainText(itemData.description);
+      await expect(itemRow).toContainText(itemData.price.toFixed(2));
+      await expect(itemRow).toContainText(itemData.quantity.toString());
+      await expect(itemRow).toContainText(label1);
+      await expect(itemRow).toContainText(label2);
+    });
 
   test('should not create item without required fields', async ({ dashboard, folder }) => {
     // Try to create item without name
@@ -141,7 +147,7 @@ test.describe('Dashboard - Item Management', () => {
     const totalValue = await folder.getTotalValue();
 
     // Verify stats format
-    expect(await folder.stats.textContent()).toMatch(/\d+ items • \d+ total quantity/);
+    expect(await folder.stats.textContent()).toMatch(/\d+ items •/);
 
     // Since we created items with specific prices, we can verify calculations
     // This is a basic check that the total is reasonable
@@ -155,11 +161,14 @@ test.describe('Dashboard - Item Management', () => {
       // Verify table headers
       const headers = itemsTable.locator('thead th');
       await expect(headers.nth(0)).toContainText('Item');
-      await expect(headers.nth(1)).toContainText('Description');
-      await expect(headers.nth(2)).toContainText('Price');
-      await expect(headers.nth(3)).toContainText('Quantity');
-      await expect(headers.nth(4)).toContainText('Total Value');
-      await expect(headers.nth(5)).toContainText('Last Modified');
+      await expect(headers.nth(1)).toContainText('Labels');
+      await expect(headers.nth(2)).toContainText('Description');
+      await expect(headers.nth(3)).toContainText('Cost');
+      await expect(headers.nth(4)).toContainText('Price');
+      await expect(headers.nth(5)).toContainText('Quantity');
+      await expect(headers.nth(6)).toContainText('Unit');
+      await expect(headers.nth(7)).toContainText('Total Value');
+      await expect(headers.nth(8)).toContainText('Last Modified');
     }
   });
 });

@@ -11,6 +11,12 @@
 
 	let { data }: PageProps = $props();
 
+	interface Label {
+		id: string;
+		name: string;
+		color: string;
+	}
+
 	interface Item {
 		id: string;
 		name: string;
@@ -19,6 +25,7 @@
 		cost?: number | null;
 		quantity: number;
 		unit: Unit;
+		labels: Label[];
 		createdAt: string;
 		updatedAt: string;
 		lastModifiedBy: string;
@@ -34,13 +41,20 @@
 	}
 
 	let folders = $state((data.folders as Folder[]) || []);
+	let labels = $state<Label[]>([]);
+	let recentLabels = $state<Label[]>([]);
 	let isCreatingFolder = $state(false);
 	let isCreatingItem = $state(false);
+	let isCreatingLabel = $state(false);
 	let showCreateFolderForm = $state(false);
 	let showCreateItemForm = $state(false);
+	let showCreateLabelForm = $state(false);
 	let showAdvancedItemFields = $state(false);
 	let showEditItemModal = $state(false);
 	let showDeleteConfirmation = $state(false);
+	let showLabelDropdown = $state(false);
+	let activeLabelSlot = $state<number | null>(null); // 0 or 1 for which label slot is being edited
+	let labelSearchQuery = $state('');
 	let editingItem: Item | null = $state(null);
 	let originalItem: Item | null = $state(null); // Store original values to detect changes
 	let isUpdatingItem = $state(false);
@@ -53,6 +67,11 @@
 		name: ''
 	});
 
+	let newLabel = $state({
+		name: '',
+		color: '#3B82F6'
+	});
+
 	let newItem = $state({
 		name: '',
 		description: '',
@@ -60,8 +79,128 @@
 		cost: 0,
 		quantity: 0,
 		unit: Unit.PCS,
-		folderId: ''
+		folderId: '',
+		selectedLabels: [null, null] as (Label | null)[] // Two slots for labels
 	});
+
+	// Load labels when the component is initialized
+	async function loadLabels() {
+		try {
+			const result = await trpc.dashboard.getLabels.query();
+			if (result.status === SuccessStatus.SUCCESS) {
+				labels = result.labels as Label[];
+			}
+		} catch (err) {
+			console.error('Failed to load labels:', err);
+		}
+	}
+
+	// Load recent labels for dropdown
+	async function loadRecentLabels() {
+		try {
+			const result = await trpc.dashboard.getRecentLabels.query();
+			if (result.status === SuccessStatus.SUCCESS) {
+				recentLabels = result.labels as Label[];
+			}
+		} catch (err) {
+			console.error('Failed to load recent labels:', err);
+		}
+	}
+
+	// Load labels on mount
+	loadLabels();
+	loadRecentLabels();
+
+	// Open label dropdown for a specific slot
+	function openLabelDropdown(slotIndex: number) {
+		activeLabelSlot = slotIndex;
+		showLabelDropdown = true;
+		labelSearchQuery = '';
+		// Refresh both label arrays when opening dropdown to ensure consistency
+		loadLabels();
+		loadRecentLabels();
+	}
+
+	// Close label dropdown
+	function closeLabelDropdown() {
+		showLabelDropdown = false;
+		activeLabelSlot = null;
+		labelSearchQuery = '';
+	}
+
+	// Select a label for the active slot
+	function selectLabel(label: Label) {
+		if (activeLabelSlot !== null) {
+			// Check if this label is already selected in the other slot
+			const otherSlot = activeLabelSlot === 0 ? 1 : 0;
+			if (newItem.selectedLabels[otherSlot]?.id === label.id) {
+				error = 'This label is already selected. Please choose a different label.';
+				return;
+			}
+			
+			newItem.selectedLabels[activeLabelSlot] = label;
+			closeLabelDropdown();
+			error = ''; // Clear any existing error
+		}
+	}
+
+	// Remove a label from a slot
+	function removeLabel(slotIndex: number) {
+		newItem.selectedLabels[slotIndex] = null;
+	}
+
+	// Get filtered labels based on search query
+	function getFilteredLabels(): Label[] {
+		// Always exclude already selected labels first
+		const availableLabels = labels.filter(label => 
+			!newItem.selectedLabels.some(selectedLabel => selectedLabel?.id === label.id)
+		);
+		
+		if (!labelSearchQuery.trim()) {
+			// No search query: return recent labels that are also available (not selected)
+			return recentLabels.filter(label => 
+				!newItem.selectedLabels.some(selectedLabel => selectedLabel?.id === label.id)
+			);
+		}
+		
+		// With search query: search through all available labels
+		return availableLabels.filter(label => 
+			label.name.toLowerCase().includes(labelSearchQuery.toLowerCase())
+		);
+	}
+
+	async function createLabel() {
+		if (!newLabel.name.trim()) {
+			error = 'Label name is required';
+			return;
+		}
+
+		try {
+			isCreatingLabel = true;
+			error = '';
+			successMessage = '';
+
+			const result = await trpc.dashboard.createLabel.mutate({
+				name: newLabel.name.trim(),
+				color: newLabel.color
+			});
+
+			if (result.status === SuccessStatus.SUCCESS) {
+				successMessage = result.message;
+				newLabel = { name: '', color: '#3B82F6' };
+				showCreateLabelForm = false;
+
+				// Add the new label to the labels array
+				labels = [result.label as Label, ...labels];
+				// Also refresh recent labels to include the newly created label
+				loadRecentLabels();
+			}
+		} catch (err: unknown) {
+			error = (err as Error).message || 'Failed to create label';
+		} finally {
+			isCreatingLabel = false;
+		}
+	}
 
 	async function createFolder() {
 		if (!newFolder.name.trim()) {
@@ -113,7 +252,8 @@
 				cost: newItem.cost || undefined,
 				quantity: newItem.quantity || undefined,
 				unit: newItem.unit,
-				folderId: targetFolderId
+				folderId: targetFolderId,
+				labelIds: newItem.selectedLabels.filter(label => label !== null).map(label => label!.id)
 			});
 
 			if (result.status === SuccessStatus.SUCCESS) {
@@ -125,7 +265,8 @@
 					cost: 0,
 					quantity: 0,
 					unit: Unit.PCS,
-					folderId: ''
+					folderId: '',
+					selectedLabels: [null, null]
 				};
 				showCreateItemForm = false;
 
@@ -168,8 +309,14 @@
 		return items.reduce((sum, item) => sum + item.price * item.quantity, 0);
 	}
 
-	function getTotalItems(items: Item[]) {
-		return items.reduce((sum, item) => sum + item.quantity, 0);
+	function getTotalItemsByUnit(items: Item[]): Record<string, string> {
+		if (!items || items.length === 0) return {};
+
+		return items.reduce<Record<string, string>>((totals, item) => {
+			const prev = totals[item.unit] ? parseFloat(totals[item.unit]) : 0;
+			totals[item.unit] = (prev + item.quantity).toFixed(2); // rounds to 2 decimals
+			return totals;
+		}, {});
 	}
 
 	function openEditModal(item: Item) {
@@ -207,7 +354,7 @@
 
 		return (
 			editingItem.name !== originalItem.name ||
-			(editingItem.description !== originalItem.description || originalItem.description === null) ||
+			(editingItem.description !== originalItem.description && editingItem.description !== "") ||
 			editingItem.price !== originalItem.price ||
 			editingItem.cost !== originalItem.cost ||
 			editingItem.unit !== originalItem.unit ||
@@ -383,6 +530,21 @@
 						</svg>
 						Create Item
 					</button>
+					<button
+						onclick={() => (showCreateLabelForm = !showCreateLabelForm)}
+						class="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-gradient-to-r from-purple-600 to-violet-600 hover:from-purple-700 hover:to-violet-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-purple-500 transition-all duration-200"
+						data-testid="create-label-button"
+					>
+						<svg class="h-5 w-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+							<path
+								stroke-linecap="round"
+								stroke-linejoin="round"
+								stroke-width="2"
+								d="M7 7h.01M7 3h5c.512 0 1.024.195 1.414.586l7 7a2 2 0 010 2.828l-7 7a2 2 0 01-2.828 0l-7-7A1.994 1.994 0 013 12V7a4 4 0 014-4z"
+							/>
+						</svg>
+						Create Label
+					</button>
 				</div>
 			</div>
 		</div>
@@ -472,6 +634,89 @@
 			</div>
 		{/if}
 
+		<!-- Create Label Form -->
+		{#if showCreateLabelForm}
+			<div
+				class="mb-8 bg-white rounded-lg shadow-sm border border-gray-200 p-6"
+				data-testid="create-label-form"
+			>
+				<h3 class="text-lg font-medium text-gray-900 mb-4">Create New Label</h3>
+				<div class="flex items-end space-x-4">
+					<div class="flex-1">
+						<label for="labelName" class="block text-sm font-medium text-gray-700 mb-2"
+							>Label Name</label
+						>
+						<input
+							id="labelName"
+							type="text"
+							bind:value={newLabel.name}
+							placeholder="Enter label name"
+							class="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-purple-500 focus:border-purple-500 transition-colors"
+							disabled={isCreatingLabel}
+						/>
+					</div>
+					<div class="flex-shrink-0">
+						<label for="labelColor" class="block text-sm font-medium text-gray-700 mb-2"
+							>Color</label
+						>
+						<div class="relative">
+							<input
+								id="labelColor"
+								type="color"
+								bind:value={newLabel.color}
+								class="h-10 w-16 rounded-md border border-gray-300 cursor-pointer focus:ring-2 focus:ring-purple-500 focus:border-purple-500"
+								disabled={isCreatingLabel}
+							/>
+						</div>
+					</div>
+					<div class="flex space-x-3">
+						<button
+							onclick={() => {
+								showCreateLabelForm = false;
+								newLabel = { name: '', color: '#3B82F6' };
+							}}
+							class="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-purple-500 transition-colors"
+							disabled={isCreatingLabel}
+							data-testid="cancel-label-button"
+						>
+							Cancel
+						</button>
+						<button
+							onclick={createLabel}
+							disabled={isCreatingLabel}
+							class="px-4 py-2 text-sm font-medium text-white bg-gradient-to-r from-purple-600 to-purple-700 hover:from-purple-700 hover:to-purple-800 rounded-md focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-purple-500 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200"
+							data-testid="submit-label-button"
+						>
+							{#if isCreatingLabel}
+								<svg
+									class="animate-spin -ml-1 mr-2 h-4 w-4 text-white inline"
+									fill="none"
+									viewBox="0 0 24 24"
+								>
+									<circle
+										class="opacity-25"
+										cx="12"
+										cy="12"
+										r="10"
+										stroke="currentColor"
+										stroke-width="4"
+									></circle>
+									<path
+										class="opacity-75"
+										fill="currentColor"
+										d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+									></path>
+								</svg>
+								Creating...
+							{:else}
+								Create Label
+							{/if}
+						</button>
+					</div>
+				</div>
+			</div>
+		{/if}
+
 		<!-- Create Item Form -->
 		{#if showCreateItemForm}
 			<div
@@ -511,6 +756,107 @@
 							{/each}
 						</select>
 					</div>
+				</div>
+
+				<!-- Labels Selection -->
+				<div class="mb-4">
+					<div class="flex space-x-4">
+						{#each [0, 1] as slotIndex}
+							<div class="relative">
+								{#if newItem.selectedLabels[slotIndex]}
+									<!-- Selected Label -->
+									<button
+										type="button"
+										onclick={() => openLabelDropdown(slotIndex)}
+										disabled={isCreatingItem}
+										class="inline-flex items-center px-4 py-2 rounded-full text-sm font-medium border-2 transition-all duration-200 hover:shadow-md focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 disabled:opacity-50 disabled:cursor-not-allowed"
+										style="background-color: {newItem.selectedLabels[slotIndex]!.color}20; border-color: {newItem.selectedLabels[slotIndex]!.color}40; color: {newItem.selectedLabels[slotIndex]!.color}"
+									>
+										<div
+											class="w-3 h-3 rounded-full mr-2"
+											style="background-color: {newItem.selectedLabels[slotIndex]!.color}"
+										></div>
+										{newItem.selectedLabels[slotIndex]!.name}
+									</button>
+								{:else}
+									<!-- Empty Placeholder -->
+									<button
+										type="button"
+										onclick={() => openLabelDropdown(slotIndex)}
+										disabled={isCreatingItem}
+										class="inline-flex items-center px-6 py-3 rounded-full text-sm font-medium border-2 border-dashed border-gray-300 text-gray-500 hover:border-indigo-300 hover:text-indigo-600 transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 disabled:opacity-50 disabled:cursor-not-allowed"
+									>
+										<svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+											<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path>
+										</svg>
+										Add Label
+									</button>
+								{/if}
+							</div>
+						{/each}
+					</div>
+
+					<!-- Label Dropdown -->
+					{#if showLabelDropdown && activeLabelSlot !== null}
+						<!-- Background Overlay -->
+						<div 
+							class="fixed inset-0 z-[5]" 
+							onclick={closeLabelDropdown}
+						></div>
+						
+						<div class="relative mt-2">
+							<div class="absolute z-10 w-80 bg-white border border-gray-200 rounded-lg shadow-lg">
+								<!-- Search Bar -->
+								<div class="p-3 border-b border-gray-200">
+									<input
+										name="labelSearch"
+										type="text"
+										bind:value={labelSearchQuery}
+										placeholder="Search labels..."
+										class="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 text-sm"
+									/>
+								</div>
+								
+								<!-- Labels List -->
+								<div class="max-h-60 overflow-y-auto p-2">
+									{#each getFilteredLabels() as label (label.id)}
+										<button
+											type="button"
+											onclick={() => selectLabel(label)}
+											class="w-full flex items-center p-2 rounded-md hover:bg-gray-50 focus:outline-none focus:bg-gray-50 transition-colors"
+										>
+											<div
+												class="w-4 h-4 rounded-full mr-3 border border-gray-200"
+												style="background-color: {label.color}"
+											></div>
+											<span class="text-sm text-gray-900 flex-1 text-left">{label.name}</span>
+										</button>
+									{/each}
+									
+									{#if getFilteredLabels().length === 0}
+										<div class="p-3 text-sm text-gray-500 text-center">
+											{labelSearchQuery ? 'No labels found matching your search' : 'No recent labels available'}
+										</div>
+									{/if}
+								</div>
+								
+								<!-- Close Button -->
+								<div class="p-3 border-t border-gray-200">
+									<button
+										type="button"
+										onclick={closeLabelDropdown}
+										class="w-full px-3 py-2 text-sm font-medium text-gray-700 bg-gray-100 rounded-md hover:bg-gray-200 focus:outline-none focus:ring-2 focus:ring-indigo-500 transition-colors"
+									>
+										Close
+									</button>
+								</div>
+							</div>
+						</div>
+					{/if}
+
+					{#if labels.length === 0}
+						<p class="text-sm text-gray-500 mt-2">No labels available. Create labels first to assign them to items.</p>
+					{/if}
 				</div>
 
 				<!-- Optional Advanced Fields Toggle -->
@@ -557,8 +903,7 @@
 							/>
 						</div>
 						<div>
-							<label for="itemCost" class="block text-sm font-medium text-gray-700 mb-2"
-								>Cost (optional)</label
+							<label for="itemCost" class="block text-sm font-medium text-gray-700 mb-2">Cost</label
 							>
 							<input
 								id="itemCost"
@@ -630,7 +975,9 @@
 								cost: 0,
 								quantity: 0,
 								unit: Unit.PCS,
-								folderId: ''
+								folderId: '',
+								labelIds: [],
+								selectedLabels: [null, null]
 							};
 						}}
 						class="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 transition-colors"
@@ -764,7 +1111,11 @@
 								</div>
 								<div class="text-right">
 									<div class="text-sm text-gray-500" data-testid="folder-stats">
-										{folder.items.length} items • {getTotalItems(folder.items)} total quantity
+										{folder.items.length} items •
+										{Object.entries(getTotalItemsByUnit(folder.items))
+											.map(([unit, total]) => (total ? `${total} ${unit}` : ''))
+											.filter(Boolean)
+											.join(' • ')}
 									</div>
 									<div class="text-lg font-semibold text-gray-900" data-testid="folder-total-value">
 										{formatPrice(getTotalValue(folder.items))}
@@ -800,6 +1151,11 @@
 												class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
 											>
 												Item
+											</th>
+											<th
+												class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
+											>
+												Labels
 											</th>
 											<th
 												class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
@@ -860,6 +1216,21 @@
 															</span>
 														</div>
 														<div class="text-sm font-medium text-gray-900">{item.name}</div>
+													</div>
+												</td>
+												<td class="px-6 py-4 whitespace-nowrap">
+													<div class="flex items-center space-x-1">
+														{#each item.labels as label (label.id)}
+															<span 
+																class="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium border"
+																style="background-color: {label.color}20; border-color: {label.color}40; color: {label.color}"
+															>
+																{label.name}
+															</span>
+														{/each}
+														{#if item.labels.length === 0}
+															<span class="text-sm text-gray-400">—</span>
+														{/if}
 													</div>
 												</td>
 												<td class="px-6 py-4 whitespace-nowrap">
@@ -1007,7 +1378,7 @@
 					<div class="grid grid-cols-1 md:grid-cols-3 gap-4">
 						<div>
 							<label for="editItemCost" class="block text-sm font-medium text-gray-700 mb-2">
-								Cost (optional)
+								Cost
 							</label>
 							<input
 								id="editItemCost"
@@ -1076,7 +1447,9 @@
 										class="font-bold {quantityChange > 0 ? 'text-green-600' : 'text-red-600'}"
 										data-testid="quantity-change"
 									>
-										{quantityChange > 0 ? ` + ${Math.round(quantityChange * 100) / 100}` : ` - ${Math.abs(Math.round(quantityChange * 100) / 100)}`}
+										{quantityChange > 0
+											? ` + ${Math.round(quantityChange * 100) / 100}`
+											: ` - ${Math.abs(Math.round(quantityChange * 100) / 100)}`}
 									</span>
 									<span class="text-gray-600"> → </span>
 									<span
