@@ -320,8 +320,8 @@
 	}
 
 	function openEditModal(item: Item) {
-		editingItem = { ...item }; // Create a copy to avoid mutating the original
-		originalItem = { ...item }; // Store a copy of the original item
+		editingItem = structuredClone(item); // Create a deep copy to avoid any reference sharing
+		originalItem = structuredClone(item); // Store a deep copy of the original item
 		quantityInput = item.quantity;
 		showEditItemModal = true;
 		showDeleteConfirmation = false;
