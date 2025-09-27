@@ -1,18 +1,15 @@
 <!-- Table skeleton component for users/admins pages -->
+<!-- eslint-disable @typescript-eslint/no-unused-vars -->
 <script lang="ts">
 	import SkeletonBase from './SkeletonBase.svelte';
 
 	interface Props {
-		title?: string;
-		subtitle?: string;
 		rows?: number;
 		columns?: Array<{ width: string; label?: string }>;
 		showActions?: boolean;
 	}
 
 	let {
-		title = 'Table',
-		subtitle = 'Loading data...',
 		rows = 5,
 		columns = [
 			{ width: '30%', label: 'Name' },
@@ -52,7 +49,7 @@
 				<!-- Table header -->
 				<thead class="bg-gray-50">
 					<tr>
-						{#each columns as column}
+						{#each columns as _, colIndex (colIndex)}
 							<th class="px-6 py-3 text-left">
 								<SkeletonBase width="80px" height="0.875rem" />
 							</th>
@@ -62,9 +59,9 @@
 
 				<!-- Table rows skeleton -->
 				<tbody class="bg-white divide-y divide-gray-200">
-					{#each Array(rows) as _, rowIndex}
+					{#each Array(rows) as _, rowIndex (rowIndex)}
 						<tr class="hover:bg-gray-50">
-							{#each columns as column, colIndex}
+							{#each columns as column, colIndex (colIndex)}
 								<td class="px-6 py-4 whitespace-nowrap">
 									{#if colIndex === columns.length - 1 && showActions}
 										<!-- Actions column -->

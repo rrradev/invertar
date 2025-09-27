@@ -1,4 +1,5 @@
 <!-- Shelf skeleton component for dashboard -->
+<!-- eslint-disable @typescript-eslint/no-unused-vars -->
 <script lang="ts">
 	import SkeletonBase from './SkeletonBase.svelte';
 
@@ -26,7 +27,7 @@
 
 	<!-- Shelves skeleton -->
 	<div class="space-y-6">
-		{#each Array(shelves) as _, shelfIndex}
+		{#each Array(shelves) as _, shelfIndex (shelfIndex)}
 			<div class="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden">
 				<!-- Shelf Header skeleton -->
 				<div class="px-6 py-4 bg-gray-50 border-b border-gray-200">
@@ -78,7 +79,7 @@
 
 						<!-- Table rows skeleton -->
 						<tbody class="bg-white divide-y divide-gray-200">
-							{#each Array(itemsPerShelf) as _, itemIndex}
+							{#each Array(itemsPerShelf) as _, itemIndex (itemIndex)}
 								<tr class="hover:bg-gray-50">
 									<!-- Item name -->
 									<td class="px-6 py-4">

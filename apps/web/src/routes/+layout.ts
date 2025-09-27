@@ -8,14 +8,6 @@ export const load: LayoutLoad = async ({ url }) => {
 	const currentPath = url.pathname;
 	const isAuthRoute = currentPath === '/login' || currentPath === '/set-password';
 	const isRootRoute = currentPath === '/';
-	const isSkeletonDemo = currentPath.startsWith('/skeleton-demo');
-
-	// Skip auth checks for skeleton demo
-	if (isSkeletonDemo) {
-		return {
-			currentPath
-		};
-	}
 
 	if (isAuthRoute) {
 		// On auth pages, don't call profile and set unauthenticated

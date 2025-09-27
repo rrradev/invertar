@@ -1,6 +1,6 @@
 <script lang="ts">
 	import '../app.css';
-	import { navigating, page } from '$app/stores';
+	import { navigating } from '$app/stores';
 	import { onMount } from 'svelte';
 	import { skeleton } from '$lib/stores/skeleton';
 
