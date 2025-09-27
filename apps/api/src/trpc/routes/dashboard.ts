@@ -172,6 +172,15 @@ export const dashboardRouter = router({
         },
       });
 
+      // Create user preference to have the new shelf expanded by default
+      await prisma.userShelfPreference.create({
+        data: {
+          userId: ctx.user!.id,
+          shelfId: newShelf.id,
+          isExpanded: true,
+        },
+      });
+
       return {
         status: SuccessStatus.SUCCESS,
         message: `Shelf "${input.name}" created successfully!`,
