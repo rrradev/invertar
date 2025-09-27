@@ -2,6 +2,8 @@
 	import { trpc } from '$lib/trpc';
 	import { SuccessStatus } from '@repo/types/trpc/successStatus';
 	import Header from '$lib/components/Header.svelte';
+	import TableSkeleton from '$lib/components/skeletons/TableSkeleton.svelte';
+	import { createLoadingController } from '$lib/utils/loadingState';
 	import type { PageData } from './$types';
 	import { loading } from '$lib/stores/loading';
 
@@ -20,8 +22,18 @@
 		hasInitialPassword: boolean;
 	}
 
-	let users = $state((data.users as UserListItem[]) || []);
-	let isLoading = $state(false);
+	let users = $state<UserListItem[]>([]);
+	
+	// Enhanced loading state with delay and minimum display time
+	let showSkeleton = $state(true);
+	const loadingController = createLoadingController(
+		(show) => showSkeleton = show,
+		{
+			showDelay: 120,    // 120ms delay before showing skeleton
+			minDisplayTime: 500 // 500ms minimum display time
+		}
+	);
+	
 	let isCreating = $state(false);
 	let isDeleting = $state('');
 	let isResetting = $state('');
@@ -41,7 +53,7 @@
 
 	async function loadUsers() {
 		try {
-			isLoading = true;
+			loadingController.startLoading();
 			error = '';
 			const result = await trpc.admin.listUsers.query();
 
@@ -51,7 +63,7 @@
 		} catch (err: any) {
 			error = err.message || 'Failed to load users';
 		} finally {
-			isLoading = false;
+			loadingController.endLoading();
 		}
 	}
 
@@ -205,292 +217,293 @@
 			minute: '2-digit'
 		});
 	}
+
+	// Load users on component mount
+	loadUsers();
 </script>
 
 <div class="min-h-screen bg-gray-50">
-	<Header />
+	{#if showSkeleton}
+		<!-- Show skeleton while loading -->
+		<Header />
+		<TableSkeleton
+			rows={5}
+			columns={[
+				{ width: '40%', label: 'User' },
+				{ width: '25%', label: 'Created' },
+				{ width: '20%', label: 'Status' },
+				{ width: '15%', label: 'Actions' }
+			]}
+			showActions={true}
+		/>
+	{:else}
+		<Header />
 
-	<!-- Main Content -->
-	<main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-		{#if $loading}
-			<div class="text-center py-12">
-				<svg class="animate-spin mx-auto h-8 w-8 text-gray-400" fill="none" viewBox="0 0 24 24">
-					<circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"
-					></circle>
-					<path
-						class="opacity-75"
-						fill="currentColor"
-						d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
-					></path>
-				</svg>
-				<p class="mt-2 text-sm text-gray-500">Loading...</p>
-			</div>
-		{:else}
-			<!-- Page Header -->
-			<div class="mb-8">
-				<div class="sm:flex sm:items-center sm:justify-between">
-					<div>
-						<h2 class="text-2xl font-bold text-gray-900">User Management</h2>
-						<p class="mt-2 text-sm text-gray-700">Manage users in your organization</p>
+		<!-- Main Content -->
+		<main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+			{#if $loading}
+				<div class="text-center py-12">
+					<svg class="animate-spin mx-auto h-8 w-8 text-gray-400" fill="none" viewBox="0 0 24 24">
+						<circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"
+						></circle>
+						<path
+							class="opacity-75"
+							fill="currentColor"
+							d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+						></path>
+					</svg>
+					<p class="mt-2 text-sm text-gray-500">Loading...</p>
+				</div>
+			{:else}
+				<!-- Page Header -->
+				<div class="mb-8">
+					<div class="sm:flex sm:items-center sm:justify-between">
+						<div>
+							<h2 class="text-2xl font-bold text-gray-900">User Management</h2>
+							<p class="mt-2 text-sm text-gray-700">Manage users in your organization</p>
+						</div>
+						<div class="mt-4 sm:mt-0">
+							<button
+								on:click={() => (showCreateForm = !showCreateForm)}
+								class="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-gradient-to-r from-indigo-600 to-cyan-600 hover:from-indigo-700 hover:to-cyan-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 transition-all duration-200"
+							>
+								<svg class="h-5 w-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+									<path
+										stroke-linecap="round"
+										stroke-linejoin="round"
+										stroke-width="2"
+										d="M12 6v6m0 0v6m0-6h6m-6 0H6"
+									/>
+								</svg>
+								Create User
+							</button>
+						</div>
 					</div>
-					<div class="mt-4 sm:mt-0">
-						<button
-							on:click={() => (showCreateForm = !showCreateForm)}
-							class="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-gradient-to-r from-indigo-600 to-cyan-600 hover:from-indigo-700 hover:to-cyan-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 transition-all duration-200"
-						>
-							<svg class="h-5 w-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+				</div>
+
+				<!-- Messages -->
+				{#if error}
+					<div
+						id="error-message"
+						class="mb-6 bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg"
+					>
+						{error}
+					</div>
+				{/if}
+
+				{#if successMessage}
+					<div
+						id="success-message"
+						class="mb-6 bg-green-50 border border-green-200 text-green-700 px-4 py-3 rounded-lg"
+					>
+						{successMessage}
+					</div>
+				{/if}
+
+				<!-- Create User Form -->
+				{#if showCreateForm}
+					<div
+						class="mb-8 bg-white rounded-lg shadow-sm border border-gray-200 p-6"
+						id="create-user-form"
+					>
+						<h3 class="text-lg font-medium text-gray-900 mb-4">Create New User</h3>
+						<div class="grid grid-cols-1 gap-4">
+							<div>
+								<label for="username" class="block text-sm font-medium text-gray-700 mb-2"
+									>Username</label
+								>
+								<input
+									id="username"
+									type="text"
+									bind:value={newUser.username}
+									placeholder="Enter username"
+									class="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-colors"
+									disabled={isCreating}
+								/>
+							</div>
+						</div>
+						<div class="mt-4 flex justify-end space-x-3">
+							<button
+								on:click={() => (showCreateForm = false)}
+								class="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 transition-colors"
+								disabled={isCreating}
+							>
+								Cancel
+							</button>
+							<button
+								on:click={createUser}
+								disabled={isCreating}
+								class="px-4 py-2 text-sm font-medium text-white bg-gradient-to-r from-indigo-600 to-cyan-600 hover:from-indigo-700 hover:to-cyan-700 rounded-md focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200"
+							>
+								{#if isCreating}
+									<svg
+										class="animate-spin -ml-1 mr-2 h-4 w-4 text-white inline"
+										fill="none"
+										viewBox="0 0 24 24"
+									>
+										<circle
+											class="opacity-25"
+											cx="12"
+											cy="12"
+											r="10"
+											stroke="currentColor"
+											stroke-width="4"
+										></circle>
+										<path
+											class="opacity-75"
+											fill="currentColor"
+											d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+										></path>
+									</svg>
+									Creating...
+								{:else}
+									Create User
+								{/if}
+							</button>
+						</div>
+					</div>
+				{/if}
+
+				<!-- Users List -->
+				<div class="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden">
+					<div class="px-6 py-4 border-b border-gray-200">
+						<h3 class="text-lg font-medium text-gray-900">Users</h3>
+						<p class="mt-1 text-sm text-gray-500">Manage users in your organization</p>
+					</div>
+
+					{#if users.length === 0}
+						<div class="px-6 py-8 text-center">
+							<svg
+								class="mx-auto h-12 w-12 text-gray-400"
+								fill="none"
+								stroke="currentColor"
+								viewBox="0 0 24 24"
+							>
 								<path
 									stroke-linecap="round"
 									stroke-linejoin="round"
 									stroke-width="2"
-									d="M12 6v6m0 0v6m0-6h6m-6 0H6"
+									d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197m13.5-9a2.5 2.5 0 11-5 0 2.5 2.5 0 015 0z"
 								/>
 							</svg>
-							Create User
-						</button>
-					</div>
-				</div>
-			</div>
-
-			<!-- Messages -->
-			{#if error}
-				<div
-					id="error-message"
-					class="mb-6 bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg"
-				>
-					{error}
-				</div>
-			{/if}
-
-			{#if successMessage}
-				<div
-					id="success-message"
-					class="mb-6 bg-green-50 border border-green-200 text-green-700 px-4 py-3 rounded-lg"
-				>
-					{successMessage}
-				</div>
-			{/if}
-
-			<!-- Create User Form -->
-			{#if showCreateForm}
-				<div
-					class="mb-8 bg-white rounded-lg shadow-sm border border-gray-200 p-6"
-					id="create-user-form"
-				>
-					<h3 class="text-lg font-medium text-gray-900 mb-4">Create New User</h3>
-					<div class="grid grid-cols-1 gap-4">
-						<div>
-							<label for="username" class="block text-sm font-medium text-gray-700 mb-2"
-								>Username</label
-							>
-							<input
-								id="username"
-								type="text"
-								bind:value={newUser.username}
-								placeholder="Enter username"
-								class="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-colors"
-								disabled={isCreating}
-							/>
+							<h3 class="mt-2 text-sm font-medium text-gray-900">No users</h3>
+							<p class="mt-1 text-sm text-gray-500">Get started by creating a new user.</p>
 						</div>
-					</div>
-					<div class="mt-4 flex justify-end space-x-3">
-						<button
-							on:click={() => (showCreateForm = false)}
-							class="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 transition-colors"
-							disabled={isCreating}
-						>
-							Cancel
-						</button>
-						<button
-							on:click={createUser}
-							disabled={isCreating}
-							class="px-4 py-2 text-sm font-medium text-white bg-gradient-to-r from-indigo-600 to-cyan-600 hover:from-indigo-700 hover:to-cyan-700 rounded-md focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200"
-						>
-							{#if isCreating}
-								<svg
-									class="animate-spin -ml-1 mr-2 h-4 w-4 text-white inline"
-									fill="none"
-									viewBox="0 0 24 24"
-								>
-									<circle
-										class="opacity-25"
-										cx="12"
-										cy="12"
-										r="10"
-										stroke="currentColor"
-										stroke-width="4"
-									></circle>
-									<path
-										class="opacity-75"
-										fill="currentColor"
-										d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
-									></path>
-								</svg>
-								Creating...
-							{:else}
-								Create User
-							{/if}
-						</button>
-					</div>
+					{:else}
+						<div class="overflow-x-auto">
+							<table class="min-w-full divide-y divide-gray-200">
+								<thead class="bg-gray-50">
+									<tr>
+										<th
+											class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
+										>
+											User
+										</th>
+										<th
+											class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
+										>
+											Created
+										</th>
+										<th
+											class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
+										>
+											OTAC
+										</th>
+										<th
+											class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
+										>
+											Status
+										</th>
+										<th
+											class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
+										>
+											Actions
+										</th>
+									</tr>
+								</thead>
+								<tbody class="bg-white divide-y divide-gray-200">
+									{#each users as userData (userData.id)}
+										<tr class="hover:bg-gray-50 transition-colors">
+											<td class="px-6 py-4 whitespace-nowrap">
+												<div class="flex items-center">
+													<div
+														class="h-10 w-10 bg-gradient-to-r from-indigo-600 to-cyan-600 rounded-full flex items-center justify-center"
+													>
+														<span class="text-sm font-medium text-white"
+															>{userData.username.charAt(0).toUpperCase()}</span
+														>
+													</div>
+													<div class="ml-4">
+														<div class="text-sm font-medium text-gray-900">{userData.username}</div>
+													</div>
+												</div>
+											</td>
+											<td class="px-6 py-4 whitespace-nowrap">
+												<div class="text-sm text-gray-900">{formatDate(userData.createdAt)}</div>
+											</td>
+											<td class="px-6 py-4 whitespace-nowrap">
+												{#if userData.oneTimeAccessCode}
+													<div class="text-sm text-gray-900 font-mono">
+														{userData.oneTimeAccessCode}
+													</div>
+													{#if userData.oneTimeAccessCodeExpiry}
+														<div class="text-xs text-gray-500 mt-1">
+															Expires: {formatDate(userData.oneTimeAccessCodeExpiry)}
+														</div>
+													{/if}
+												{:else}
+													<span class="text-xs text-gray-400">-</span>
+												{/if}
+											</td>
+											<td class="px-6 py-4 whitespace-nowrap">
+												{#if userData.hasInitialPassword && userData.oneTimeAccessCodeExpiry && new Date() < new Date(userData.oneTimeAccessCodeExpiry)}
+													<span
+														class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-yellow-100 text-yellow-800"
+													>
+														Pending Setup
+													</span>
+												{:else if userData.oneTimeAccessCodeExpiry && new Date() > new Date(userData.oneTimeAccessCodeExpiry)}
+													<span
+														class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-red-100 text-red-800"
+													>
+														OTAC Expired
+													</span>
+												{:else}
+													<span
+														class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800"
+													>
+														Active
+													</span>
+												{/if}
+											</td>
+											<td
+												class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium relative"
+											>
+												<div class="relative inline-block text-left">
+													<button
+														on:click|stopPropagation={(e) => toggleDropdown(userData.id, e)}
+														class="inline-flex items-center justify-center w-8 h-8 text-gray-400 hover:text-gray-600 rounded-full hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-indigo-500 transition-colors"
+														aria-expanded={openDropdown === userData.id}
+														aria-haspopup="true"
+													>
+														<svg class="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
+															<path
+																d="M10 6a2 2 0 110-4 2 2 0 010 4zM10 12a2 2 0 110-4 2 2 0 010 4zM10 18a2 2 0 110-4 2 2 0 010 4z"
+															/>
+														</svg>
+													</button>
+												</div>
+											</td>
+										</tr>
+									{/each}
+								</tbody>
+							</table>
+						</div>
+					{/if}
 				</div>
 			{/if}
-
-			<!-- Users List -->
-			<div class="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden">
-				<div class="px-6 py-4 border-b border-gray-200">
-					<h3 class="text-lg font-medium text-gray-900">Users</h3>
-					<p class="mt-1 text-sm text-gray-500">Manage users in your organization</p>
-				</div>
-
-				{#if isLoading}
-					<div class="px-6 py-8 text-center">
-						<svg class="animate-spin mx-auto h-8 w-8 text-gray-400" fill="none" viewBox="0 0 24 24">
-							<circle
-								class="opacity-25"
-								cx="12"
-								cy="12"
-								r="10"
-								stroke="currentColor"
-								stroke-width="4"
-							></circle>
-							<path
-								class="opacity-75"
-								fill="currentColor"
-								d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
-							></path>
-						</svg>
-						<p class="mt-2 text-sm text-gray-500">Loading users...</p>
-					</div>
-				{:else if users.length === 0}
-					<div class="px-6 py-8 text-center">
-						<svg
-							class="mx-auto h-12 w-12 text-gray-400"
-							fill="none"
-							stroke="currentColor"
-							viewBox="0 0 24 24"
-						>
-							<path
-								stroke-linecap="round"
-								stroke-linejoin="round"
-								stroke-width="2"
-								d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197m13.5-9a2.5 2.5 0 11-5 0 2.5 2.5 0 015 0z"
-							/>
-						</svg>
-						<h3 class="mt-2 text-sm font-medium text-gray-900">No users</h3>
-						<p class="mt-1 text-sm text-gray-500">Get started by creating a new user.</p>
-					</div>
-				{:else}
-					<div class="overflow-x-auto">
-						<table class="min-w-full divide-y divide-gray-200">
-							<thead class="bg-gray-50">
-								<tr>
-									<th
-										class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
-									>
-										User
-									</th>
-									<th
-										class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
-									>
-										Created
-									</th>
-									<th
-										class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
-									>
-										OTAC
-									</th>
-									<th
-										class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
-									>
-										Status
-									</th>
-									<th
-										class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
-									>
-										Actions
-									</th>
-								</tr>
-							</thead>
-							<tbody class="bg-white divide-y divide-gray-200">
-								{#each users as userData (userData.id)}
-									<tr class="hover:bg-gray-50 transition-colors">
-										<td class="px-6 py-4 whitespace-nowrap">
-											<div class="flex items-center">
-												<div
-													class="h-10 w-10 bg-gradient-to-r from-indigo-600 to-cyan-600 rounded-full flex items-center justify-center"
-												>
-													<span class="text-sm font-medium text-white"
-														>{userData.username.charAt(0).toUpperCase()}</span
-													>
-												</div>
-												<div class="ml-4">
-													<div class="text-sm font-medium text-gray-900">{userData.username}</div>
-												</div>
-											</div>
-										</td>
-										<td class="px-6 py-4 whitespace-nowrap">
-											<div class="text-sm text-gray-900">{formatDate(userData.createdAt)}</div>
-										</td>
-										<td class="px-6 py-4 whitespace-nowrap">
-											{#if userData.oneTimeAccessCode}
-												<div class="text-sm text-gray-900 font-mono">
-													{userData.oneTimeAccessCode}
-												</div>
-												{#if userData.oneTimeAccessCodeExpiry}
-													<div class="text-xs text-gray-500 mt-1">
-														Expires: {formatDate(userData.oneTimeAccessCodeExpiry)}
-													</div>
-												{/if}
-											{:else}
-												<span class="text-xs text-gray-400">-</span>
-											{/if}
-										</td>
-										<td class="px-6 py-4 whitespace-nowrap">
-											{#if userData.hasInitialPassword && userData.oneTimeAccessCodeExpiry && new Date() < new Date(userData.oneTimeAccessCodeExpiry)}
-												<span
-													class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-yellow-100 text-yellow-800"
-												>
-													Pending Setup
-												</span>
-											{:else if userData.oneTimeAccessCodeExpiry && new Date() > new Date(userData.oneTimeAccessCodeExpiry)}
-												<span
-													class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-red-100 text-red-800"
-												>
-													OTAC Expired
-												</span>
-											{:else}
-												<span
-													class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800"
-												>
-													Active
-												</span>
-											{/if}
-										</td>
-										<td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium relative">
-											<div class="relative inline-block text-left">
-												<button
-													on:click|stopPropagation={(e) => toggleDropdown(userData.id, e)}
-													class="inline-flex items-center justify-center w-8 h-8 text-gray-400 hover:text-gray-600 rounded-full hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-indigo-500 transition-colors"
-													aria-expanded={openDropdown === userData.id}
-													aria-haspopup="true"
-												>
-													<svg class="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
-														<path
-															d="M10 6a2 2 0 110-4 2 2 0 010 4zM10 12a2 2 0 110-4 2 2 0 010 4zM10 18a2 2 0 110-4 2 2 0 010 4z"
-														/>
-													</svg>
-												</button>
-											</div>
-										</td>
-									</tr>
-								{/each}
-							</tbody>
-						</table>
-					</div>
-				{/if}
-			</div>
-		{/if}
-	</main>
+		</main>
+	{/if}
 </div>
 
 <!-- Teleported Dropdown Menu -->

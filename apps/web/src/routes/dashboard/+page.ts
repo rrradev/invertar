@@ -1,31 +1,15 @@
 import type { PageLoad } from './$types';
-import { trpc } from '$lib/trpc';
 import { requireAuth } from '$lib/auth';
 
 export const load: PageLoad = async () => {
-	// Wait for authentication to complete before making API calls
+	// Only wait for authentication, don't load data here
+	// Data will be loaded at component level to show skeleton during loading
 	const user = await requireAuth();
 
-	// If not authenticated, return empty data - layout will handle redirect
-	if (!user) {
-		return {
-			shelves: []
-		};
-	}
-
-	try {
-		// Get dashboard data
-		const result = await trpc.dashboard.getShelvesWithItems.query();
-
-		return {
-			shelves: result.shelves
-		};
-	} catch (error) {
-		// If API call fails, return empty data
-		console.error('Failed to load dashboard data:', error);
-		return {
-			shelves: []
-		};
-	}
+	// Return immediately so navigation completes quickly
+	// Component will load data and show skeleton
+	return {
+		shelves: [] // Empty initial data
+	};
 };
 export const ssr = false;
