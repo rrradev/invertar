@@ -1,6 +1,5 @@
 import { expect, Locator } from "@playwright/test";
 import BaseComponent from "../base.component";
-
 export default class Shelf extends BaseComponent {
 
     itemsTable: Locator;
