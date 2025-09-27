@@ -146,15 +146,21 @@
 
 			const newExpandedState = !shelf.isExpanded;
 
-			// If expanding and shelf has no items loaded, load them
-			if (newExpandedState && shelf.items.length === 0) {
+			// Update local state immediately for UI responsiveness
+			const shelfIndex = shelves.findIndex((s) => s.id === shelfId);
+			if (shelfIndex !== -1) {
+				shelves[shelfIndex].isExpanded = newExpandedState;
+			}
+
+			// If expanding, always reload items to get latest data
+			if (newExpandedState) {
+				// Add to loading state immediately so skeleton shows right away
 				loadingShelfItems = [...loadingShelfItems, shelfId];
 
 				try {
 					const itemsResult = await trpc.dashboard.getShelfItems.query({ shelfId });
 					if (itemsResult.status === SuccessStatus.SUCCESS) {
 						// Update the shelf with loaded items
-						const shelfIndex = shelves.findIndex((s) => s.id === shelfId);
 						if (shelfIndex !== -1) {
 							shelves[shelfIndex].items = itemsResult.items as Item[];
 						}
@@ -163,16 +169,14 @@
 					console.error('Failed to load shelf items:', err);
 					error = 'Failed to load shelf items';
 					setTimeout(() => (error = ''), 3000);
+					// Revert expansion state on error
+					if (shelfIndex !== -1) {
+						shelves[shelfIndex].isExpanded = false;
+					}
 					return;
 				} finally {
 					loadingShelfItems = loadingShelfItems.filter((id) => id !== shelfId);
 				}
-			}
-
-			// Update local state immediately for UI responsiveness
-			const shelfIndex = shelves.findIndex((s) => s.id === shelfId);
-			if (shelfIndex !== -1) {
-				shelves[shelfIndex].isExpanded = newExpandedState;
 			}
 
 			// Update preference on backend
