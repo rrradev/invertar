@@ -4,7 +4,7 @@
 	import { Unit, UNIT_LABELS } from '@repo/types/units';
 	import Header from '$lib/components/Header.svelte';
 	import ShelfSkeleton from '$lib/components/skeletons/ShelfSkeleton.svelte';
-	import { skeleton } from '$lib/stores/skeleton';
+	import { createLoadingController } from '$lib/utils/loadingState';
 	import type { PageData } from './$types';
 
 	interface PageProps {
@@ -45,7 +45,17 @@
 	let shelves = $state<Shelf[]>([]);
 	let labels = $state<Label[]>([]);
 	let recentLabels = $state<Label[]>([]);
-	let isLoadingShelves = $state(true); // Track loading state for shelves
+	
+	// Enhanced loading state with delay and minimum display time
+	let showSkeleton = $state(true);
+	const loadingController = createLoadingController(
+		(show) => showSkeleton = show,
+		{
+			showDelay: 120,    // 120ms delay before showing skeleton
+			minDisplayTime: 500 // 500ms minimum display time
+		}
+	);
+	
 	let isCreatingShelf = $state(false);
 	let isCreatingItem = $state(false);
 	let isCreatingLabel = $state(false);
@@ -89,7 +99,7 @@
 	// Load shelves data
 	async function loadShelves() {
 		try {
-			isLoadingShelves = true;
+			loadingController.startLoading();
 			const result = await trpc.dashboard.getShelvesWithItems.query();
 			if (result.status === SuccessStatus.SUCCESS) {
 				shelves = result.shelves as Shelf[];
@@ -97,7 +107,7 @@
 		} catch (err) {
 			console.error('Failed to load shelves:', err);
 		} finally {
-			isLoadingShelves = false;
+			loadingController.endLoading();
 		}
 	}
 
@@ -533,7 +543,7 @@
 </script>
 
 <div class="min-h-screen bg-gray-50">
-	{#if isLoadingShelves}
+	{#if showSkeleton}
 		<!-- Show skeleton while loading -->
 		<Header />
 		<ShelfSkeleton shelves={3} itemsPerShelf={4} />

@@ -4,7 +4,7 @@
 	import { SuccessStatus } from '@repo/types/trpc/successStatus';
 	import Header from '$lib/components/Header.svelte';
 	import TableSkeleton from '$lib/components/skeletons/TableSkeleton.svelte';
-	import { skeleton } from '$lib/stores/skeleton';
+	import { createLoadingController } from '$lib/utils/loadingState';
 	import type { PageData } from './$types';
 
 	interface PageProps {
@@ -14,7 +14,17 @@
 	let { data }: PageProps = $props();
 
 	let admins = $state<Admin[]>([]);
-	let isLoading = $state(true); // Start loading immediately
+	
+	// Enhanced loading state with delay and minimum display time
+	let showSkeleton = $state(true);
+	const loadingController = createLoadingController(
+		(show) => showSkeleton = show,
+		{
+			showDelay: 120,    // 120ms delay before showing skeleton
+			minDisplayTime: 500 // 500ms minimum display time
+		}
+	);
+	
 	let isCreating = $state(false);
 	let isDeleting = $state('');
 	let isRefreshing = $state('');
@@ -37,7 +47,7 @@
 
 	async function loadAdmins() {
 		try {
-			isLoading = true;
+			loadingController.startLoading();
 			error = '';
 			const result = await trpc.superAdmin.listAdmins.query();
 
@@ -47,7 +57,7 @@
 		} catch (err: any) {
 			error = err.message || 'Failed to load admins';
 		} finally {
-			isLoading = false;
+			loadingController.endLoading();
 		}
 	}
 
@@ -231,7 +241,7 @@
 </script>
 
 <div class="min-h-screen bg-gray-50">
-	{#if isLoading}
+	{#if showSkeleton}
 		<!-- Show skeleton while loading -->
 		<Header />
 		<TableSkeleton
@@ -249,7 +259,7 @@
 
 		<!-- Main Content -->
 		<main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-			{#if isLoading}
+			{#if false}
 				<div class="text-center py-12">
 					<svg class="animate-spin mx-auto h-8 w-8 text-gray-400" fill="none" viewBox="0 0 24 24">
 						<circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"
@@ -395,7 +405,7 @@
 						<p class="mt-1 text-sm text-gray-500">A list of all administrators in your app</p>
 					</div>
 
-					{#if isLoading}
+					{#if false}
 						<div class="px-6 py-8 text-center">
 							<svg
 								class="animate-spin mx-auto h-8 w-8 text-gray-400"

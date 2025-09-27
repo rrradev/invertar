@@ -3,7 +3,7 @@
 	import { SuccessStatus } from '@repo/types/trpc/successStatus';
 	import Header from '$lib/components/Header.svelte';
 	import TableSkeleton from '$lib/components/skeletons/TableSkeleton.svelte';
-	import { skeleton } from '$lib/stores/skeleton';
+	import { createLoadingController } from '$lib/utils/loadingState';
 	import type { PageData } from './$types';
 	import { loading } from '$lib/stores/loading';
 
@@ -23,7 +23,17 @@
 	}
 
 	let users = $state<UserListItem[]>([]);
-	let isLoading = $state(true); // Start loading immediately
+	
+	// Enhanced loading state with delay and minimum display time
+	let showSkeleton = $state(true);
+	const loadingController = createLoadingController(
+		(show) => showSkeleton = show,
+		{
+			showDelay: 120,    // 120ms delay before showing skeleton
+			minDisplayTime: 500 // 500ms minimum display time
+		}
+	);
+	
 	let isCreating = $state(false);
 	let isDeleting = $state('');
 	let isResetting = $state('');
@@ -43,7 +53,7 @@
 
 	async function loadUsers() {
 		try {
-			isLoading = true;
+			loadingController.startLoading();
 			error = '';
 			const result = await trpc.admin.listUsers.query();
 
@@ -53,7 +63,7 @@
 		} catch (err: any) {
 			error = err.message || 'Failed to load users';
 		} finally {
-			isLoading = false;
+			loadingController.endLoading();
 		}
 	}
 
@@ -213,7 +223,7 @@
 </script>
 
 <div class="min-h-screen bg-gray-50">
-	{#if isLoading}
+	{#if showSkeleton}
 		<!-- Show skeleton while loading -->
 		<Header />
 		<TableSkeleton
@@ -361,7 +371,7 @@
 						<p class="mt-1 text-sm text-gray-500">Manage users in your organization</p>
 					</div>
 
-					{#if isLoading}
+					{#if false}
 						<div class="px-6 py-8 text-center">
 							<svg
 								class="animate-spin mx-auto h-8 w-8 text-gray-400"
