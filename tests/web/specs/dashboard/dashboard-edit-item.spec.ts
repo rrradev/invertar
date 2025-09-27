@@ -240,7 +240,7 @@ test.describe('Dashboard - Edit Item Modal', () => {
     expect(finalItemCount).toBe(initialItemCount - 1);
 
     // Verify item no longer exists in folder
-    await expect(folder.getItemByName(randomItemName)).toHaveCount(0);
+    await expect(folder.getItemRowByName(randomItemName)).toHaveCount(0);
   });
 
   test('should handle validation errors in edit modal', async ({ dashboard, folder, randomItemName }) => {
