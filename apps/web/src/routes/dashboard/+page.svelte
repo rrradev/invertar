@@ -320,8 +320,34 @@
 	}
 
 	function openEditModal(item: Item) {
-		editingItem = item;
-		originalItem = { ...item }; // Store a copy of the original item
+		// Create a deep copy manually to avoid structuredClone issues
+		editingItem = {
+			id: item.id,
+			name: item.name,
+			description: item.description,
+			price: item.price,
+			cost: item.cost,
+			quantity: item.quantity,
+			unit: item.unit,
+			labels: item.labels.map(label => ({ ...label })), // Deep copy labels array
+			createdAt: item.createdAt,
+			updatedAt: item.updatedAt,
+			lastModifiedBy: item.lastModifiedBy
+		};
+		// Store original values for change detection
+		originalItem = {
+			id: item.id,
+			name: item.name,
+			description: item.description,
+			price: item.price,
+			cost: item.cost,
+			quantity: item.quantity,
+			unit: item.unit,
+			labels: item.labels.map(label => ({ ...label })), // Deep copy labels array
+			createdAt: item.createdAt,
+			updatedAt: item.updatedAt,
+			lastModifiedBy: item.lastModifiedBy
+		};
 		quantityInput = item.quantity;
 		showEditItemModal = true;
 		showDeleteConfirmation = false;
@@ -394,7 +420,7 @@
 				name: editingItem.name.trim(),
 				description: editingItem.description?.trim() || undefined,
 				price: editingItem.price || 0,
-				cost: editingItem.cost || undefined,
+				cost: editingItem.cost ?? undefined,
 				unit: editingItem.unit
 			});
 
@@ -1240,7 +1266,7 @@
 												</td>
 												<td class="px-6 py-4 whitespace-nowrap">
 													<div class="text-sm text-gray-900">
-														{item.cost ? formatPrice(item.cost) : '-'}
+														{item.cost != null ? formatPrice(item.cost) : '-'}
 													</div>
 												</td>
 												<td class="px-6 py-4 whitespace-nowrap">

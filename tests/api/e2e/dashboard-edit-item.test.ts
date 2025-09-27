@@ -160,6 +160,27 @@ describe('Dashboard - Edit Item API', () => {
       expect(response.data.code).toBe('BAD_REQUEST');
     });
 
+    it('should update item cost to zero correctly', async () => {
+      const updateData = {
+        itemId: testItemId,
+        name: `updated-item-${faker.string.alphanumeric(8)}`,
+        description: 'Cost set to zero',
+        price: 50.00,
+        cost: 0, // This was the bug case - zero cost should be preserved
+        unit: Unit.M
+      };
+
+      const response = await req<SuccessResponse<{message: string}>>(
+        'POST',
+        'dashboard.updateItem',
+        updateData,
+        userToken
+      );
+
+      expect(response.status).toBe('SUCCESS');
+      expect(response.message).toContain(`Item "${updateData.name}" updated successfully`);
+    });
+
     it('should return NOT_FOUND for non-existent item', async () => {
       const updateData = {
         itemId: 'non-existent-id',

@@ -68,6 +68,7 @@ export const dashboardRouter = router({
           name: item.name,
           description: item.description,
           price: item.price,
+          cost: item.cost,
           quantity: item.quantity,
           unit: item.unit,
           labels: item.labels.map((itemLabel: any) => ({
@@ -448,7 +449,7 @@ export const dashboardRouter = router({
             name: input.name,
             description: input.description,
             price: input.price ?? 0,
-            cost: input.cost,
+            cost: input.cost ?? null, // Explicitly set to null when undefined
             unit: input.unit,
             hashId: newHashId,
             lastModifiedById: ctx.user!.id,

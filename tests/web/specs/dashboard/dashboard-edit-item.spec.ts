@@ -240,7 +240,7 @@ test.describe('Dashboard - Edit Item Modal', () => {
     expect(finalItemCount).toBe(initialItemCount - 1);
 
     // Verify item no longer exists in folder
-    await expect(folder.getItemByName(randomItemName)).toHaveCount(0);
+    await expect(folder.getItemRowByName(randomItemName)).toHaveCount(0);
   });
 
   test('should handle validation errors in edit modal', async ({ dashboard, folder, randomItemName }) => {
@@ -292,5 +292,60 @@ test.describe('Dashboard - Edit Item Modal', () => {
     // Verify quantity in table
     const itemRow = folder.getItemRowByName(randomItemName);
     await expect(itemRow).toContainText('130');
+  });
+
+  test('should update item cost and unit correctly', { tag: '@smoke' }, async ({ dashboard, folder, randomItemName }) => {
+    // Create initial item with some basic data
+    await dashboard.createBasicItem(randomItemName, folder);
+    await dashboard.waitForSuccessMessage();
+
+    // Open edit modal
+    await dashboard.openEditModalForItem(randomItemName);
+
+    // Update cost and unit
+    const updateData = {
+      cost: 0, 
+      unit: 'KG'
+    };
+    
+    await dashboard.updateItemDetails(updateData);
+    await dashboard.submitItemUpdate();
+
+    // Verify success message
+    await dashboard.waitForSuccessMessage();
+    const successMessage = await dashboard.getSuccessMessageText();
+    expect(successMessage).toContain('updated successfully');
+
+    // Verify cost field shows 0.00 in the edit modal
+    await dashboard.openEditModalForItem(randomItemName);
+    await expect(dashboard.editItemCostInput).toHaveValue('0');
+    await expect(dashboard.editItemUnitSelect).toHaveValue('KG');
+    
+    // Verify unit is displayed in the table
+    await dashboard.closeEditModal();
+    const cellData = await folder.getItemCellData(randomItemName);
+    expect(cellData['Unit']).toBe('KG');
+    
+    // Test updating cost to a positive number
+    await dashboard.openEditModalForItem(randomItemName);
+    await dashboard.updateItemDetails({ cost: 25.50, unit: 'L' });
+    await dashboard.submitItemUpdate();
+    await dashboard.waitForSuccessMessage();
+    
+    // Verify the positive cost and new unit
+    await dashboard.openEditModalForItem(randomItemName);
+    await expect(dashboard.editItemCostInput).toHaveValue('25.5');
+    await expect(dashboard.editItemUnitSelect).toHaveValue('L');
+    await dashboard.closeEditModal();
+
+    const updatedCellData = await folder.getItemCellData(randomItemName);
+    expect(updatedCellData['Unit']).toBe('L');
+    expect(updatedCellData['Cost']).toBe('$25.50');
+
+    await dashboard.page.reload();
+    await folder.shouldHaveItemWithName(randomItemName);
+    const reloadedCellData = await folder.getItemCellData(randomItemName);
+    expect(reloadedCellData['Unit']).toBe('L');
+    expect(reloadedCellData['Cost']).toBe('$25.50');
   });
 });
