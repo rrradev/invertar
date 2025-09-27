@@ -181,7 +181,7 @@ export const dashboardRouter = router({
           createdAt: newShelf.createdAt.toISOString(),
           updatedAt: newShelf.updatedAt.toISOString(),
           lastModifiedBy: newShelf.lastModifiedBy.username,
-          isExpanded: false, // New shelves default to collapsed for performance
+          isExpanded: true, // New shelves should be expanded by default for better UX
           items: [],
         },
       };
