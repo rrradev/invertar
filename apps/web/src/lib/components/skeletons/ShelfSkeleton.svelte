@@ -18,8 +18,6 @@
 		<SkeletonBase width="350px" height="1rem" />
 	</div>
 
-
-
 	<!-- Shelves skeleton -->
 	<div class="space-y-6">
 		{#each Array(shelves) as _, shelfIndex (shelfIndex)}
