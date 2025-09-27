@@ -39,6 +39,7 @@
 		createdAt: string;
 		updatedAt: string;
 		lastModifiedBy: string;
+		isExpanded: boolean;
 		items: Item[];
 	}
 
@@ -75,6 +76,9 @@
 	let quantityInput = $state(0);
 	let error = $state('');
 	let successMessage = $state('');
+	
+	// Track which shelves are currently loading items (for expand/collapse)
+	let loadingShelfItems = $state<Set<string>>(new Set());
 
 	let newShelf = $state({
 		name: ''
@@ -132,6 +136,64 @@
 			}
 		} catch (err) {
 			console.error('Failed to load recent labels:', err);
+		}
+	}
+
+	// Toggle shelf expand/collapse state
+	async function toggleShelfExpansion(shelfId: string) {
+		try {
+			const shelf = shelves.find(s => s.id === shelfId);
+			if (!shelf) return;
+
+			const newExpandedState = !shelf.isExpanded;
+			
+			// If expanding and shelf has no items loaded, load them
+			if (newExpandedState && shelf.items.length === 0) {
+				loadingShelfItems.add(shelfId);
+				loadingShelfItems = new Set(loadingShelfItems); // Trigger reactivity
+				
+				try {
+					const itemsResult = await trpc.dashboard.getShelfItems.query({ shelfId });
+					if (itemsResult.status === SuccessStatus.SUCCESS) {
+						// Update the shelf with loaded items
+						const shelfIndex = shelves.findIndex(s => s.id === shelfId);
+						if (shelfIndex !== -1) {
+							shelves[shelfIndex].items = itemsResult.items as Item[];
+						}
+					}
+				} catch (err) {
+					console.error('Failed to load shelf items:', err);
+					error = 'Failed to load shelf items';
+					setTimeout(() => error = '', 3000);
+					return;
+				} finally {
+					loadingShelfItems.delete(shelfId);
+					loadingShelfItems = new Set(loadingShelfItems); // Trigger reactivity
+				}
+			}
+
+			// Update local state immediately for UI responsiveness
+			const shelfIndex = shelves.findIndex(s => s.id === shelfId);
+			if (shelfIndex !== -1) {
+				shelves[shelfIndex].isExpanded = newExpandedState;
+			}
+
+			// Update preference on backend
+			await trpc.dashboard.updateShelfPreference.mutate({
+				shelfId,
+				isExpanded: newExpandedState
+			});
+
+		} catch (err) {
+			console.error('Failed to toggle shelf expansion:', err);
+			error = 'Failed to update shelf state';
+			setTimeout(() => error = '', 3000);
+			
+			// Revert local state on error
+			const shelfIndex = shelves.findIndex(s => s.id === shelfId);
+			if (shelfIndex !== -1) {
+				shelves[shelfIndex].isExpanded = !shelves[shelfIndex].isExpanded;
+			}
 		}
 	}
 
@@ -1169,6 +1231,40 @@
 							<div class="px-6 py-4 bg-gray-50 border-b border-gray-200">
 								<div class="flex items-center justify-between">
 									<div class="flex items-center">
+										<!-- Expand/Collapse Button -->
+										<button
+											onclick={() => toggleShelfExpansion(shelf.id)}
+											class="mr-2 p-1 rounded-md hover:bg-gray-200 focus:outline-none focus:ring-2 focus:ring-indigo-500 transition-colors"
+											disabled={loadingShelfItems.has(shelf.id)}
+											data-testid="shelf-expand-button"
+											aria-label={shelf.isExpanded ? 'Collapse shelf' : 'Expand shelf'}
+										>
+											{#if loadingShelfItems.has(shelf.id)}
+												<svg
+													class="h-5 w-5 text-gray-400 animate-spin"
+													fill="none"
+													viewBox="0 0 24 24"
+												>
+													<circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+													<path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+												</svg>
+											{:else}
+												<svg
+													class="h-5 w-5 text-gray-600 transform transition-transform duration-200 {shelf.isExpanded ? 'rotate-90' : ''}"
+													fill="none"
+													stroke="currentColor"
+													viewBox="0 0 24 24"
+												>
+													<path
+														stroke-linecap="round"
+														stroke-linejoin="round"
+														stroke-width="2"
+														d="M9 5l7 7-7 7"
+													/>
+												</svg>
+											{/if}
+										</button>
+										
 										<svg
 											class="h-6 w-6 text-yellow-500 mr-3"
 											fill="none"
@@ -1193,42 +1289,45 @@
 									</div>
 									<div class="text-right">
 										<div class="text-sm text-gray-500" data-testid="shelf-stats">
-											{shelf.items.length} items •
-											{Object.entries(getTotalItemsByUnit(shelf.items))
-												.map(([unit, total]) => (total ? `${total} ${unit}` : ''))
-												.filter(Boolean)
-												.join(' • ')}
+											{shelf.isExpanded ? shelf.items.length : '?'} items
+											{#if shelf.isExpanded}
+												• {Object.entries(getTotalItemsByUnit(shelf.items))
+													.map(([unit, total]) => (total ? `${total} ${unit}` : ''))
+													.filter(Boolean)
+													.join(' • ')}
+											{/if}
 										</div>
 										<div
 											class="text-lg font-semibold text-gray-900"
 											data-testid="shelf-total-value"
 										>
-											{formatPrice(getTotalValue(shelf.items))}
+											{shelf.isExpanded ? formatPrice(getTotalValue(shelf.items)) : '---'}
 										</div>
 									</div>
 								</div>
 							</div>
 
-							<!-- Items List -->
-							{#if shelf.items.length === 0}
-								<div class="px-6 py-8 text-center" data-testid="empty-shelf-state">
-									<svg
-										class="mx-auto h-8 w-8 text-gray-400"
-										fill="none"
-										stroke="currentColor"
-										viewBox="0 0 24 24"
-									>
-										<path
-											stroke-linecap="round"
-											stroke-linejoin="round"
-											stroke-width="2"
-											d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"
-										/>
-									</svg>
-									<p class="mt-2 text-sm text-gray-500">No items in this shelf yet</p>
-								</div>
-							{:else}
-								<div class="overflow-x-auto">
+							<!-- Items List - Only show when shelf is expanded -->
+							{#if shelf.isExpanded}
+								{#if shelf.items.length === 0}
+									<div class="px-6 py-8 text-center" data-testid="empty-shelf-state">
+										<svg
+											class="mx-auto h-8 w-8 text-gray-400"
+											fill="none"
+											stroke="currentColor"
+											viewBox="0 0 24 24"
+										>
+											<path
+												stroke-linecap="round"
+												stroke-linejoin="round"
+												stroke-width="2"
+												d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"
+											/>
+										</svg>
+										<p class="mt-2 text-sm text-gray-500">No items in this shelf yet</p>
+									</div>
+								{:else}
+									<div class="overflow-x-auto">
 									<table class="min-w-full divide-y divide-gray-200" data-testid="items-table">
 										<thead class="bg-gray-50">
 											<tr>
@@ -1376,6 +1475,7 @@
 									</table>
 								</div>
 							{/if}
+						{/if}
 						</div>
 					{/each}
 				</div>

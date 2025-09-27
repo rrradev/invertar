@@ -9,18 +9,59 @@ import {
   updateItemInput,
   deleteShelfInput,
   deleteItemInput,
-  adjustItemQuantityInput
+  adjustItemQuantityInput,
+  updateShelfPreferenceInput,
+  getShelfItemsInput
 } from '@repo/types/schemas/dashboard';
 import { SuccessStatus } from '@repo/types/trpc';
 import { generateItemHashId } from '@repo/utils/items';
 
 export const dashboardRouter = router({
-  // Get all shelves and their items for the user's organization
+  // Get all shelves with user preferences, but only load items for expanded shelves
   getShelvesWithItems: protectedProcedure
     .query(async ({ ctx }) => {
+      // First, get all shelves for the organization
       const shelves = await prisma.shelf.findMany({
         where: {
           organizationId: ctx.user!.organizationId,
+        },
+        include: {
+          lastModifiedBy: {
+            select: {
+              username: true,
+            },
+          },
+          userPreferences: {
+            where: {
+              userId: ctx.user!.id,
+            },
+            select: {
+              isExpanded: true,
+            },
+          },
+        },
+        orderBy: {
+          createdAt: 'desc',
+        },
+      });
+
+      // Get expanded shelf IDs (shelves that should load items)
+      const expandedShelfIds = [];
+      for (const shelf of shelves) {
+        // Default to expanded (true) if no preference exists
+        const isExpanded = shelf.userPreferences.length > 0 
+          ? shelf.userPreferences[0].isExpanded 
+          : true;
+        
+        if (isExpanded) {
+          expandedShelfIds.push(shelf.id);
+        }
+      }
+
+      // Load items only for expanded shelves
+      const shelvesWithItems = await prisma.shelf.findMany({
+        where: {
+          id: { in: expandedShelfIds },
         },
         include: {
           items: {
@@ -46,41 +87,50 @@ export const dashboardRouter = router({
               createdAt: 'desc',
             },
           },
-          lastModifiedBy: {
-            select: {
-              username: true,
-            },
-          },
-        },
-        orderBy: {
-          createdAt: 'desc',
         },
       });
 
-      const formatted = shelves.map((shelf: any) => ({
-        id: shelf.id,
-        name: shelf.name,
-        createdAt: shelf.createdAt.toISOString(),
-        updatedAt: shelf.updatedAt.toISOString(),
-        lastModifiedBy: shelf.lastModifiedBy.username,
-        items: shelf.items.map((item: any) => ({
-          id: item.id,
-          name: item.name,
-          description: item.description,
-          price: item.price,
-          cost: item.cost,
-          quantity: item.quantity,
-          unit: item.unit,
-          labels: item.labels.map((itemLabel: any) => ({
-            id: itemLabel.label.id,
-            name: itemLabel.label.name,
-            color: itemLabel.label.color,
-          })),
-          createdAt: item.createdAt.toISOString(),
-          updatedAt: item.updatedAt.toISOString(),
-          lastModifiedBy: item.lastModifiedBy.username,
-        })),
-      }));
+      // Create a map of shelf items for quick lookup
+      const shelfItemsMap = new Map();
+      shelvesWithItems.forEach(shelf => {
+        shelfItemsMap.set(shelf.id, shelf.items);
+      });
+
+      const formatted = shelves.map((shelf: any) => {
+        const isExpanded = shelf.userPreferences.length > 0 
+          ? shelf.userPreferences[0].isExpanded 
+          : true;
+        
+        const items = isExpanded && shelfItemsMap.has(shelf.id) 
+          ? shelfItemsMap.get(shelf.id).map((item: any) => ({
+              id: item.id,
+              name: item.name,
+              description: item.description,
+              price: item.price,
+              cost: item.cost,
+              quantity: item.quantity,
+              unit: item.unit,
+              labels: item.labels.map((itemLabel: any) => ({
+                id: itemLabel.label.id,
+                name: itemLabel.label.name,
+                color: itemLabel.label.color,
+              })),
+              createdAt: item.createdAt.toISOString(),
+              updatedAt: item.updatedAt.toISOString(),
+              lastModifiedBy: item.lastModifiedBy.username,
+            }))
+          : [];
+
+        return {
+          id: shelf.id,
+          name: shelf.name,
+          createdAt: shelf.createdAt.toISOString(),
+          updatedAt: shelf.updatedAt.toISOString(),
+          lastModifiedBy: shelf.lastModifiedBy.username,
+          isExpanded,
+          items,
+        };
+      });
 
       return {
         status: SuccessStatus.SUCCESS,
@@ -707,6 +757,121 @@ export const dashboardRouter = router({
           color: newLabel.color,
           createdAt: newLabel.createdAt.toISOString(),
           updatedAt: newLabel.updatedAt.toISOString(),
+        },
+      };
+    }),
+
+  // Get items for a specific shelf (used when expanding a collapsed shelf)
+  getShelfItems: protectedProcedure
+    .input(getShelfItemsInput)
+    .query(async ({ input, ctx }) => {
+      // Verify shelf belongs to user's organization
+      const shelf = await prisma.shelf.findFirst({
+        where: {
+          id: input.shelfId,
+          organizationId: ctx.user!.organizationId,
+        },
+        include: {
+          items: {
+            include: {
+              lastModifiedBy: {
+                select: {
+                  username: true,
+                },
+              },
+              labels: {
+                include: {
+                  label: {
+                    select: {
+                      id: true,
+                      name: true,
+                      color: true,
+                    },
+                  },
+                },
+              },
+            },
+            orderBy: {
+              createdAt: 'desc',
+            },
+          },
+        },
+      });
+
+      if (!shelf) {
+        throw new TRPCError({
+          code: "NOT_FOUND",
+          message: "Shelf not found or access denied."
+        });
+      }
+
+      const formattedItems = shelf.items.map((item: any) => ({
+        id: item.id,
+        name: item.name,
+        description: item.description,
+        price: item.price,
+        cost: item.cost,
+        quantity: item.quantity,
+        unit: item.unit,
+        labels: item.labels.map((itemLabel: any) => ({
+          id: itemLabel.label.id,
+          name: itemLabel.label.name,
+          color: itemLabel.label.color,
+        })),
+        createdAt: item.createdAt.toISOString(),
+        updatedAt: item.updatedAt.toISOString(),
+        lastModifiedBy: item.lastModifiedBy.username,
+      }));
+
+      return {
+        status: SuccessStatus.SUCCESS,
+        items: formattedItems,
+      };
+    }),
+
+  // Update user preference for shelf expand/collapse state
+  updateShelfPreference: protectedProcedure
+    .input(updateShelfPreferenceInput)
+    .mutation(async ({ input, ctx }) => {
+      // Verify shelf belongs to user's organization
+      const shelf = await prisma.shelf.findFirst({
+        where: {
+          id: input.shelfId,
+          organizationId: ctx.user!.organizationId,
+        },
+      });
+
+      if (!shelf) {
+        throw new TRPCError({
+          code: "NOT_FOUND",
+          message: "Shelf not found or access denied."
+        });
+      }
+
+      // Upsert user preference (create if doesn't exist, update if exists)
+      const preference = await prisma.userShelfPreference.upsert({
+        where: {
+          userId_shelfId: {
+            userId: ctx.user!.id,
+            shelfId: input.shelfId,
+          },
+        },
+        update: {
+          isExpanded: input.isExpanded,
+        },
+        create: {
+          userId: ctx.user!.id,
+          shelfId: input.shelfId,
+          isExpanded: input.isExpanded,
+        },
+      });
+
+      return {
+        status: SuccessStatus.SUCCESS,
+        message: `Shelf preference updated successfully.`,
+        preference: {
+          shelfId: preference.shelfId,
+          isExpanded: preference.isExpanded,
         },
       };
     }),
