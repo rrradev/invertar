@@ -13,8 +13,8 @@
 
 	let { data }: PageProps = $props();
 
-	let admins = $state((data.admins as Admin[]) || []);
-	let isLoading = $state(false);
+	let admins = $state<Admin[]>([]);
+	let isLoading = $state(true); // Start loading immediately
 	let isCreating = $state(false);
 	let isDeleting = $state('');
 	let isRefreshing = $state('');
@@ -225,15 +225,16 @@
 			minute: '2-digit'
 		});
 	}
+
+	// Load admins on component mount
+	loadAdmins();
 </script>
 
 <div class="min-h-screen bg-gray-50">
-	{#if $skeleton.admins}
+	{#if isLoading}
 		<!-- Show skeleton while loading -->
 		<Header />
 		<TableSkeleton
-			title="Admins"
-			subtitle="Manage administrators across organizations"
 			rows={5}
 			columns={[
 				{ width: '35%', label: 'Admin' },

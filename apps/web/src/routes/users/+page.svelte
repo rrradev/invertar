@@ -22,8 +22,8 @@
 		hasInitialPassword: boolean;
 	}
 
-	let users = $state((data.users as UserListItem[]) || []);
-	let isLoading = $state(false);
+	let users = $state<UserListItem[]>([]);
+	let isLoading = $state(true); // Start loading immediately
 	let isCreating = $state(false);
 	let isDeleting = $state('');
 	let isResetting = $state('');
@@ -207,15 +207,16 @@
 			minute: '2-digit'
 		});
 	}
+
+	// Load users on component mount
+	loadUsers();
 </script>
 
 <div class="min-h-screen bg-gray-50">
-	{#if $skeleton.users}
+	{#if isLoading}
 		<!-- Show skeleton while loading -->
 		<Header />
 		<TableSkeleton
-			title="Users"
-			subtitle="Manage users in your organization"
 			rows={5}
 			columns={[
 				{ width: '40%', label: 'User' },

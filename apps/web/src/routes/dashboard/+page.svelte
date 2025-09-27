@@ -42,9 +42,10 @@
 		items: Item[];
 	}
 
-	let shelves = $state((data.shelves as Shelf[]) || []);
+	let shelves = $state<Shelf[]>([]);
 	let labels = $state<Label[]>([]);
 	let recentLabels = $state<Label[]>([]);
+	let isLoadingShelves = $state(true); // Track loading state for shelves
 	let isCreatingShelf = $state(false);
 	let isCreatingItem = $state(false);
 	let isCreatingLabel = $state(false);
@@ -85,6 +86,21 @@
 		selectedLabels: [null, null] as (Label | null)[] // Two slots for labels
 	});
 
+	// Load shelves data
+	async function loadShelves() {
+		try {
+			isLoadingShelves = true;
+			const result = await trpc.dashboard.getShelvesWithItems.query();
+			if (result.status === SuccessStatus.SUCCESS) {
+				shelves = result.shelves as Shelf[];
+			}
+		} catch (err) {
+			console.error('Failed to load shelves:', err);
+		} finally {
+			isLoadingShelves = false;
+		}
+	}
+
 	// Load labels when the component is initialized
 	async function loadLabels() {
 		try {
@@ -109,7 +125,8 @@
 		}
 	}
 
-	// Load labels on mount
+	// Load data on mount
+	loadShelves();
 	loadLabels();
 	loadRecentLabels();
 
@@ -516,7 +533,7 @@
 </script>
 
 <div class="min-h-screen bg-gray-50">
-	{#if $skeleton.dashboard}
+	{#if isLoadingShelves}
 		<!-- Show skeleton while loading -->
 		<Header />
 		<ShelfSkeleton shelves={3} itemsPerShelf={4} />
