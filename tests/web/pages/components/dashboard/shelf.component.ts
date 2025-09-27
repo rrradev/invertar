@@ -1,6 +1,5 @@
 import { expect, Locator } from "@playwright/test";
 import BaseComponent from "../base.component";
-import { get } from "http";
 
 export default class Shelf extends BaseComponent {
 

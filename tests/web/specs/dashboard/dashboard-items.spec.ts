@@ -8,7 +8,7 @@ test.describe('Dashboard - Item Management', () => {
     await dashboard.openCreateItemForm();
 
     // Verify shelf select is populated with at least our test shelf
-    const options = await dashboard.getFolderOptions();
+    const options = await dashboard.getShelfOptions();
     const optionCount = await options.count();
     expect(optionCount).toBeGreaterThan(1); // At least default empty option + our shelf
 
@@ -56,7 +56,7 @@ test.describe('Dashboard - Item Management', () => {
       expect(successMessage).toContain(`Item \"${randomItemName}\" created successfully`);
 
       // Verify item appears in table with correct data
-      await dashboard.waitForFoldersToLoad();
+      await dashboard.waitForShelvesToLoad();
 
       await shelf.shouldHaveItemWithName(itemData.name);
       const itemRow = shelf.getItemRowByName(itemData.name);
@@ -72,7 +72,7 @@ test.describe('Dashboard - Item Management', () => {
   test('should not create item without required fields', async ({ dashboard, shelf }) => {
     // Try to create item without name
     await dashboard.openCreateItemForm();
-    await dashboard.itemFolderSelect.selectOption(await shelf.getName());
+    await dashboard.itemShelfSelect.selectOption(await shelf.getName());
     await dashboard.submitItemButton.click();
 
     // Verify error message
@@ -82,7 +82,7 @@ test.describe('Dashboard - Item Management', () => {
 
     // Try to create item without shelf selection
     await dashboard.itemNameInput.fill('Test Item');
-    await dashboard.itemFolderSelect.selectOption(''); // Empty selection
+    await dashboard.itemShelfSelect.selectOption(''); // Empty selection
     await dashboard.submitItemButton.click();
 
     // Verify error message persists or appears again
@@ -100,7 +100,7 @@ test.describe('Dashboard - Item Management', () => {
     // Start creating item but cancel
     await dashboard.openCreateItemForm();
     await dashboard.itemNameInput.fill('cancelled-item');
-    await dashboard.itemFolderSelect.selectOption(await shelf.getName());
+    await dashboard.itemShelfSelect.selectOption(await shelf.getName());
     await dashboard.toggleAdvancedFields();
     await dashboard.itemDescriptionInput.fill('This should not be saved');
     await dashboard.cancelItemCreation();
@@ -116,7 +116,7 @@ test.describe('Dashboard - Item Management', () => {
   test('should validate advanced field types including decimals', async ({ dashboard, shelf }) => {
     await dashboard.openCreateItemForm();
     await dashboard.itemNameInput.fill('validation-test');
-    await dashboard.itemFolderSelect.selectOption(await shelf.getName());
+    await dashboard.itemShelfSelect.selectOption(await shelf.getName());
 
     // Show advanced fields
     await dashboard.toggleAdvancedFields();
