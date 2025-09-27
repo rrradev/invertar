@@ -18,12 +18,7 @@
 		<SkeletonBase width="350px" height="1rem" />
 	</div>
 
-	<!-- Action buttons skeleton -->
-	<div class="mb-6 flex flex-wrap gap-3">
-		<SkeletonBase width="140px" height="2.5rem" rounded="md" />
-		<SkeletonBase width="120px" height="2.5rem" rounded="md" />
-		<SkeletonBase width="130px" height="2.5rem" rounded="md" />
-	</div>
+
 
 	<!-- Shelves skeleton -->
 	<div class="space-y-6">
