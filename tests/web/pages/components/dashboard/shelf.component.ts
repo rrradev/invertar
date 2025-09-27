@@ -64,24 +64,6 @@ export default class Shelf extends BaseComponent {
         await expect(this.expandButton).toHaveAttribute('aria-label', /Expand shelf/);
     }
 
-    async shouldShowLoadingState(): Promise<void> {
-        await expect(this.expandButton.locator('svg.animate-spin')).toBeVisible();
-    }
-
-    async shouldNotShowLoadingState(): Promise<void> {
-        await expect(this.expandButton.locator('svg.animate-spin')).not.toBeVisible();
-    }
-
-    async shouldShowCollapsedStats(): Promise<void> {
-        await expect(this.stats).toContainText('?');
-        await expect(this.totalValue).toHaveText('---');
-    }
-
-    async shouldShowExpandedStats(): Promise<void> {
-        await expect(this.stats).not.toContainText('?');
-        await expect(this.totalValue).not.toHaveText('---');
-    }
-
     async shouldHaveItemWithName(name: string) {
         const itemRow = this.itemsTable.getByRole('row').filter({ hasText: name });
         await expect(itemRow).toBeVisible();

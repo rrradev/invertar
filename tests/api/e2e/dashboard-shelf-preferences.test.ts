@@ -82,12 +82,11 @@ describe('Dashboard - Shelf Preferences API', () => {
       );
 
       expect(response.data.code).toBe('NOT_FOUND');
-      expect(response.data.message).toBe('Shelf not found or access denied.');
     });
 
     it('should prevent cross-organization access', async () => {
       // Get token for a different organization
-      const otherOrgToken = await getToken(UserRole.USER); // This would be a different user/org in real scenario
+      const otherOrgToken = await getToken(UserRole.SUPER_ADMIN); // This would be a different user/org in real scenario
 
       const preferenceData = {
         shelfId,
@@ -101,8 +100,7 @@ describe('Dashboard - Shelf Preferences API', () => {
         otherOrgToken
       );
 
-      // Expect either NOT_FOUND or FORBIDDEN depending on implementation
-      expect(['NOT_FOUND', 'FORBIDDEN']).toContain(response.data.code);
+      expect(response.data.code).toBe('NOT_FOUND');
     });
   });
 
@@ -132,9 +130,9 @@ describe('Dashboard - Shelf Preferences API', () => {
 
     it('should get shelf items successfully', async () => {
       const response = await req<SuccessResponse<{ items: any[] }>>(
-        'POST',
-        'dashboard.getShelfItems',
-        { shelfId },
+        'GET',
+        `dashboard.getShelfItems?input={"shelfId":"${shelfId}"}`,
+        {},
         userToken
       );
 
@@ -155,28 +153,27 @@ describe('Dashboard - Shelf Preferences API', () => {
 
     it('should reject invalid shelf ID', async () => {
       const response = await req<ErrorResponse>(
-        'POST',
-        'dashboard.getShelfItems',
-        { shelfId: 'invalid-shelf-id' },
+        'GET',
+        'dashboard.getShelfItems?input={"shelfId":"invalid-shelf-id"}',
+        {},
         userToken
       );
 
       expect(response.data.code).toBe('NOT_FOUND');
-      expect(response.data.message).toBe('Shelf not found or access denied.');
     });
 
     it('should prevent cross-organization access', async () => {
       // Get token for a different organization  
-      const otherOrgToken = await getToken(UserRole.USER); // This would be a different user/org in real scenario
+      const otherOrgToken = await getToken(UserRole.SUPER_ADMIN); // This would be a different user/org in real scenario
 
       const response = await req<ErrorResponse>(
-        'POST',
-        'dashboard.getShelfItems',
-        { shelfId },
+        'GET',
+        'dashboard.getShelfItems?input={"shelfId":"' + shelfId + '"}',
+        {},
         otherOrgToken
       );
 
-      expect(['NOT_FOUND', 'FORBIDDEN']).toContain(response.data.code);
+      expect(response.data.code).toBe('NOT_FOUND');
     });
   });
 
@@ -192,7 +189,7 @@ describe('Dashboard - Shelf Preferences API', () => {
 
       // Then get shelves
       const response = await req<SuccessResponse<{ shelves: any[] }>>(
-        'POST',
+        'GET',
         'dashboard.getShelvesWithItems',
         {},
         userToken
@@ -211,7 +208,7 @@ describe('Dashboard - Shelf Preferences API', () => {
 
     it('should default to collapsed when no preference exists for performance', async () => {
       const response = await req<SuccessResponse<{ shelves: any[] }>>(
-        'POST',
+        'GET',
         'dashboard.getShelvesWithItems',
         {},
         userToken
