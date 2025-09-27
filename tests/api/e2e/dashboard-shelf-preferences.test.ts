@@ -209,7 +209,7 @@ describe('Dashboard - Shelf Preferences API', () => {
       expect(Array.isArray(shelf.items)).toBe(true);
     });
 
-    it('should default to expanded when no preference exists', async () => {
+    it('should default to collapsed when no preference exists for performance', async () => {
       const response = await req<SuccessResponse<{ shelves: any[] }>>(
         'POST',
         'dashboard.getShelvesWithItems',
@@ -222,7 +222,7 @@ describe('Dashboard - Shelf Preferences API', () => {
       
       const shelf = response.shelves.find(s => s.id === shelfId);
       expect(shelf).toBeDefined();
-      expect(shelf.isExpanded).toBe(true); // Default behavior
+      expect(shelf.isExpanded).toBe(false); // Default to collapsed for performance
     });
   });
 });

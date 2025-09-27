@@ -48,10 +48,10 @@ export const dashboardRouter = router({
       // Get expanded shelf IDs (shelves that should load items)
       const expandedShelfIds = [];
       for (const shelf of shelves) {
-        // Default to expanded (true) if no preference exists
+        // Default to collapsed (false) if no preference exists - only load items for explicitly expanded shelves
         const isExpanded = shelf.userPreferences.length > 0 
           ? shelf.userPreferences[0].isExpanded 
-          : true;
+          : false;
         
         if (isExpanded) {
           expandedShelfIds.push(shelf.id);
@@ -99,7 +99,7 @@ export const dashboardRouter = router({
       const formatted = shelves.map((shelf: any) => {
         const isExpanded = shelf.userPreferences.length > 0 
           ? shelf.userPreferences[0].isExpanded 
-          : true;
+          : false; // Default to collapsed for performance
         
         const items = isExpanded && shelfItemsMap.has(shelf.id) 
           ? shelfItemsMap.get(shelf.id).map((item: any) => ({
@@ -181,6 +181,7 @@ export const dashboardRouter = router({
           createdAt: newShelf.createdAt.toISOString(),
           updatedAt: newShelf.updatedAt.toISOString(),
           lastModifiedBy: newShelf.lastModifiedBy.username,
+          isExpanded: false, // New shelves default to collapsed for performance
           items: [],
         },
       };
