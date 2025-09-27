@@ -1,7 +1,8 @@
 <script lang="ts">
 	import '../app.css';
-	import { navigating } from '$app/stores';
+	import { navigating, page } from '$app/stores';
 	import { onMount } from 'svelte';
+	import { skeleton } from '$lib/stores/skeleton';
 
 	interface LayoutProps {
 		// eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -19,10 +20,39 @@
 			}
 		}, 100);
 	});
+
+	// Handle navigation loading states
+	$effect(() => {
+		if ($navigating) {
+			// Determine which skeleton to show based on destination route
+			const route = $navigating.to?.route?.id;
+
+			// Reset all skeletons first
+			skeleton.hideAllSkeletons();
+
+			// Show appropriate skeleton based on route
+			switch (route) {
+				case '/dashboard':
+					skeleton.showSkeleton('dashboard');
+					break;
+				case '/users':
+					skeleton.showSkeleton('users');
+					break;
+				case '/admins':
+					skeleton.showSkeleton('admins');
+					break;
+			}
+		} else {
+			// Navigation completed, hide all skeletons
+			setTimeout(() => {
+				skeleton.hideAllSkeletons();
+			}, 200); // Small delay to allow content to render
+		}
+	});
 </script>
 
-<!-- Navigation Loading Overlay -->
-{#if $navigating}
+<!-- Minimal navigation loading for non-skeleton pages (login, etc.) -->
+{#if $navigating && !['dashboard', 'users', 'admins'].some( (route) => $navigating?.to?.route?.id?.includes(route) )}
 	<div
 		class="fixed inset-0 z-50 bg-white bg-opacity-80 backdrop-blur-sm flex items-center justify-center"
 	>
