@@ -20,6 +20,7 @@ export default class Dashboard extends BasePage {
 
     // Form inputs
     shelfNameInput: Locator;
+    shelfColorInput: Locator;
     itemNameInput: Locator;
     itemDescriptionInput: Locator;
     itemPriceInput: Locator;
@@ -98,6 +99,7 @@ export default class Dashboard extends BasePage {
 
         // Form inputs
         this.shelfNameInput = page.locator('#shelfName');
+        this.shelfColorInput = page.locator('#shelfColor');
         this.itemNameInput = page.locator('#itemName');
         this.itemDescriptionInput = page.locator('#itemDescription');
         this.itemPriceInput = page.locator('#itemPrice');
@@ -180,9 +182,12 @@ export default class Dashboard extends BasePage {
         await expect(this.createItemForm).toBeVisible();
     }
 
-    async createShelf(name: string) {
+    async createShelf(name: string, color?: string) {
         await this.openCreateShelfForm();
         await this.shelfNameInput.fill(name);
+        if (color) {
+            await this.shelfColorInput.fill(color);
+        }
         await this.submitShelfButton.click();
     }
 

@@ -1284,6 +1284,11 @@
 												d="M3 6h18M3 12h18M3 18h18M3 6v12a1 1 0 001 1h16a1 1 0 001-1V6"
 											/>
 										</svg>
+										<div
+											class="w-4 h-4 rounded-full mr-3 border border-gray-200 flex-shrink-0"
+											style="background-color: {shelf.color}"
+											title="Shelf color: {shelf.color}"
+										></div>
 										<div>
 											<h3 class="text-lg font-medium text-gray-900" data-testid="shelf-name">
 												{shelf.name}
