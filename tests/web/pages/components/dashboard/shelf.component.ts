@@ -2,7 +2,7 @@ import { expect, Locator } from "@playwright/test";
 import BaseComponent from "../base.component";
 import { get } from "http";
 
-export default class Folder extends BaseComponent {
+export default class Shelf extends BaseComponent {
 
     itemsTable: Locator;
     stats: Locator;
@@ -10,11 +10,11 @@ export default class Folder extends BaseComponent {
     constructor($: Locator) {
         super($);
         this.itemsTable = this.$.locator('[data-testid="items-table"]');
-        this.stats = this.$.locator('[data-testid="folder-stats"]');
+        this.stats = this.$.locator('[data-testid="shelf-stats"]');
     }
 
-    async getFolderId(): Promise<string> {
-        return (await this.$.getAttribute('data-folder-id')) || '';
+    async getShelfId(): Promise<string> {
+        return (await this.$.getAttribute('data-shelf-id')) || '';
     }
 
     async shouldHaveItemWithName(name: string) {
@@ -65,10 +65,10 @@ export default class Folder extends BaseComponent {
     }
 
     async getTotalValue(): Promise<number> {
-        return parseFloat((await this.$.getByTestId('folder-total-value').textContent())?.replace(/[$,]/g, '') || '0');
+        return parseFloat((await this.$.getByTestId('shelf-total-value').textContent())?.replace(/[$,]/g, '') || '0');
     }
 
     async getName(): Promise<string> {
-        return (await this.$.getByTestId('folder-name').textContent()) || '';
+        return (await this.$.getByTestId('shelf-name').textContent()) || '';
     }
 }

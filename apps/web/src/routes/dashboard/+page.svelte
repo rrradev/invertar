@@ -31,7 +31,7 @@
 		lastModifiedBy: string;
 	}
 
-	interface Folder {
+	interface Shelf {
 		id: string;
 		name: string;
 		createdAt: string;
@@ -40,13 +40,13 @@
 		items: Item[];
 	}
 
-	let folders = $state((data.folders as Folder[]) || []);
+	let shelves = $state((data.shelves as Shelf[]) || []);
 	let labels = $state<Label[]>([]);
 	let recentLabels = $state<Label[]>([]);
-	let isCreatingFolder = $state(false);
+	let isCreatingShelf = $state(false);
 	let isCreatingItem = $state(false);
 	let isCreatingLabel = $state(false);
-	let showCreateFolderForm = $state(false);
+	let showCreateShelfForm = $state(false);
 	let showCreateItemForm = $state(false);
 	let showCreateLabelForm = $state(false);
 	let showAdvancedItemFields = $state(false);
@@ -63,7 +63,7 @@
 	let error = $state('');
 	let successMessage = $state('');
 
-	let newFolder = $state({
+	let newShelf = $state({
 		name: ''
 	});
 
@@ -79,7 +79,7 @@
 		cost: 0,
 		quantity: 0,
 		unit: Unit.PCS,
-		folderId: '',
+		shelfId: '',
 		selectedLabels: [null, null] as (Label | null)[] // Two slots for labels
 	});
 
@@ -202,39 +202,39 @@
 		}
 	}
 
-	async function createFolder() {
-		if (!newFolder.name.trim()) {
-			error = 'Folder name is required';
+	async function createShelf() {
+		if (!newShelf.name.trim()) {
+			error = 'Shelf name is required';
 			return;
 		}
 
 		try {
-			isCreatingFolder = true;
+			isCreatingShelf = true;
 			error = '';
 			successMessage = '';
 
-			const result = await trpc.dashboard.createFolder.mutate({
-				name: newFolder.name.trim()
+			const result = await trpc.dashboard.createShelf.mutate({
+				name: newShelf.name.trim()
 			});
 
 			if (result.status === SuccessStatus.SUCCESS) {
 				successMessage = result.message;
-				newFolder = { name: '' };
-				showCreateFolderForm = false;
+				newShelf = { name: '' };
+				showCreateShelfForm = false;
 
-				// Add the new folder to the existing folders array
-				folders = [result.folder as Folder, ...folders];
+				// Add the new shelf to the existing shelves array
+				shelves = [result.shelf as Shelf, ...shelves];
 			}
 		} catch (err: unknown) {
-			error = (err as Error).message || 'Failed to create folder';
+			error = (err as Error).message || 'Failed to create shelf';
 		} finally {
-			isCreatingFolder = false;
+			isCreatingShelf = false;
 		}
 	}
 
 	async function createItem() {
-		if (!newItem.name.trim() || !newItem.folderId) {
-			error = 'Item name and folder selection are required';
+		if (!newItem.name.trim() || !newItem.shelfId) {
+			error = 'Item name and shelf selection are required';
 			return;
 		}
 
@@ -243,7 +243,7 @@
 			error = '';
 			successMessage = '';
 
-			const targetFolderId = newItem.folderId; // Store before resetting
+			const targetShelfId = newItem.shelfId; // Store before resetting
 
 			const result = await trpc.dashboard.createItem.mutate({
 				name: newItem.name.trim(),
@@ -252,7 +252,7 @@
 				cost: newItem.cost || undefined,
 				quantity: newItem.quantity || undefined,
 				unit: newItem.unit,
-				folderId: targetFolderId,
+				shelfId: targetShelfId,
 				labelIds: newItem.selectedLabels.filter(label => label !== null).map(label => label!.id)
 			});
 
@@ -265,20 +265,20 @@
 					cost: 0,
 					quantity: 0,
 					unit: Unit.PCS,
-					folderId: '',
+					shelfId: '',
 					selectedLabels: [null, null]
 				};
 				showCreateItemForm = false;
 
-				// Add the new item to the corresponding folder
-				folders = folders.map((folder) => {
-					if (folder.id === targetFolderId) {
+				// Add the new item to the corresponding shelf
+				shelves = shelves.map((shelf) => {
+					if (shelf.id === targetShelfId) {
 						return {
-							...folder,
-							items: [result.item as Item, ...folder.items]
+							...shelf,
+							items: [result.item as Item, ...shelf.items]
 						};
 					}
-					return folder;
+					return shelf;
 				});
 			}
 		} catch (err: unknown) {
@@ -426,10 +426,10 @@
 
 			if (updateResult.status === SuccessStatus.SUCCESS) {
 				updateItemSuccessful = true;
-				// Update the item in the folders array with new details
-				folders = folders.map((folder) => ({
-					...folder,
-					items: folder.items.map((item) =>
+				// Update the item in the shelves array with new details
+				shelves = shelves.map((shelf) => ({
+					...shelf,
+					items: shelf.items.map((item) =>
 						item.id === editingItem.id ? { ...item, ...editingItem } : item
 					)
 				}));
@@ -445,10 +445,10 @@
 
 					if (quantityResult.status === SuccessStatus.SUCCESS) {
 						adjustItemQuantitySuccessful = true;
-						// Update the quantity in the folders array and editingItem
-						folders = folders.map((folder) => ({
-							...folder,
-							items: folder.items.map((item) =>
+						// Update the quantity in the shelves array and editingItem
+						shelves = shelves.map((shelf) => ({
+							...shelf,
+							items: shelf.items.map((item) =>
 								item.id === editingItem.id
 									? { ...item, quantity: quantityResult.newQuantity }
 									: item
@@ -496,10 +496,10 @@
 			if (result.status === SuccessStatus.SUCCESS) {
 				successMessage = result.message;
 
-				// Remove the item from the folders array
-				folders = folders.map((folder) => ({
-					...folder,
-					items: folder.items.filter((item) => item.id !== editingItem.id)
+				// Remove the item from the shelves array
+				shelves = shelves.map((shelf) => ({
+					...shelf,
+					items: shelf.items.filter((item) => item.id !== editingItem.id)
 				}));
 
 				closeEditModal();
@@ -523,13 +523,13 @@
 			<div class="sm:flex sm:items-center sm:justify-between">
 				<div>
 					<h2 class="text-2xl font-bold text-gray-900" data-testid="dashboard-title">Dashboard</h2>
-					<p class="mt-2 text-sm text-gray-700">Manage your inventory folders and items</p>
+					<p class="mt-2 text-sm text-gray-700">Manage your inventory shelves and items</p>
 				</div>
 				<div class="mt-4 sm:mt-0 flex space-x-3">
 					<button
-						onclick={() => (showCreateFolderForm = !showCreateFolderForm)}
+						onclick={() => (showCreateShelfForm = !showCreateShelfForm)}
 						class="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-gradient-to-r from-green-600 to-green-700 hover:from-green-700 hover:to-green-800 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 transition-all duration-200"
-						data-testid="create-folder-button"
+						data-testid="create-shelf-button"
 					>
 						<svg class="h-5 w-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
 							<path
@@ -539,7 +539,7 @@
 								d="M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-6l-2-2H5a2 2 0 00-2 2z"
 							/>
 						</svg>
-						Create Folder
+						Create Shelf
 					</button>
 					<button
 						onclick={() => (showCreateItemForm = !showCreateItemForm)}
@@ -594,43 +594,43 @@
 			</div>
 		{/if}
 
-		<!-- Create Folder Form -->
-		{#if showCreateFolderForm}
+		<!-- Create Shelf Form -->
+		{#if showCreateShelfForm}
 			<div
 				class="mb-8 bg-white rounded-lg shadow-sm border border-gray-200 p-6"
-				data-testid="create-folder-form"
+				data-testid="create-shelf-form"
 			>
-				<h3 class="text-lg font-medium text-gray-900 mb-4">Create New Folder</h3>
+				<h3 class="text-lg font-medium text-gray-900 mb-4">Create New Shelf</h3>
 				<div class="flex items-end space-x-4">
 					<div class="flex-1">
-						<label for="folderName" class="block text-sm font-medium text-gray-700 mb-2"
-							>Folder Name</label
+						<label for="shelfName" class="block text-sm font-medium text-gray-700 mb-2"
+							>Shelf Name</label
 						>
 						<input
-							id="folderName"
+							id="shelfName"
 							type="text"
-							bind:value={newFolder.name}
-							placeholder="Enter folder name"
+							bind:value={newShelf.name}
+							placeholder="Enter shelf name"
 							class="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-green-500 focus:border-green-500 transition-colors"
-							disabled={isCreatingFolder}
+							disabled={isCreatingShelf}
 						/>
 					</div>
 					<div class="flex space-x-3">
 						<button
-							onclick={() => (showCreateFolderForm = false)}
+							onclick={() => (showCreateShelfForm = false)}
 							class="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 transition-colors"
-							disabled={isCreatingFolder}
-							data-testid="cancel-folder-button"
+							disabled={isCreatingShelf}
+							data-testid="cancel-shelf-button"
 						>
 							Cancel
 						</button>
 						<button
-							onclick={createFolder}
-							disabled={isCreatingFolder}
+							onclick={createShelf}
+							disabled={isCreatingShelf}
 							class="px-4 py-2 text-sm font-medium text-white bg-gradient-to-r from-green-600 to-green-700 hover:from-green-700 hover:to-green-800 rounded-md focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200"
-							data-testid="submit-folder-button"
+							data-testid="submit-shelf-button"
 						>
-							{#if isCreatingFolder}
+							{#if isCreatingShelf}
 								<svg
 									class="animate-spin -ml-1 mr-2 h-4 w-4 text-white inline"
 									fill="none"
@@ -652,7 +652,7 @@
 								</svg>
 								Creating...
 							{:else}
-								Create Folder
+								Create Shelf
 							{/if}
 						</button>
 					</div>
@@ -767,18 +767,18 @@
 						/>
 					</div>
 					<div>
-						<label for="itemFolder" class="block text-sm font-medium text-gray-700 mb-2"
-							>Folder <span class="text-red-500">*</span></label
+						<label for="itemShelf" class="block text-sm font-medium text-gray-700 mb-2"
+							>Shelf <span class="text-red-500">*</span></label
 						>
 						<select
-							id="itemFolder"
-							bind:value={newItem.folderId}
+							id="itemShelf"
+							bind:value={newItem.shelfId}
 							class="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-colors"
 							disabled={isCreatingItem}
 						>
-							<option value="">Select folder</option>
-							{#each folders as folder (folder.id)}
-								<option value={folder.id}>{folder.name}</option>
+							<option value="">Select shelf</option>
+							{#each shelves as shelf (shelf.id)}
+								<option value={shelf.id}>{shelf.name}</option>
 							{/each}
 						</select>
 					</div>
@@ -1047,8 +1047,8 @@
 			</div>
 		{/if}
 
-		<!-- Folders List -->
-		{#if !folders}
+		<!-- Shelves List -->
+		{#if !shelves}
 			<div
 				class="bg-white rounded-lg shadow-sm border border-gray-200 p-8 text-center"
 				data-testid="loading-state"
@@ -1062,9 +1062,9 @@
 						d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 714 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
 					></path>
 				</svg>
-				<p class="mt-2 text-sm text-gray-500">Loading folders and items...</p>
+				<p class="mt-2 text-sm text-gray-500">Loading shelves and items...</p>
 			</div>
-		{:else if folders.length === 0}
+		{:else if shelves.length === 0}
 			<div
 				class="bg-white rounded-lg shadow-sm border border-gray-200 p-8 text-center"
 				data-testid="empty-state"
@@ -1082,11 +1082,11 @@
 						d="M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-6l-2-2H5a2 2 0 00-2 2z"
 					/>
 				</svg>
-				<h3 class="mt-2 text-sm font-medium text-gray-900">No folders yet</h3>
-				<p class="mt-1 text-sm text-gray-500">Get started by creating your first folder.</p>
+				<h3 class="mt-2 text-sm font-medium text-gray-900">No shelves yet</h3>
+				<p class="mt-1 text-sm text-gray-500">Get started by creating your first shelf.</p>
 				<div class="mt-6">
 					<button
-						onclick={() => (showCreateFolderForm = true)}
+						onclick={() => (showCreateShelfForm = true)}
 						class="inline-flex items-center px-4 py-2 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-gradient-to-r from-green-600 to-green-700 hover:from-green-700 hover:to-green-800 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500"
 					>
 						<svg class="-ml-1 mr-2 h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -1097,19 +1097,19 @@
 								d="M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-6l-2-2H5a2 2 0 00-2 2z"
 							/>
 						</svg>
-						Create Folder
+						Create Shelf
 					</button>
 				</div>
 			</div>
 		{:else}
-			<div class="space-y-6" data-testid="folders-container">
-				{#each folders as folder (folder.id)}
+			<div class="space-y-6" data-testid="shelves-container">
+				{#each shelves as shelf (shelf.id)}
 					<div
 						class="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden"
-						data-testid="folder-item"
-						data-folder-id={folder.id}
+						data-testid="shelf-item"
+						data-shelf-id={shelf.id}
 					>
-						<!-- Folder Header -->
+						<!-- Shelf Header -->
 						<div class="px-6 py-4 bg-gray-50 border-b border-gray-200">
 							<div class="flex items-center justify-between">
 								<div class="flex items-center">
@@ -1127,32 +1127,32 @@
 										/>
 									</svg>
 									<div>
-										<h3 class="text-lg font-medium text-gray-900" data-testid="folder-name">
-											{folder.name}
+										<h3 class="text-lg font-medium text-gray-900" data-testid="shelf-name">
+											{shelf.name}
 										</h3>
 										<p class="text-sm text-gray-500">
-											Created {formatDate(folder.createdAt)} by {folder.lastModifiedBy}
+											Created {formatDate(shelf.createdAt)} by {shelf.lastModifiedBy}
 										</p>
 									</div>
 								</div>
 								<div class="text-right">
-									<div class="text-sm text-gray-500" data-testid="folder-stats">
-										{folder.items.length} items •
-										{Object.entries(getTotalItemsByUnit(folder.items))
+									<div class="text-sm text-gray-500" data-testid="shelf-stats">
+										{shelf.items.length} items •
+										{Object.entries(getTotalItemsByUnit(shelf.items))
 											.map(([unit, total]) => (total ? `${total} ${unit}` : ''))
 											.filter(Boolean)
 											.join(' • ')}
 									</div>
-									<div class="text-lg font-semibold text-gray-900" data-testid="folder-total-value">
-										{formatPrice(getTotalValue(folder.items))}
+									<div class="text-lg font-semibold text-gray-900" data-testid="shelf-total-value">
+										{formatPrice(getTotalValue(shelf.items))}
 									</div>
 								</div>
 							</div>
 						</div>
 
 						<!-- Items List -->
-						{#if folder.items.length === 0}
-							<div class="px-6 py-8 text-center" data-testid="empty-folder-state">
+						{#if shelf.items.length === 0}
+							<div class="px-6 py-8 text-center" data-testid="empty-shelf-state">
 								<svg
 									class="mx-auto h-8 w-8 text-gray-400"
 									fill="none"
@@ -1226,7 +1226,7 @@
 										</tr>
 									</thead>
 									<tbody class="bg-white divide-y divide-gray-200">
-										{#each folder.items as item (item.id)}
+										{#each shelf.items as item (item.id)}
 											<tr
 												class="hover:bg-gray-50 transition-colors"
 												data-testid="item-row"
