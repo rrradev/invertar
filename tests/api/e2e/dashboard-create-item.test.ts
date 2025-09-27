@@ -7,21 +7,21 @@ import { Unit } from '@repo/types/units';
 
 describe('Dashboard - Create Item API', () => {
   let userToken: string;
-  let testFolderId: string;
+  let testShelfId: string;
 
   beforeEach(async () => {
     // Get user token for authentication
     userToken = await getToken(UserRole.USER);
 
-    // Create a test folder
-    const folderName = `test-folder-${faker.string.alphanumeric(8)}`;
-    const folderResponse = await req<SuccessResponse<{ folder: { id: string } }>>(
+    // Create a test shelf
+    const shelfName = `test-shelf-${faker.string.alphanumeric(8)}`;
+    const shelfResponse = await req<SuccessResponse<{ shelf: { id: string } }>>(
       'POST',
-      'dashboard.createFolder',
-      { name: folderName },
+      'dashboard.createShelf',
+      { name: shelfName },
       userToken
     );
-    testFolderId = folderResponse.folder.id;
+    testShelfId = shelfResponse.shelf.id;
   });
 
   describe('createItem endpoint', () => {
@@ -33,7 +33,7 @@ describe('Dashboard - Create Item API', () => {
         cost: 89.25,
         quantity: 12.5, // decimal quantity
         unit: Unit.L,
-        folderId: testFolderId
+        shelfId: testShelfId
       };
 
       const response = await req<SuccessResponse<{ message: string; item: any }>>(
@@ -59,7 +59,7 @@ describe('Dashboard - Create Item API', () => {
         price: 99.99,
         quantity: 5.25,
         unit: Unit.KG,
-        folderId: testFolderId
+        shelfId: testShelfId
         // cost field omitted
       };
 
@@ -81,7 +81,7 @@ describe('Dashboard - Create Item API', () => {
         description: faker.commerce.productDescription(),
         price: 25.50,
         quantity: 10,
-        folderId: testFolderId
+        shelfId: testShelfId
         // unit field omitted
       };
 
@@ -106,7 +106,7 @@ describe('Dashboard - Create Item API', () => {
           price: parseFloat(faker.commerce.price()),
           quantity: parseFloat((Math.random() * 10 + 1).toFixed(2)),
           unit: unit,
-          folderId: testFolderId
+          shelfId: testShelfId
         };
 
         const response = await req<SuccessResponse<{ item: any }>>(
@@ -129,7 +129,7 @@ describe('Dashboard - Create Item API', () => {
         cost: -10.00, // Negative cost should fail
         quantity: 5,
         unit: Unit.PCS,
-        folderId: testFolderId
+        shelfId: testShelfId
       };
 
       const response = await req<ErrorResponse>(
@@ -149,7 +149,7 @@ describe('Dashboard - Create Item API', () => {
         price: 50.00,
         quantity: -5.5, // Negative quantity should fail
         unit: Unit.L,
-        folderId: testFolderId
+        shelfId: testShelfId
       };
 
       const response = await req<ErrorResponse>(
@@ -170,7 +170,7 @@ describe('Dashboard - Create Item API', () => {
         cost: 800.00,
         quantity: 0.01, // Very small decimal
         unit: Unit.ML,
-        folderId: testFolderId
+        shelfId: testShelfId
       };
 
       const response = await req<SuccessResponse<{ item: any }>>(

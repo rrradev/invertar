@@ -7,22 +7,22 @@ import { Unit } from '@repo/types/units';
 
 describe('Dashboard - Edit Item API', () => {
   let userToken: string;
-  let testFolderId: string;
+  let testShelfId: string;
   let testItemId: string;
 
   beforeEach(async () => {
     // Get user token for authentication
     userToken = await getToken(UserRole.USER);
 
-    // Create a test folder
-    const folderName = `test-folder-${faker.string.alphanumeric(8)}`;
-    const folderResponse = await req<SuccessResponse<{ folder: { id: string } }>>(
+    // Create a test shelf
+    const shelfName = `test-shelf-${faker.string.alphanumeric(8)}`;
+    const shelfResponse = await req<SuccessResponse<{ shelf: { id: string } }>>(
       'POST',
-      'dashboard.createFolder',
-      { name: folderName },
+      'dashboard.createShelf',
+      { name: shelfName },
       userToken
     );
-    testFolderId = folderResponse.folder.id;
+    testShelfId = shelfResponse.shelf.id;
 
     // Create a test item
     const itemData = {
@@ -32,7 +32,7 @@ describe('Dashboard - Edit Item API', () => {
       cost: parseFloat(faker.commerce.price()) * 0.7, // cost is typically lower than price
       quantity: parseFloat((Math.random() * 100 + 1).toFixed(2)), // decimal quantity
       unit: Unit.KG,
-      folderId: testFolderId
+      shelfId: testShelfId
     };
 
     const itemResponse = await req<SuccessResponse<{ item: { id: string } }>>(

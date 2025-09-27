@@ -2,7 +2,7 @@ import { test as base, expect } from '@playwright/test';
 import Login from '../pages/login.page';
 import Dashboard from '../pages/dashboard.page';
 import { faker } from '@faker-js/faker';
-import Folder from '../pages/components/dashboard/folder.component';
+import Shelf from '../pages/components/dashboard/shelf.component';
 import { getToken, req } from '../../api/e2e/config/config';
 import { UserRole } from '@repo/types/users';
 
@@ -12,7 +12,7 @@ const password = process.env.USER_PASSWORD!;
 
 type MyFixtures = {
     dashboard: Dashboard;
-    folder: Folder;
+    shelf: Shelf;
     randomItemName: string;
     accessToken: string;
     label1: string;
@@ -33,14 +33,14 @@ export const test = base.extend<MyFixtures>({
         await use(dashboard);
     },
 
-    folder: async ({ dashboard }, use) => {
-        // Create a folder for item tests
-        const testFolderName = faker.commerce.department() + '-items-' + Date.now();
-        await dashboard.createFolder(testFolderName);
+    shelf: async ({ dashboard }, use) => {
+        // Create a shelf for item tests
+        const testShelfName = faker.commerce.department() + '-items-' + Date.now();
+        await dashboard.createShelf(testShelfName);
         await dashboard.waitForSuccessMessage();
-        await dashboard.waitForFoldersToLoad();
-        const folder = await dashboard.getFolderByName(testFolderName);
-        await use(folder);
+        await dashboard.waitForShelvesToLoad();
+        const shelf = await dashboard.getShelfByName(testShelfName);
+        await use(shelf);
     },
 
     randomItemName: async ({ }, use) => {

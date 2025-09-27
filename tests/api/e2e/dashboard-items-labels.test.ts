@@ -7,7 +7,7 @@ import { Unit } from '@repo/types/units';
 
 describe('Dashboard - Items with Labels API', () => {
   let userToken: string;
-  let testFolderId: string;
+  let testShelfId: string;
   let testLabel1Id: string;
   let testLabel2Id: string;
   let testLabel3Id: string;
@@ -15,15 +15,15 @@ describe('Dashboard - Items with Labels API', () => {
   beforeEach(async () => {
     userToken = await getToken(UserRole.USER);
 
-    // Create a test folder
-    const folderName = `test-folder-${faker.string.alphanumeric(8)}`;
-    const folderResponse = await req<SuccessResponse<{ folder: { id: string } }>>( 
+    // Create a test shelf
+    const shelfName = `test-shelf-${faker.string.alphanumeric(8)}`;
+    const shelfResponse = await req<SuccessResponse<{ shelf: { id: string } }>>( 
       'POST',
-      'dashboard.createFolder',
-      { name: folderName },
+      'dashboard.createShelf',
+      { name: shelfName },
       userToken
     );
-    testFolderId = folderResponse.folder.id;
+    testShelfId = shelfResponse.shelf.id;
 
     // Create test labels
     const label1Response = await req<SuccessResponse<{ label: { id: string } }>>( 
@@ -59,7 +59,7 @@ describe('Dashboard - Items with Labels API', () => {
         price: 100.50,
         quantity: 5,
         unit: Unit.PCS,
-        folderId: testFolderId
+        shelfId: testShelfId
       };
 
       const response = await req<SuccessResponse<{ message: string; item: any }>>( 
@@ -81,7 +81,7 @@ describe('Dashboard - Items with Labels API', () => {
         price: 100.50,
         quantity: 5,
         unit: Unit.PCS,
-        folderId: testFolderId,
+        shelfId: testShelfId,
         labelIds: [testLabel1Id]
       };
 
@@ -105,7 +105,7 @@ describe('Dashboard - Items with Labels API', () => {
         price: 100.50,
         quantity: 5,
         unit: Unit.PCS,
-        folderId: testFolderId,
+        shelfId: testShelfId,
         labelIds: [testLabel1Id, testLabel2Id]
       };
 
@@ -132,7 +132,7 @@ describe('Dashboard - Items with Labels API', () => {
         price: 100.50,
         quantity: 5,
         unit: Unit.PCS,
-        folderId: testFolderId,
+        shelfId: testShelfId,
         labelIds: [testLabel1Id, testLabel2Id, testLabel3Id]
       };
 
@@ -155,7 +155,7 @@ describe('Dashboard - Items with Labels API', () => {
         price: 100.50,
         quantity: 5,
         unit: Unit.PCS,
-        folderId: testFolderId,
+        shelfId: testShelfId,
         labelIds: [fakeId]
       };
 
@@ -180,7 +180,7 @@ describe('Dashboard - Items with Labels API', () => {
         price: 100.50,
         quantity: 5,
         unit: Unit.PCS,
-        folderId: testFolderId
+        shelfId: testShelfId
       };
 
       const firstResponse = await req<SuccessResponse<{ item: any }>>( 
@@ -199,7 +199,7 @@ describe('Dashboard - Items with Labels API', () => {
         price: 200.50,
         quantity: 10,
         unit: Unit.PCS,
-        folderId: testFolderId
+        shelfId: testShelfId
       };
 
       const secondResponse = await req<ErrorResponse>(
@@ -223,7 +223,7 @@ describe('Dashboard - Items with Labels API', () => {
         price: 100.50,
         quantity: 5,
         unit: Unit.PCS,
-        folderId: testFolderId
+        shelfId: testShelfId
       };
 
       const firstResponse = await req<SuccessResponse<{ item: any }>>( 
@@ -242,7 +242,7 @@ describe('Dashboard - Items with Labels API', () => {
         price: 200.50,
         quantity: 10,
         unit: Unit.PCS,
-        folderId: testFolderId,
+        shelfId: testShelfId,
         labelIds: [testLabel1Id]
       };
 
@@ -269,7 +269,7 @@ describe('Dashboard - Items with Labels API', () => {
         price: 100.50,
         quantity: 5,
         unit: Unit.PCS,
-        folderId: testFolderId,
+        shelfId: testShelfId,
         labelIds: [testLabel1Id]
       };
 
@@ -289,7 +289,7 @@ describe('Dashboard - Items with Labels API', () => {
         price: 200.50,
         quantity: 10,
         unit: Unit.PCS,
-        folderId: testFolderId,
+        shelfId: testShelfId,
         labelIds: [testLabel2Id]
       };
 
@@ -309,7 +309,7 @@ describe('Dashboard - Items with Labels API', () => {
         price: 300.50,
         quantity: 15,
         unit: Unit.PCS,
-        folderId: testFolderId,
+        shelfId: testShelfId,
         labelIds: [testLabel1Id, testLabel2Id]
       };
 
@@ -336,7 +336,7 @@ describe('Dashboard - Items with Labels API', () => {
         price: 100.50,
         quantity: 5,
         unit: Unit.PCS,
-        folderId: testFolderId
+        shelfId: testShelfId
       };
 
       const response = await req<SuccessResponse<{ item: { id: string } }>>( 
@@ -376,7 +376,7 @@ describe('Dashboard - Items with Labels API', () => {
         price: 100.50,
         quantity: 5,
         unit: Unit.PCS,
-        folderId: testFolderId,
+        shelfId: testShelfId,
         labelIds: [testLabel1Id, testLabel2Id]
       };
 
@@ -418,7 +418,7 @@ describe('Dashboard - Items with Labels API', () => {
         price: 100.50,
         quantity: 5,
         unit: Unit.PCS,
-        folderId: testFolderId,
+        shelfId: testShelfId,
         labelIds: [testLabel1Id]
       };
 
@@ -436,7 +436,7 @@ describe('Dashboard - Items with Labels API', () => {
         price: 200.50,
         quantity: 10,
         unit: Unit.PCS,
-        folderId: testFolderId,
+        shelfId: testShelfId,
         labelIds: [testLabel2Id]
       };
 
