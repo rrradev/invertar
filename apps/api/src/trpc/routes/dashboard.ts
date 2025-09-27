@@ -68,6 +68,7 @@ export const dashboardRouter = router({
           name: item.name,
           description: item.description,
           price: item.price,
+          cost: item.cost,
           quantity: item.quantity,
           unit: item.unit,
           labels: item.labels.map((itemLabel: any) => ({
