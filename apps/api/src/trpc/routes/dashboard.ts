@@ -2,12 +2,12 @@ import { router, protectedProcedure } from "../../trpc";
 import { TRPCError } from "@trpc/server";
 import { prisma } from "@repo/db";
 import {
-  createFolderInput,
+  createShelfInput,
   createItemInput,
   createLabelInput,
-  updateFolderInput,
+  updateShelfInput,
   updateItemInput,
-  deleteFolderInput,
+  deleteShelfInput,
   deleteItemInput,
   adjustItemQuantityInput
 } from '@repo/types/schemas/dashboard';
@@ -15,10 +15,10 @@ import { SuccessStatus } from '@repo/types/trpc';
 import { generateItemHashId } from '@repo/utils/items';
 
 export const dashboardRouter = router({
-  // Get all folders and their items for the user's organization
-  getFoldersWithItems: protectedProcedure
+  // Get all shelves and their items for the user's organization
+  getShelvesWithItems: protectedProcedure
     .query(async ({ ctx }) => {
-      const folders = await prisma.folder.findMany({
+      const shelves = await prisma.shelf.findMany({
         where: {
           organizationId: ctx.user!.organizationId,
         },
@@ -57,13 +57,13 @@ export const dashboardRouter = router({
         },
       });
 
-      const formatted = folders.map((folder: any) => ({
-        id: folder.id,
-        name: folder.name,
-        createdAt: folder.createdAt.toISOString(),
-        updatedAt: folder.updatedAt.toISOString(),
-        lastModifiedBy: folder.lastModifiedBy.username,
-        items: folder.items.map((item: any) => ({
+      const formatted = shelves.map((shelf: any) => ({
+        id: shelf.id,
+        name: shelf.name,
+        createdAt: shelf.createdAt.toISOString(),
+        updatedAt: shelf.updatedAt.toISOString(),
+        lastModifiedBy: shelf.lastModifiedBy.username,
+        items: shelf.items.map((item: any) => ({
           id: item.id,
           name: item.name,
           description: item.description,
@@ -84,30 +84,30 @@ export const dashboardRouter = router({
 
       return {
         status: SuccessStatus.SUCCESS,
-        folders: formatted,
+        shelves: formatted,
       };
     }),
 
-  // Create a new folder
-  createFolder: protectedProcedure
-    .input(createFolderInput)
+  // Create a new shelf
+  createShelf: protectedProcedure
+    .input(createShelfInput)
     .mutation(async ({ input, ctx }) => {
-      // Check if folder name already exists in the organization
-      const existingFolder = await prisma.folder.findFirst({
+      // Check if shelf name already exists in the organization
+      const existingShelf = await prisma.shelf.findFirst({
         where: {
           organizationId: ctx.user!.organizationId,
           name: input.name,
         },
       });
 
-      if (existingFolder) {
+      if (existingShelf) {
         throw new TRPCError({
           code: "CONFLICT",
-          message: "Folder with this name already exists in your organization."
+          message: "Shelf with this name already exists in your organization."
         });
       }
 
-      const newFolder = await prisma.folder.create({
+      const newShelf = await prisma.shelf.create({
         data: {
           name: input.name,
           organizationId: ctx.user!.organizationId,
@@ -124,13 +124,13 @@ export const dashboardRouter = router({
 
       return {
         status: SuccessStatus.SUCCESS,
-        message: `Folder "${input.name}" created successfully!`,
-        folder: {
-          id: newFolder.id,
-          name: newFolder.name,
-          createdAt: newFolder.createdAt.toISOString(),
-          updatedAt: newFolder.updatedAt.toISOString(),
-          lastModifiedBy: newFolder.lastModifiedBy.username,
+        message: `Shelf "${input.name}" created successfully!`,
+        shelf: {
+          id: newShelf.id,
+          name: newShelf.name,
+          createdAt: newShelf.createdAt.toISOString(),
+          updatedAt: newShelf.updatedAt.toISOString(),
+          lastModifiedBy: newShelf.lastModifiedBy.username,
           items: [],
         },
       };
@@ -140,23 +140,23 @@ export const dashboardRouter = router({
   createItem: protectedProcedure
     .input(createItemInput)
     .mutation(async ({ input, ctx }) => {
-      // Check if the folder exists and belongs to the user's organization
-      const folder = await prisma.folder.findUnique({
-        where: { id: input.folderId },
+      // Check if the shelf exists and belongs to the user's organization
+      const shelf = await prisma.shelf.findUnique({
+        where: { id: input.shelfId },
         select: { organizationId: true },
       });
 
-      if (!folder) {
+      if (!shelf) {
         throw new TRPCError({
           code: "NOT_FOUND",
-          message: "Folder not found."
+          message: "Shelf not found."
         });
       }
 
-      if (folder.organizationId !== ctx.user!.organizationId) {
+      if (shelf.organizationId !== ctx.user!.organizationId) {
         throw new TRPCError({
           code: "FORBIDDEN",
-          message: "You can only add items to folders in your organization."
+          message: "You can only add items to shelves in your organization."
         });
       }
 
@@ -194,8 +194,8 @@ export const dashboardRouter = router({
       // Check for existing item with same hash in the folder
       const existingItem = await prisma.item.findUnique({
         where: {
-          folderId_hashId: {
-            folderId: input.folderId,
+          shelfId_hashId: {
+            shelfId: input.shelfId,
             hashId: hashId,
           },
         },
@@ -204,7 +204,7 @@ export const dashboardRouter = router({
       if (existingItem) {
         throw new TRPCError({
           code: "CONFLICT",
-          message: "An item with this name and labels already exists in this folder. Please add labels to make it unique."
+          message: "An item with this name and labels already exists in this shelf. Please add labels to make it unique."
         });
       }
 
@@ -218,7 +218,7 @@ export const dashboardRouter = router({
             cost: input.cost,
             quantity: input.quantity ?? 0,
             unit: input.unit ?? 'PCS',
-            folderId: input.folderId,
+            shelfId: input.shelfId,
             hashId: hashId,
             lastModifiedById: ctx.user!.id,
           },
@@ -290,50 +290,50 @@ export const dashboardRouter = router({
       };
     }),
 
-  // Update folder
-  updateFolder: protectedProcedure
-    .input(updateFolderInput)
+  // Update shelf
+  updateShelf: protectedProcedure
+    .input(updateShelfInput)
     .mutation(async ({ input, ctx }) => {
-      // Check if folder exists and belongs to user's organization
-      const folder = await prisma.folder.findUnique({
-        where: { id: input.folderId },
+      // Check if shelf exists and belongs to user's organization
+      const shelf = await prisma.shelf.findUnique({
+        where: { id: input.shelfId },
         select: { organizationId: true, name: true },
       });
 
-      if (!folder) {
+      if (!shelf) {
         throw new TRPCError({
           code: "NOT_FOUND",
-          message: "Folder not found."
+          message: "Shelf not found."
         });
       }
 
-      if (folder.organizationId !== ctx.user!.organizationId) {
+      if (shelf.organizationId !== ctx.user!.organizationId) {
         throw new TRPCError({
           code: "FORBIDDEN",
-          message: "You can only edit folders in your organization."
+          message: "You can only edit shelves in your organization."
         });
       }
 
-      // Check if new name conflicts with existing folders (only if name is changing)
-      if (folder.name !== input.name) {
-        const existingFolder = await prisma.folder.findFirst({
+      // Check if new name conflicts with existing shelves (only if name is changing)
+      if (shelf.name !== input.name) {
+        const existingShelf = await prisma.shelf.findFirst({
           where: {
             organizationId: ctx.user!.organizationId,
             name: input.name,
-            id: { not: input.folderId },
+            id: { not: input.shelfId },
           },
         });
 
-        if (existingFolder) {
+        if (existingShelf) {
           throw new TRPCError({
             code: "CONFLICT",
-            message: "Folder with this name already exists in your organization."
+            message: "Shelf with this name already exists in your organization."
           });
         }
       }
 
-      const updatedFolder = await prisma.folder.update({
-        where: { id: input.folderId },
+      const updatedShelf = await prisma.shelf.update({
+        where: { id: input.shelfId },
         data: {
           name: input.name,
           lastModifiedById: ctx.user!.id,
@@ -342,7 +342,7 @@ export const dashboardRouter = router({
 
       return {
         status: SuccessStatus.SUCCESS,
-        message: `Folder "${input.name}" updated successfully!`,
+        message: `Shelf "${input.name}" updated successfully!`,
       };
     }),
 
@@ -354,7 +354,7 @@ export const dashboardRouter = router({
       const item = await prisma.item.findUnique({
         where: { id: input.itemId },
         include: {
-          folder: {
+          shelf: {
             select: { organizationId: true },
           },
           labels: {
@@ -374,7 +374,7 @@ export const dashboardRouter = router({
         });
       }
 
-      if (item.folder.organizationId !== ctx.user!.organizationId) {
+      if (item.shelf.organizationId !== ctx.user!.organizationId) {
         throw new TRPCError({
           code: "FORBIDDEN",
           message: "You can only edit items in your organization."
@@ -426,7 +426,7 @@ export const dashboardRouter = router({
         // Check for conflicts with the new hash (excluding current item)
         const existingItem = await prisma.item.findFirst({
           where: {
-            folderId: item.folderId,
+            shelfId: item.shelfId,
             hashId: newHashId,
             NOT: { id: input.itemId },
           },
@@ -435,7 +435,7 @@ export const dashboardRouter = router({
         if (existingItem) {
           throw new TRPCError({
             code: "CONFLICT",
-            message: "An item with this name and labels already exists in this folder. Please modify labels to make it unique."
+            message: "An item with this name and labels already exists in this shelf. Please modify labels to make it unique."
           });
         }
       }
@@ -494,7 +494,7 @@ export const dashboardRouter = router({
           id: true,
           name: true,
           quantity: true,
-          folder: {
+          shelf: {
             select: { organizationId: true },
           },
         },
@@ -507,7 +507,7 @@ export const dashboardRouter = router({
         });
       }
 
-      if (item.folder.organizationId !== ctx.user!.organizationId) {
+      if (item.shelf.organizationId !== ctx.user!.organizationId) {
         throw new TRPCError({
           code: "FORBIDDEN",
           message: "You can only edit items in your organization."
@@ -532,13 +532,13 @@ export const dashboardRouter = router({
       };
     }),
 
-  // Delete folder (only if empty)
-  deleteFolder: protectedProcedure
-    .input(deleteFolderInput)
+  // Delete shelf (only if empty)
+  deleteShelf: protectedProcedure
+    .input(deleteShelfInput)
     .mutation(async ({ input, ctx }) => {
-      // Check if folder exists and belongs to user's organization
-      const folder = await prisma.folder.findUnique({
-        where: { id: input.folderId },
+      // Check if shelf exists and belongs to user's organization
+      const shelf = await prisma.shelf.findUnique({
+        where: { id: input.shelfId },
         select: {
           organizationId: true,
           name: true,
@@ -550,34 +550,34 @@ export const dashboardRouter = router({
         },
       });
 
-      if (!folder) {
+      if (!shelf) {
         throw new TRPCError({
           code: "NOT_FOUND",
-          message: "Folder not found."
+          message: "Shelf not found."
         });
       }
 
-      if (folder.organizationId !== ctx.user!.organizationId) {
+      if (shelf.organizationId !== ctx.user!.organizationId) {
         throw new TRPCError({
           code: "FORBIDDEN",
-          message: "You can only delete folders in your organization."
+          message: "You can only delete shelves in your organization."
         });
       }
 
-      if (folder._count.items > 0) {
+      if (shelf._count.items > 0) {
         throw new TRPCError({
           code: "BAD_REQUEST",
-          message: "Cannot delete folder that contains items. Move or delete items first."
+          message: "Cannot delete shelf that contains items. Move or delete items first."
         });
       }
 
-      await prisma.folder.delete({
-        where: { id: input.folderId },
+      await prisma.shelf.delete({
+        where: { id: input.shelfId },
       });
 
       return {
         status: SuccessStatus.SUCCESS,
-        message: `Folder "${folder.name}" deleted successfully!`,
+        message: `Shelf "${shelf.name}" deleted successfully!`,
       };
     }),
 
@@ -589,7 +589,7 @@ export const dashboardRouter = router({
         where: { id: input.itemId },
         select: {
           name: true,
-          folder: {
+          shelf: {
             select: { organizationId: true },
           },
         },
@@ -603,7 +603,7 @@ export const dashboardRouter = router({
         });
       }
 
-      if (item.folder.organizationId !== ctx.user!.organizationId) {
+      if (item.shelf.organizationId !== ctx.user!.organizationId) {
         throw new TRPCError({
           code: "FORBIDDEN",
           message: "You can only delete items in your organization."

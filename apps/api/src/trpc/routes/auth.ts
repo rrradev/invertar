@@ -25,11 +25,25 @@ function setAuthCookies(reply: FastifyReply, payload: JWTPayload) {
     httpOnly: true,
     secure: process.env.NODE_ENV === 'production',
     sameSite: 'strict',
-    maxAge: 30 * 24 * 60 * 60, // 30 days in seconds
+    maxAge: 6 * 24 * 60 * 60, // 6 days in seconds
     path: '/trpc/auth.refreshToken',
   });
 
   return { accessToken, refreshToken };
+}
+
+function setAccessTokenOnly(reply: FastifyReply, payload: JWTPayload) {
+  const accessToken = generateAccessToken(payload);
+
+  reply.setCookie('accessToken', accessToken, {
+    httpOnly: true,
+    secure: process.env.NODE_ENV === 'production',
+    sameSite: 'lax',
+    maxAge: 15 * 60, // 15 minutes in seconds
+    path: '/',
+  });
+
+  return { accessToken };
 }
 
 function clearAuthCookies(reply: FastifyReply) {
@@ -180,7 +194,7 @@ export const authRouter = router({
         organizationId: user.organizationId,
       };
 
-      const { accessToken } = setAuthCookies(ctx.res, newPayload);
+      const accessToken = setAccessTokenOnly(ctx.res, newPayload);
 
       return { status: SuccessStatus.TOKEN_REFRESHED, accessToken };
     }),

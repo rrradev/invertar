@@ -4,39 +4,39 @@ import { Unit } from '@repo/types/units';
 
 test.describe('Dashboard - Item Management', () => {
 
-  test('should show folder options in item creation form', async ({ dashboard, folder }) => {
+  test('should show shelf options in item creation form', async ({ dashboard, shelf }) => {
     await dashboard.openCreateItemForm();
 
-    // Verify folder select is populated with at least our test folder
-    const options = await dashboard.getFolderOptions();
+    // Verify shelf select is populated with at least our test shelf
+    const options = await dashboard.getShelfOptions();
     const optionCount = await options.count();
-    expect(optionCount).toBeGreaterThan(1); // At least default empty option + our folder
+    expect(optionCount).toBeGreaterThan(1); // At least default empty option + our shelf
 
-    // Verify our test folder is in the options
+    // Verify our test shelf is in the options
     const optionsText = await options.allTextContents();
-    expect(optionsText).toContain(await folder.getName());
+    expect(optionsText).toContain(await shelf.getName());
 
     await dashboard.cancelItemCreation();
   });
 
-  test('should create a basic item successfully', async ({ dashboard, folder, randomItemName }) => {
-    // Create basic item (name + folder only)
-    await dashboard.createBasicItem(randomItemName, folder);
+  test('should create a basic item successfully', async ({ dashboard, shelf, randomItemName }) => {
+    // Create basic item (name + shelf only)
+    await dashboard.createBasicItem(randomItemName, shelf);
 
     // Verify success message
     await dashboard.waitForSuccessMessage();
     const successMessage = await dashboard.getSuccessMessageText();
     expect(successMessage).toContain(`Item \"${randomItemName}\" created successfully`);
 
-    // Verify item appears in the folder's table
-    await folder.shouldHaveItemWithName(randomItemName);
+    // Verify item appears in the shelf's table
+    await shelf.shouldHaveItemWithName(randomItemName);
   });
 
   test('should create an item with advanced fields including cost, unit and labels', { tag: '@smoke' },
-    async ({ dashboard, folder, randomItemName, label1, label2 }) => {
+    async ({ dashboard, shelf, randomItemName, label1, label2 }) => {
       const itemData = {
         name: randomItemName,
-        folder,
+        shelf,
         description: faker.commerce.productDescription(),
         price: parseFloat(faker.commerce.price()),
         cost: parseFloat((Math.random() * 50 + 10).toFixed(2)), // Random cost between 10-60
@@ -56,10 +56,10 @@ test.describe('Dashboard - Item Management', () => {
       expect(successMessage).toContain(`Item \"${randomItemName}\" created successfully`);
 
       // Verify item appears in table with correct data
-      await dashboard.waitForFoldersToLoad();
+      await dashboard.waitForShelvesToLoad();
 
-      await folder.shouldHaveItemWithName(itemData.name);
-      const itemRow = folder.getItemRowByName(itemData.name);
+      await shelf.shouldHaveItemWithName(itemData.name);
+      const itemRow = shelf.getItemRowByName(itemData.name);
 
       await expect(itemRow).toBeVisible();
       await expect(itemRow).toContainText(itemData.description);
@@ -69,38 +69,38 @@ test.describe('Dashboard - Item Management', () => {
       await expect(itemRow).toContainText(label2);
     });
 
-  test('should not create item without required fields', async ({ dashboard, folder }) => {
+  test('should not create item without required fields', async ({ dashboard, shelf }) => {
     // Try to create item without name
     await dashboard.openCreateItemForm();
-    await dashboard.itemFolderSelect.selectOption(await folder.getName());
+    await dashboard.itemShelfSelect.selectOption(await shelf.getName());
     await dashboard.submitItemButton.click();
 
     // Verify error message
     await dashboard.waitForErrorMessage();
     const errorMessage = await dashboard.getErrorMessageText();
-    expect(errorMessage).toContain('Item name and folder selection are required');
+    expect(errorMessage).toContain('Item name and shelf selection are required');
 
-    // Try to create item without folder selection
+    // Try to create item without shelf selection
     await dashboard.itemNameInput.fill('Test Item');
-    await dashboard.itemFolderSelect.selectOption(''); // Empty selection
+    await dashboard.itemShelfSelect.selectOption(''); // Empty selection
     await dashboard.submitItemButton.click();
 
     // Verify error message persists or appears again
     await dashboard.waitForErrorMessage();
     const errorMessage2 = await dashboard.getErrorMessageText();
-    expect(errorMessage2).toContain('Item name and folder selection are required');
+    expect(errorMessage2).toContain('Item name and shelf selection are required');
 
     await dashboard.cancelItemCreation();
   });
 
-  test('should handle item creation form cancellation', async ({ dashboard, folder }) => {
-    // Get current item count in the test folder
-    const initialItemCount = await folder.getItemCount();
+  test('should handle item creation form cancellation', async ({ dashboard, shelf }) => {
+    // Get current item count in the test shelf
+    const initialItemCount = await shelf.getItemCount();
 
     // Start creating item but cancel
     await dashboard.openCreateItemForm();
     await dashboard.itemNameInput.fill('cancelled-item');
-    await dashboard.itemFolderSelect.selectOption(await folder.getName());
+    await dashboard.itemShelfSelect.selectOption(await shelf.getName());
     await dashboard.toggleAdvancedFields();
     await dashboard.itemDescriptionInput.fill('This should not be saved');
     await dashboard.cancelItemCreation();
@@ -109,14 +109,14 @@ test.describe('Dashboard - Item Management', () => {
     await expect(dashboard.createItemForm).not.toBeVisible();
 
     // Verify item count hasn't changed
-    const finalItemCount = await folder.getItemCount();
+    const finalItemCount = await shelf.getItemCount();
     expect(finalItemCount).toBe(initialItemCount);
   });
 
-  test('should validate advanced field types including decimals', async ({ dashboard, folder }) => {
+  test('should validate advanced field types including decimals', async ({ dashboard, shelf }) => {
     await dashboard.openCreateItemForm();
     await dashboard.itemNameInput.fill('validation-test');
-    await dashboard.itemFolderSelect.selectOption(await folder.getName());
+    await dashboard.itemShelfSelect.selectOption(await shelf.getName());
 
     // Show advanced fields
     await dashboard.toggleAdvancedFields();
@@ -142,20 +142,20 @@ test.describe('Dashboard - Item Management', () => {
     await dashboard.cancelItemCreation();
   });
 
-  test('should calculate and display folder totals correctly', async ({ folder }) => {
-    // Get folder stats and total value
-    const totalValue = await folder.getTotalValue();
+  test('should calculate and display shelf totals correctly', async ({ shelf }) => {
+    // Get shelf stats and total value
+    const totalValue = await shelf.getTotalValue();
 
     // Verify stats format
-    expect(await folder.stats.textContent()).toMatch(/\d+ items •/);
+    expect(await shelf.stats.textContent()).toMatch(/\d+ items •/);
 
     // Since we created items with specific prices, we can verify calculations
     // This is a basic check that the total is reasonable
     expect(totalValue).toBeGreaterThanOrEqual(0);
   });
 
-  test('should display items table with correct headers', async ({ dashboard, folder }) => {
-    const itemsTable = folder.itemsTable;
+  test('should display items table with correct headers', async ({ dashboard, shelf }) => {
+    const itemsTable = shelf.itemsTable;
 
     if (await itemsTable.isVisible()) {
       // Verify table headers

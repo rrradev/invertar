@@ -5,7 +5,7 @@ async function purgeAllTestUsers() {
     const orgs = [parsedEnv.SUPERADMIN_ORGANIZATION, parsedEnv.ADMIN_ORGANIZATION, parsedEnv.USER_ORGANIZATION];
 
     const allOrgs = await prisma.organization.findMany({
-        include: { folders: { include: { items: true } }, users: true },
+        include: { shelves: { include: { items: true } }, users: true },
     });
 
     // Filter organizations whose name ends with a numeric pattern (timestamp-like)
@@ -20,18 +20,18 @@ async function purgeAllTestUsers() {
     for (const orgName of orgs) {
         const org = await prisma.organization.findUnique({
             where: { name: orgName },
-            include: { folders: { include: { items: true } } },
+            include: { shelves: { include: { items: true } } },
         });
 
         if (!org) continue;
 
         await prisma.label.deleteMany({ where: { organizationId: org.id } });
     
-        for (const folder of org.folders) {
-            await prisma.item.deleteMany({ where: { folderId: folder.id } });
+        for (const shelf of org.shelves) {
+            await prisma.item.deleteMany({ where: { shelfId: shelf.id } });
         }
 
-        await prisma.folder.deleteMany({ where: { organizationId: org.id } });
+        await prisma.shelf.deleteMany({ where: { organizationId: org.id } });
 
         await prisma.user.deleteMany({ where: { organizationId: org.id } });
 

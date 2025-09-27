@@ -3,30 +3,30 @@ import BasePage from "./base.page";
 import SuccessMessage from "./components/success-message.component";
 import ErrorMessage from "./components/error-message.component";
 import Header from "./components/header.component";
-import Folder from "./components/dashboard/folder.component";
+import Shelf from "./components/dashboard/shelf.component";
 
 export default class Dashboard extends BasePage {
     header: Header
     // Page elements
     dashboardTitle: Locator;
-    createFolderButton: Locator;
+    createShelfButton: Locator;
     createItemButton: Locator;
     createLabelButton: Locator;
 
     // Forms
-    createFolderForm: Locator;
+    createShelfForm: Locator;
     createItemForm: Locator;
     createLabelForm: Locator;
 
     // Form inputs
-    folderNameInput: Locator;
+    shelfNameInput: Locator;
     itemNameInput: Locator;
     itemDescriptionInput: Locator;
     itemPriceInput: Locator;
     itemCostInput: Locator;
     itemQuantityInput: Locator;
     itemUnitSelect: Locator;
-    itemFolderSelect: Locator;
+    itemShelfSelect: Locator;
     labelNameInput: Locator;
     labelColorInput: Locator;
     addLabel1Button: Locator;
@@ -34,8 +34,8 @@ export default class Dashboard extends BasePage {
     labelSearchInput: Locator;
 
     // Form buttons
-    submitFolderButton: Locator;
-    cancelFolderButton: Locator;
+    submitShelfButton: Locator;
+    cancelShelfButton: Locator;
     submitItemButton: Locator;
     cancelItemButton: Locator;
     submitLabelButton: Locator;
@@ -72,10 +72,10 @@ export default class Dashboard extends BasePage {
     cancelDeleteButton: Locator;
 
     // Content areas
-    foldersContainer: Locator;
+    shelvesContainer: Locator;
     loadingState: Locator;
     emptyState: Locator;
-    emptyFolderState: Locator;
+    emptyShelfState: Locator;
 
     // Messages
     errorMessage: ErrorMessage;
@@ -87,24 +87,24 @@ export default class Dashboard extends BasePage {
         this.header = Header.from(page);
         // Page elements
         this.dashboardTitle = page.getByTestId('dashboard-title');
-        this.createFolderButton = page.getByTestId('create-folder-button');
+        this.createShelfButton = page.getByTestId('create-shelf-button');
         this.createItemButton = page.getByTestId('create-item-button');
         this.createLabelButton = page.getByTestId('create-label-button');
 
         // Forms
-        this.createFolderForm = page.getByTestId('create-folder-form');
+        this.createShelfForm = page.getByTestId('create-shelf-form');
         this.createItemForm = page.getByTestId('create-item-form');
         this.createLabelForm = page.getByTestId('create-label-form');
 
         // Form inputs
-        this.folderNameInput = page.locator('#folderName');
+        this.shelfNameInput = page.locator('#shelfName');
         this.itemNameInput = page.locator('#itemName');
         this.itemDescriptionInput = page.locator('#itemDescription');
         this.itemPriceInput = page.locator('#itemPrice');
         this.itemCostInput = page.locator('#itemCost');
         this.itemQuantityInput = page.locator('#itemQuantity');
         this.itemUnitSelect = page.locator('#itemUnit');
-        this.itemFolderSelect = page.locator('#itemFolder');
+        this.itemShelfSelect = page.locator('#itemShelf');
         this.labelNameInput = page.locator('#labelName');
         this.labelColorInput = page.locator('#labelColor');
         this.addLabel1Button = page.getByRole('button', { name: 'Add Label' }).first();
@@ -112,8 +112,8 @@ export default class Dashboard extends BasePage {
         this.labelSearchInput = page.locator('[name="labelSearch"]');
 
         // Form buttons
-        this.submitFolderButton = page.getByTestId('submit-folder-button');
-        this.cancelFolderButton = page.getByTestId('cancel-folder-button');
+        this.submitShelfButton = page.getByTestId('submit-shelf-button');
+        this.cancelShelfButton = page.getByTestId('cancel-shelf-button');
         this.submitItemButton = page.getByTestId('submit-item-button');
         this.cancelItemButton = page.getByTestId('cancel-item-button');
         this.submitLabelButton = page.getByTestId('submit-label-button');
@@ -150,10 +150,10 @@ export default class Dashboard extends BasePage {
         this.cancelDeleteButton = page.getByTestId('cancel-delete-button');
 
         // Content areas
-        this.foldersContainer = page.getByTestId('folders-container');
+        this.shelvesContainer = page.getByTestId('shelves-container');
         this.loadingState = page.getByTestId('loading-state');
         this.emptyState = page.getByTestId('empty-state');
-        this.emptyFolderState = page.getByTestId('empty-folder-state');
+        this.emptyShelfState = page.getByTestId('empty-shelf-state');
 
         // Messages
         this.errorMessage = ErrorMessage.from(page);
@@ -166,13 +166,13 @@ export default class Dashboard extends BasePage {
 
     async shouldBeVisible(timeout = 5000) {
         await expect(this.dashboardTitle).toBeVisible({ timeout });
-        await expect(this.createFolderButton).toBeVisible();
+        await expect(this.createShelfButton).toBeVisible();
         await expect(this.createItemButton).toBeVisible();
     }
 
-    async openCreateFolderForm() {
-        await this.createFolderButton.click();
-        await expect(this.createFolderForm).toBeVisible();
+    async openCreateShelfForm() {
+        await this.createShelfButton.click();
+        await expect(this.createShelfForm).toBeVisible();
     }
 
     async openCreateItemForm() {
@@ -180,27 +180,27 @@ export default class Dashboard extends BasePage {
         await expect(this.createItemForm).toBeVisible();
     }
 
-    async createFolder(name: string) {
-        await this.openCreateFolderForm();
-        await this.folderNameInput.fill(name);
-        await this.submitFolderButton.click();
+    async createShelf(name: string) {
+        await this.openCreateShelfForm();
+        await this.shelfNameInput.fill(name);
+        await this.submitShelfButton.click();
     }
 
-    async cancelFolderCreation() {
-        await this.cancelFolderButton.click();
-        await expect(this.createFolderForm).not.toBeVisible();
+    async cancelShelfCreation() {
+        await this.cancelShelfButton.click();
+        await expect(this.createShelfForm).not.toBeVisible();
     }
 
-    async createBasicItem(name: string, folder: Folder) {
+    async createBasicItem(name: string, shelf: Shelf) {
         await this.openCreateItemForm();
         await this.itemNameInput.fill(name);
-        await this.itemFolderSelect.selectOption(await folder.getFolderId());
+        await this.itemShelfSelect.selectOption(await shelf.getShelfId());
         await this.submitItemButton.click();
     }
 
     async createAdvancedItem(data: {
         name: string;
-        folder: Folder;
+        shelf: Shelf;
         description?: string;
         price?: number;
         cost?: number;
@@ -210,7 +210,7 @@ export default class Dashboard extends BasePage {
     }) {
         await this.openCreateItemForm();
         await this.itemNameInput.fill(data.name);
-        await this.itemFolderSelect.selectOption(await data.folder.getFolderId());
+        await this.itemShelfSelect.selectOption(await data.shelf.getShelfId());
 
         // Show advanced fields if needed
         if (data.description || data.price || data.cost || data.quantity || data.unit) {
@@ -252,27 +252,27 @@ export default class Dashboard extends BasePage {
         await this.toggleAdvancedFieldsButton.click();
     }
 
-    async waitForFoldersToLoad() {
-        // Wait for either folders container or empty state to be visible
+    async waitForShelvesToLoad() {
+        // Wait for either shelves container or empty state to be visible
         await Promise.race([
-            expect(this.foldersContainer).toBeVisible(),
+            expect(this.shelvesContainer).toBeVisible(),
             expect(this.emptyState).toBeVisible()
         ]);
     }
 
-    async getFolderByName(name: string): Promise<Folder> {
-        return new Folder(this.page.getByTestId('folder-item').filter({ hasText: name }));
+    async getShelfByName(name: string): Promise<Shelf> {
+        return new Shelf(this.page.getByTestId('shelf-item').filter({ hasText: name }));
     }
 
-    async getItemsTableForFolder(folderId: string) {
-        return this.page.getByTestId('folder-item').filter({ has: this.page.locator(`[data-folder-id="${folderId}"]`) }).getByTestId('items-table');
+    async getItemsTableForShelf(shelfId: string) {
+        return this.page.getByTestId('shelf-item').filter({ has: this.page.locator(`[data-shelf-id="${shelfId}"]`) }).getByTestId('items-table');
     }
 
-    async getFolderStats(folderId: string) {
-        const folderElement = this.page.getByTestId('folder-item').filter({ has: this.page.locator(`[data-folder-id="${folderId}"]`) });
+    async getShelfStats(shelfId: string) {
+        const shelfElement = this.page.getByTestId('shelf-item').filter({ has: this.page.locator(`[data-shelf-id="${shelfId}"]`) });
         return {
-            stats: folderElement.getByTestId('folder-stats'),
-            totalValue: folderElement.getByTestId('folder-total-value')
+            stats: shelfElement.getByTestId('shelf-stats'),
+            totalValue: shelfElement.getByTestId('shelf-total-value')
         };
     }
 
@@ -280,8 +280,8 @@ export default class Dashboard extends BasePage {
         return this.page.getByTestId('item-row').filter({ has: this.page.locator(`[data-item-id="${itemId}"]`) });
     }
 
-    async getFolderOptions() {
-        return this.itemFolderSelect.locator('option');
+    async getShelfOptions() {
+        return this.itemShelfSelect.locator('option');
     }
 
     async waitForSuccessMessage() {

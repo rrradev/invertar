@@ -9,22 +9,22 @@ export const load: PageLoad = async () => {
 	// If not authenticated, return empty data - layout will handle redirect
 	if (!user) {
 		return {
-			folders: []
+			shelves: []
 		};
 	}
 
 	try {
 		// Get dashboard data
-		const result = await trpc.dashboard.getFoldersWithItems.query();
+		const result = await trpc.dashboard.getShelvesWithItems.query();
 
 		return {
-			folders: result.folders
+			shelves: result.shelves
 		};
 	} catch (error) {
 		// If API call fails, return empty data
 		console.error('Failed to load dashboard data:', error);
 		return {
-			folders: []
+			shelves: []
 		};
 	}
 };
