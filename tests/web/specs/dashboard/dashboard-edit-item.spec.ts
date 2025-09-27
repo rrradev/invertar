@@ -304,7 +304,7 @@ test.describe('Dashboard - Edit Item Modal', () => {
 
     // Update cost and unit
     const updateData = {
-      cost: 0, // Test setting cost to 0 (this was the bug!)
+      cost: 0, 
       unit: 'KG'
     };
     
@@ -323,8 +323,8 @@ test.describe('Dashboard - Edit Item Modal', () => {
     
     // Verify unit is displayed in the table
     await dashboard.closeEditModal();
-    const itemRow = folder.getItemRowByName(randomItemName);
-    await expect(itemRow).toContainText('KG');
+    const cellData = await folder.getItemCellData(randomItemName);
+    expect(cellData['Unit']).toBe('KG');
     
     // Test updating cost to a positive number
     await dashboard.openEditModalForItem(randomItemName);
@@ -337,8 +337,15 @@ test.describe('Dashboard - Edit Item Modal', () => {
     await expect(dashboard.editItemCostInput).toHaveValue('25.5');
     await expect(dashboard.editItemUnitSelect).toHaveValue('L');
     await dashboard.closeEditModal();
-    
-    const updatedItemRow = folder.getItemRowByName(randomItemName);
-    await expect(updatedItemRow).toContainText('L');
+
+    const updatedCellData = await folder.getItemCellData(randomItemName);
+    expect(updatedCellData['Unit']).toBe('L');
+    expect(updatedCellData['Cost']).toBe('$25.50');
+
+    await dashboard.page.reload();
+    await folder.shouldHaveItemWithName(randomItemName);
+    const reloadedCellData = await folder.getItemCellData(randomItemName);
+    expect(reloadedCellData['Unit']).toBe('L');
+    expect(reloadedCellData['Cost']).toBe('$25.50');
   });
 });
