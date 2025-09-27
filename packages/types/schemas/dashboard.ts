@@ -3,6 +3,7 @@ import { Unit } from '../units';
 
 export const createShelfInput = z.object({
   name: z.string().trim().min(1, "Shelf name is required").max(100, "Shelf name too long"),
+  color: z.string().regex(/^#([A-Fa-f0-9]{6}|[A-Fa-f0-9]{3})$/, "Invalid color format"),
 });
 
 export const createLabelInput = z.object({
@@ -24,6 +25,7 @@ export const createItemInput = z.object({
 export const updateShelfInput = z.object({
   shelfId: z.string().min(1, "Shelf ID is required"),
   name: z.string().trim().min(1, "Shelf name is required").max(100, "Shelf name too long"),
+  color: z.string().regex(/^#([A-Fa-f0-9]{6}|[A-Fa-f0-9]{3})$/, "Invalid color format"),
 });
 
 export const updateItemInput = z.object({

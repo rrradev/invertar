@@ -64,6 +64,7 @@ enum Unit {
 model Shelf {
   id               String   @id @default(cuid())
   name             String
+  color            String   // Hex color code (e.g., #10b981)
   organizationId   String
   organization     Organization @relation(fields: [organizationId], references: [id])
   items            Item[]

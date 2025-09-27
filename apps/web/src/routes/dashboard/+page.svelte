@@ -38,6 +38,7 @@
 	interface Shelf {
 		id: string;
 		name: string;
+		color: string;
 		createdAt: string;
 		updatedAt: string;
 		lastModifiedBy: string;
@@ -119,7 +120,8 @@
 	}
 
 	let newShelf = $state({
-		name: ''
+		name: '',
+		color: '#10b981'
 	});
 
 	let newLabel = $state({
@@ -301,12 +303,13 @@
 			successMessage = '';
 
 			const result = await trpc.dashboard.createShelf.mutate({
-				name: newShelf.name.trim()
+				name: newShelf.name.trim(),
+				color: newShelf.color
 			});
 
 			if (result.status === SuccessStatus.SUCCESS) {
 				successMessage = result.message;
-				newShelf = { name: '' };
+				newShelf = { name: '', color: '#10b981' };
 				showCreateShelfForm = false;
 
 				// Add the new shelf to the existing shelves array
@@ -709,9 +712,26 @@
 								disabled={isCreatingShelf}
 							/>
 						</div>
+						<div class="flex-shrink-0">
+							<label for="shelfColor" class="block text-sm font-medium text-gray-700 mb-2"
+								>Color</label
+							>
+							<div class="relative">
+								<input
+									id="shelfColor"
+									type="color"
+									bind:value={newShelf.color}
+									class="h-10 w-16 rounded-md border border-gray-300 cursor-pointer focus:ring-2 focus:ring-green-500 focus:border-green-500"
+									disabled={isCreatingShelf}
+								/>
+							</div>
+						</div>
 						<div class="flex space-x-3">
 							<button
-								onclick={() => (showCreateShelfForm = false)}
+								onclick={() => {
+									showCreateShelfForm = false;
+									newShelf = { name: '', color: '#10b981' };
+								}}
 								class="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 transition-colors"
 								disabled={isCreatingShelf}
 								data-testid="cancel-shelf-button"
@@ -1235,18 +1255,20 @@
 											aria-label={shelf.isExpanded ? 'Collapse shelf' : 'Expand shelf'}
 										>
 											<svg
-													class="h-5 w-5 text-gray-600 transform transition-transform duration-200 {shelf.isExpanded ? 'rotate-90' : ''}"
-													fill="none"
-													stroke="currentColor"
-													viewBox="0 0 24 24"
-														>
-															<path
-																stroke-linecap="round"
-																stroke-linejoin="round"
-																stroke-width="2"
-																d="M9 5l7 7-7 7"
-																/>
-												</svg>
+												class="h-5 w-5 text-gray-600 transform transition-transform duration-200 {shelf.isExpanded
+													? 'rotate-90'
+													: ''}"
+												fill="none"
+												stroke="currentColor"
+												viewBox="0 0 24 24"
+											>
+												<path
+													stroke-linecap="round"
+													stroke-linejoin="round"
+													stroke-width="2"
+													d="M9 5l7 7-7 7"
+												/>
+											</svg>
 										</button>
 
 										<svg

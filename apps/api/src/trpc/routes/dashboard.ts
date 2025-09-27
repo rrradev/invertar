@@ -124,6 +124,7 @@ export const dashboardRouter = router({
         return {
           id: shelf.id,
           name: shelf.name,
+          color: shelf.color,
           createdAt: shelf.createdAt.toISOString(),
           updatedAt: shelf.updatedAt.toISOString(),
           lastModifiedBy: shelf.lastModifiedBy.username,
@@ -160,6 +161,7 @@ export const dashboardRouter = router({
       const newShelf = await prisma.shelf.create({
         data: {
           name: input.name,
+          color: input.color,
           organizationId: ctx.user!.organizationId,
           lastModifiedById: ctx.user!.id,
         },
@@ -187,6 +189,7 @@ export const dashboardRouter = router({
         shelf: {
           id: newShelf.id,
           name: newShelf.name,
+          color: newShelf.color,
           createdAt: newShelf.createdAt.toISOString(),
           updatedAt: newShelf.updatedAt.toISOString(),
           lastModifiedBy: newShelf.lastModifiedBy.username,
@@ -357,7 +360,7 @@ export const dashboardRouter = router({
       // Check if shelf exists and belongs to user's organization
       const shelf = await prisma.shelf.findUnique({
         where: { id: input.shelfId },
-        select: { organizationId: true, name: true },
+        select: { organizationId: true, name: true, color: true },
       });
 
       if (!shelf) {
@@ -396,6 +399,7 @@ export const dashboardRouter = router({
         where: { id: input.shelfId },
         data: {
           name: input.name,
+          color: input.color,
           lastModifiedById: ctx.user!.id,
         },
       });

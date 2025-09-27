@@ -7,7 +7,6 @@
 	}
 
 	let { rows = 3 }: Props = $props();
-
 </script>
 
 <div class="overflow-x-auto">
