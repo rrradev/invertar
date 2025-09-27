@@ -11,7 +11,7 @@ model Organization {
   id        String    @id @default(cuid())
   name      String    @unique
   users     User[]
-  folders   Folder[]
+  shelves   Shelf[]
   labels    Label[]
   createdAt DateTime  @default(now())
   updatedAt DateTime  @updatedAt
@@ -30,7 +30,7 @@ model User {
   refreshToken      String?
 
   // Back-relations for lastModifiedBy
-  modifiedFolders   Folder[]     @relation("FolderLastModifiedBy")
+  modifiedShelves   Shelf[]     @relation("ShelfLastModifiedBy")
   modifiedItems     Item[]       @relation("ItemLastModifiedBy")
 
   createdAt         DateTime     @default(now())
@@ -58,7 +58,7 @@ enum Unit {
   M3      // cubic meters
 }
 
-model Folder {
+model Shelf {
   id               String   @id @default(cuid())
   name             String
   organizationId   String
@@ -67,7 +67,7 @@ model Folder {
   photos           Photo[]
 
   lastModifiedById String
-  lastModifiedBy   User     @relation("FolderLastModifiedBy", fields: [lastModifiedById], references: [id])
+  lastModifiedBy   User     @relation("ShelfLastModifiedBy", fields: [lastModifiedById], references: [id])
 
   createdAt        DateTime @default(now())
   updatedAt        DateTime @updatedAt
@@ -105,8 +105,8 @@ model Item {
   cost             Float?
   quantity         Float       @default(0)
   unit             Unit        @default(PCS)
-  folderId         String
-  folder           Folder      @relation(fields: [folderId], references: [id])
+  shelfId          String
+  shelf            Shelf       @relation(fields: [shelfId], references: [id])
   photos           Photo[]
   labels           ItemLabel[] // Many-to-many relation with labels
   hashId           String      // Hash of name + sorted label names for uniqueness
@@ -117,15 +117,15 @@ model Item {
   createdAt        DateTime    @default(now())
   updatedAt        DateTime    @updatedAt
 
-  @@unique([folderId, hashId]) // Unique hash per folder to ensure item uniqueness within folder
+  @@unique([shelfId, hashId]) // Unique hash per shelf to ensure item uniqueness within shelf
 }
 
 model Photo {
   id        String   @id @default(cuid())
   url       String
   itemId    String?  // Photo belongs either to an item
-  folderId  String?  // or to a folder
+  shelfId   String?  // or to a shelf
   item      Item?    @relation(fields: [itemId], references: [id])
-  folder    Folder?  @relation(fields: [folderId], references: [id])
+  shelf     Shelf?   @relation(fields: [shelfId], references: [id])
   createdAt DateTime @default(now())
 }

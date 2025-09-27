@@ -1,8 +1,8 @@
 import { z } from 'zod';
 import { Unit } from '../units';
 
-export const createFolderInput = z.object({
-  name: z.string().trim().min(1, "Folder name is required").max(100, "Folder name too long"),
+export const createShelfInput = z.object({
+  name: z.string().trim().min(1, "Shelf name is required").max(100, "Shelf name too long"),
 });
 
 export const createLabelInput = z.object({
@@ -17,13 +17,13 @@ export const createItemInput = z.object({
   cost: z.number().min(0, "Cost cannot be negative").optional(),
   quantity: z.number().min(0, "Quantity cannot be negative").optional().default(0),
   unit: z.nativeEnum(Unit).optional().default(Unit.PCS),
-  folderId: z.string().min(1, "Folder ID is required"),
+  shelfId: z.string().min(1, "Shelf ID is required"),
   labelIds: z.array(z.string()).max(2, "Items can have at most 2 labels").optional(),
 });
 
-export const updateFolderInput = z.object({
-  folderId: z.string().min(1, "Folder ID is required"),
-  name: z.string().trim().min(1, "Folder name is required").max(100, "Folder name too long"),
+export const updateShelfInput = z.object({
+  shelfId: z.string().min(1, "Shelf ID is required"),
+  name: z.string().trim().min(1, "Shelf name is required").max(100, "Shelf name too long"),
 });
 
 export const updateItemInput = z.object({
@@ -35,11 +35,11 @@ export const updateItemInput = z.object({
   unit: z.nativeEnum(Unit).optional(),
   labelIds: z.array(z.string()).max(2, "Items can have at most 2 labels").optional(),
   // quantity removed - will be handled by adjustItemQuantityInput
-  // folderId removed per requirements - folder changes will be implemented later with move/copy functionality
+  // shelfId removed per requirements - shelf changes will be implemented later with move/copy functionality
 });
 
-export const deleteFolderInput = z.object({
-  folderId: z.string().min(1, "Folder ID is required"),
+export const deleteShelfInput = z.object({
+  shelfId: z.string().min(1, "Shelf ID is required"),
 });
 
 export const deleteItemInput = z.object({
@@ -52,10 +52,10 @@ export const adjustItemQuantityInput = z.object({
 });
 
 export type CreateLabelInput = z.infer<typeof createLabelInput>;
-export type CreateFolderInput = z.infer<typeof createFolderInput>;
+export type CreateShelfInput = z.infer<typeof createShelfInput>;
 export type CreateItemInput = z.infer<typeof createItemInput>;
-export type UpdateFolderInput = z.infer<typeof updateFolderInput>;
+export type UpdateShelfInput = z.infer<typeof updateShelfInput>;
 export type UpdateItemInput = z.infer<typeof updateItemInput>;
-export type DeleteFolderInput = z.infer<typeof deleteFolderInput>;
+export type DeleteShelfInput = z.infer<typeof deleteShelfInput>;
 export type DeleteItemInput = z.infer<typeof deleteItemInput>;
 export type AdjustItemQuantityInput = z.infer<typeof adjustItemQuantityInput>;
