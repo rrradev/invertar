@@ -14,17 +14,14 @@
 	let { data }: PageProps = $props();
 
 	let admins = $state<Admin[]>([]);
-	
+
 	// Enhanced loading state with delay and minimum display time
 	let showSkeleton = $state(true);
-	const loadingController = createLoadingController(
-		(show) => showSkeleton = show,
-		{
-			showDelay: 120,    // 120ms delay before showing skeleton
-			minDisplayTime: 500 // 500ms minimum display time
-		}
-	);
-	
+	const loadingController = createLoadingController((show) => (showSkeleton = show), {
+		showDelay: 120, // 120ms delay before showing skeleton
+		minDisplayTime: 500 // 500ms minimum display time
+	});
+
 	let isCreating = $state(false);
 	let isDeleting = $state('');
 	let isRefreshing = $state('');
@@ -259,277 +256,274 @@
 
 		<!-- Main Content -->
 		<main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-				<!-- Page Header -->
-				<div class="mb-8">
-					<div class="sm:flex sm:items-center sm:justify-between">
-						<div>
-							<h2 class="text-2xl font-bold text-gray-900">Admin Management</h2>
-							<p class="mt-2 text-sm text-gray-700">Manage administrators in your app</p>
-						</div>
-						<div class="mt-4 sm:mt-0">
-							<button
-								on:click={() => (showCreateForm = !showCreateForm)}
-								class="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-gradient-to-r from-indigo-600 to-cyan-600 hover:from-indigo-700 hover:to-cyan-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 transition-all duration-200"
-							>
-								<svg class="h-5 w-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-									<path
-										stroke-linecap="round"
-										stroke-linejoin="round"
-										stroke-width="2"
-										d="M12 6v6m0 0v6m0-6h6m-6 0H6"
-									/>
-								</svg>
-								Create Admin
-							</button>
-						</div>
+			<!-- Page Header -->
+			<div class="mb-8">
+				<div class="sm:flex sm:items-center sm:justify-between">
+					<div>
+						<h2 class="text-2xl font-bold text-gray-900">Admin Management</h2>
+						<p class="mt-2 text-sm text-gray-700">Manage administrators in your app</p>
 					</div>
-				</div>
-
-				<!-- Messages -->
-				{#if error}
-					<div class="mb-6 bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg">
-						{error}
-					</div>
-				{/if}
-
-				{#if successMessage}
-					<div class="mb-6 bg-green-50 border border-green-200 text-green-700 px-4 py-3 rounded-lg">
-						{successMessage}
-					</div>
-				{/if}
-
-				<!-- Create Admin Form -->
-				{#if showCreateForm}
-					<div class="mb-8 bg-white rounded-lg shadow-sm border border-gray-200 p-6">
-						<h3 class="text-lg font-medium text-gray-900 mb-4">Create New Admin</h3>
-						<div class="grid grid-cols-1 md:grid-cols-3 gap-4">
-							<div>
-								<label for="username" class="block text-sm font-medium text-gray-700 mb-2"
-									>Username</label
-								>
-								<input
-									id="username"
-									type="text"
-									bind:value={newAdmin.username}
-									placeholder="Enter username"
-									class="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-colors"
-									disabled={isCreating}
-								/>
-							</div>
-							<div>
-								<label for="email" class="block text-sm font-medium text-gray-700 mb-2">Email</label
-								>
-								<input
-									id="email"
-									type="email"
-									bind:value={newAdmin.email}
-									placeholder="Enter email"
-									class="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-colors"
-									disabled={isCreating}
-								/>
-							</div>
-							<div>
-								<label for="organization" class="block text-sm font-medium text-gray-700 mb-2"
-									>Organization</label
-								>
-								<input
-									id="organization"
-									type="text"
-									bind:value={newAdmin.organizationName}
-									placeholder="Enter organization name"
-									class="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-colors"
-									disabled={isCreating}
-								/>
-							</div>
-						</div>
-						<div class="mt-4 flex justify-end space-x-3">
-							<button
-								on:click={() => (showCreateForm = false)}
-								class="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 transition-colors"
-								disabled={isCreating}
-							>
-								Cancel
-							</button>
-							<button
-								on:click={createAdmin}
-								disabled={isCreating}
-								class="px-4 py-2 text-sm font-medium text-white bg-gradient-to-r from-indigo-600 to-cyan-600 hover:from-indigo-700 hover:to-cyan-700 rounded-md focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200"
-							>
-								{#if isCreating}
-									<svg
-										class="animate-spin -ml-1 mr-2 h-4 w-4 text-white inline"
-										fill="none"
-										viewBox="0 0 24 24"
-									>
-										<circle
-											class="opacity-25"
-											cx="12"
-											cy="12"
-											r="10"
-											stroke="currentColor"
-											stroke-width="4"
-										></circle>
-										<path
-											class="opacity-75"
-											fill="currentColor"
-											d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
-										></path>
-									</svg>
-									Creating...
-								{:else}
-									Create Admin
-								{/if}
-							</button>
-						</div>
-					</div>
-				{/if}
-
-				<!-- Admins List -->
-				<div class="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden">
-					<div class="px-6 py-4 border-b border-gray-200">
-						<h3 class="text-lg font-medium text-gray-900">Administrators</h3>
-						<p class="mt-1 text-sm text-gray-500">A list of all administrators in your app</p>
-					</div>
-					{#if admins.length === 0}
-						<div class="px-6 py-8 text-center">
-							<svg
-								class="mx-auto h-12 w-12 text-gray-400"
-								fill="none"
-								stroke="currentColor"
-								viewBox="0 0 24 24"
-							>
+					<div class="mt-4 sm:mt-0">
+						<button
+							on:click={() => (showCreateForm = !showCreateForm)}
+							class="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-gradient-to-r from-indigo-600 to-cyan-600 hover:from-indigo-700 hover:to-cyan-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 transition-all duration-200"
+						>
+							<svg class="h-5 w-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
 								<path
 									stroke-linecap="round"
 									stroke-linejoin="round"
 									stroke-width="2"
-									d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197m13.5-9a2.5 2.5 0 11-5 0 2.5 2.5 0 015 0z"
+									d="M12 6v6m0 0v6m0-6h6m-6 0H6"
 								/>
 							</svg>
-							<h3 class="mt-2 text-sm font-medium text-gray-900">No administrators</h3>
-							<p class="mt-1 text-sm text-gray-500">Get started by creating a new administrator.</p>
-						</div>
-					{:else}
-						<div class="overflow-x-auto">
-							<table class="min-w-full divide-y divide-gray-200">
-								<thead class="bg-gray-50">
-									<tr>
-										<th
-											class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
-										>
-											Administrator
-										</th>
-										<th
-											class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
-										>
-											Email
-										</th>
-										<th
-											class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
-										>
-											Organization
-										</th>
-										<th
-											class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
-										>
-											Created
-										</th>
-										<th
-											class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
-										>
-											OTAC
-										</th>
-										<th
-											class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
-										>
-											Status
-										</th>
-										<th
-											class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
-										>
-											Actions
-										</th>
-									</tr>
-								</thead>
-								<tbody class="bg-white divide-y divide-gray-200">
-									{#each admins as admin (admin.id)}
-										<tr class="hover:bg-gray-50 transition-colors">
-											<td class="px-6 py-4 whitespace-nowrap">
-												<div class="flex items-center">
-													<div
-														class="h-10 w-10 bg-gradient-to-r from-indigo-600 to-cyan-600 rounded-full flex items-center justify-center"
-													>
-														<span class="text-sm font-medium text-white"
-															>{admin.username.charAt(0).toUpperCase()}</span
-														>
-													</div>
-													<div class="ml-4">
-														<div class="text-sm font-medium text-gray-900">{admin.username}</div>
-													</div>
-												</div>
-											</td>
-											<td class="px-6 py-4 whitespace-nowrap">
-												<div class="text-sm text-gray-900">{admin.email}</div>
-											</td>
-											<td class="px-6 py-4 whitespace-nowrap">
-												<div class="text-sm text-gray-900">{admin.organizationName}</div>
-											</td>
-											<td class="px-6 py-4 whitespace-nowrap">
-												<div class="text-sm text-gray-900">{formatDate(admin.createdAt)}</div>
-											</td>
-											<td class="px-6 py-4 whitespace-nowrap">
-												<div class="text-sm text-gray-900">{admin.oneTimeAccessCode}</div>
-												{#if admin.oneTimeAccessCodeExpiry}
-													<div class="text-xs text-gray-500 mt-1">
-														Expires: {formatDate(admin.oneTimeAccessCodeExpiry)}
-													</div>
-												{/if}
-											</td>
-											<td class="px-6 py-4 whitespace-nowrap">
-												{#if admin.hasInitialPassword && new Date() < new Date(admin.oneTimeAccessCodeExpiry)}
-													<span
-														class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-yellow-100 text-yellow-800"
-													>
-														Pending Setup
-													</span>
-												{:else if admin.oneTimeAccessCodeExpiry && new Date() > new Date(admin.oneTimeAccessCodeExpiry)}
-													<span
-														class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-red-100 text-red-800"
-													>
-														OTAC Expired
-													</span>
-												{:else}
-													<span
-														class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800"
-													>
-														Active
-													</span>
-												{/if}
-											</td>
-											<td
-												class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium relative"
-											>
-												<div class="relative inline-block text-left">
-													<button
-														on:click|stopPropagation={(e) => toggleDropdown(admin.id, e)}
-														class="inline-flex items-center justify-center w-8 h-8 text-gray-400 hover:text-gray-600 rounded-full hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-indigo-500 transition-colors"
-														aria-expanded={openDropdown === admin.id}
-														aria-haspopup="true"
-													>
-														<svg class="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
-															<path
-																d="M10 6a2 2 0 110-4 2 2 0 010 4zM10 12a2 2 0 110-4 2 2 0 010 4zM10 18a2 2 0 110-4 2 2 0 010 4z"
-															/>
-														</svg>
-													</button>
-												</div>
-											</td>
-										</tr>
-									{/each}
-								</tbody>
-							</table>
-						</div>
-					{/if}
+							Create Admin
+						</button>
+					</div>
 				</div>
+			</div>
+
+			<!-- Messages -->
+			{#if error}
+				<div class="mb-6 bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg">
+					{error}
+				</div>
+			{/if}
+
+			{#if successMessage}
+				<div class="mb-6 bg-green-50 border border-green-200 text-green-700 px-4 py-3 rounded-lg">
+					{successMessage}
+				</div>
+			{/if}
+
+			<!-- Create Admin Form -->
+			{#if showCreateForm}
+				<div class="mb-8 bg-white rounded-lg shadow-sm border border-gray-200 p-6">
+					<h3 class="text-lg font-medium text-gray-900 mb-4">Create New Admin</h3>
+					<div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+						<div>
+							<label for="username" class="block text-sm font-medium text-gray-700 mb-2"
+								>Username</label
+							>
+							<input
+								id="username"
+								type="text"
+								bind:value={newAdmin.username}
+								placeholder="Enter username"
+								class="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-colors"
+								disabled={isCreating}
+							/>
+						</div>
+						<div>
+							<label for="email" class="block text-sm font-medium text-gray-700 mb-2">Email</label>
+							<input
+								id="email"
+								type="email"
+								bind:value={newAdmin.email}
+								placeholder="Enter email"
+								class="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-colors"
+								disabled={isCreating}
+							/>
+						</div>
+						<div>
+							<label for="organization" class="block text-sm font-medium text-gray-700 mb-2"
+								>Organization</label
+							>
+							<input
+								id="organization"
+								type="text"
+								bind:value={newAdmin.organizationName}
+								placeholder="Enter organization name"
+								class="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-colors"
+								disabled={isCreating}
+							/>
+						</div>
+					</div>
+					<div class="mt-4 flex justify-end space-x-3">
+						<button
+							on:click={() => (showCreateForm = false)}
+							class="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 transition-colors"
+							disabled={isCreating}
+						>
+							Cancel
+						</button>
+						<button
+							on:click={createAdmin}
+							disabled={isCreating}
+							class="px-4 py-2 text-sm font-medium text-white bg-gradient-to-r from-indigo-600 to-cyan-600 hover:from-indigo-700 hover:to-cyan-700 rounded-md focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200"
+						>
+							{#if isCreating}
+								<svg
+									class="animate-spin -ml-1 mr-2 h-4 w-4 text-white inline"
+									fill="none"
+									viewBox="0 0 24 24"
+								>
+									<circle
+										class="opacity-25"
+										cx="12"
+										cy="12"
+										r="10"
+										stroke="currentColor"
+										stroke-width="4"
+									></circle>
+									<path
+										class="opacity-75"
+										fill="currentColor"
+										d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+									></path>
+								</svg>
+								Creating...
+							{:else}
+								Create Admin
+							{/if}
+						</button>
+					</div>
+				</div>
+			{/if}
+
+			<!-- Admins List -->
+			<div class="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden">
+				<div class="px-6 py-4 border-b border-gray-200">
+					<h3 class="text-lg font-medium text-gray-900">Administrators</h3>
+					<p class="mt-1 text-sm text-gray-500">A list of all administrators in your app</p>
+				</div>
+				{#if admins.length === 0}
+					<div class="px-6 py-8 text-center">
+						<svg
+							class="mx-auto h-12 w-12 text-gray-400"
+							fill="none"
+							stroke="currentColor"
+							viewBox="0 0 24 24"
+						>
+							<path
+								stroke-linecap="round"
+								stroke-linejoin="round"
+								stroke-width="2"
+								d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197m13.5-9a2.5 2.5 0 11-5 0 2.5 2.5 0 015 0z"
+							/>
+						</svg>
+						<h3 class="mt-2 text-sm font-medium text-gray-900">No administrators</h3>
+						<p class="mt-1 text-sm text-gray-500">Get started by creating a new administrator.</p>
+					</div>
+				{:else}
+					<div class="overflow-x-auto">
+						<table class="min-w-full divide-y divide-gray-200">
+							<thead class="bg-gray-50">
+								<tr>
+									<th
+										class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
+									>
+										Administrator
+									</th>
+									<th
+										class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
+									>
+										Email
+									</th>
+									<th
+										class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
+									>
+										Organization
+									</th>
+									<th
+										class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
+									>
+										Created
+									</th>
+									<th
+										class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
+									>
+										OTAC
+									</th>
+									<th
+										class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
+									>
+										Status
+									</th>
+									<th
+										class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
+									>
+										Actions
+									</th>
+								</tr>
+							</thead>
+							<tbody class="bg-white divide-y divide-gray-200">
+								{#each admins as admin (admin.id)}
+									<tr class="hover:bg-gray-50 transition-colors">
+										<td class="px-6 py-4 whitespace-nowrap">
+											<div class="flex items-center">
+												<div
+													class="h-10 w-10 bg-gradient-to-r from-indigo-600 to-cyan-600 rounded-full flex items-center justify-center"
+												>
+													<span class="text-sm font-medium text-white"
+														>{admin.username.charAt(0).toUpperCase()}</span
+													>
+												</div>
+												<div class="ml-4">
+													<div class="text-sm font-medium text-gray-900">{admin.username}</div>
+												</div>
+											</div>
+										</td>
+										<td class="px-6 py-4 whitespace-nowrap">
+											<div class="text-sm text-gray-900">{admin.email}</div>
+										</td>
+										<td class="px-6 py-4 whitespace-nowrap">
+											<div class="text-sm text-gray-900">{admin.organizationName}</div>
+										</td>
+										<td class="px-6 py-4 whitespace-nowrap">
+											<div class="text-sm text-gray-900">{formatDate(admin.createdAt)}</div>
+										</td>
+										<td class="px-6 py-4 whitespace-nowrap">
+											<div class="text-sm text-gray-900">{admin.oneTimeAccessCode}</div>
+											{#if admin.oneTimeAccessCodeExpiry}
+												<div class="text-xs text-gray-500 mt-1">
+													Expires: {formatDate(admin.oneTimeAccessCodeExpiry)}
+												</div>
+											{/if}
+										</td>
+										<td class="px-6 py-4 whitespace-nowrap">
+											{#if admin.hasInitialPassword && new Date() < new Date(admin.oneTimeAccessCodeExpiry)}
+												<span
+													class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-yellow-100 text-yellow-800"
+												>
+													Pending Setup
+												</span>
+											{:else if admin.oneTimeAccessCodeExpiry && new Date() > new Date(admin.oneTimeAccessCodeExpiry)}
+												<span
+													class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-red-100 text-red-800"
+												>
+													OTAC Expired
+												</span>
+											{:else}
+												<span
+													class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800"
+												>
+													Active
+												</span>
+											{/if}
+										</td>
+										<td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium relative">
+											<div class="relative inline-block text-left">
+												<button
+													on:click|stopPropagation={(e) => toggleDropdown(admin.id, e)}
+													class="inline-flex items-center justify-center w-8 h-8 text-gray-400 hover:text-gray-600 rounded-full hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-indigo-500 transition-colors"
+													aria-expanded={openDropdown === admin.id}
+													aria-haspopup="true"
+												>
+													<svg class="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
+														<path
+															d="M10 6a2 2 0 110-4 2 2 0 010 4zM10 12a2 2 0 110-4 2 2 0 010 4zM10 18a2 2 0 110-4 2 2 0 010 4z"
+														/>
+													</svg>
+												</button>
+											</div>
+										</td>
+									</tr>
+								{/each}
+							</tbody>
+						</table>
+					</div>
+				{/if}
+			</div>
 		</main>
 	{/if}
 </div>

@@ -1,6 +1,6 @@
 /**
  * Enhanced loading state manager that prevents skeleton flashing and ensures minimum display time
- * 
+ *
  * Features:
  * - 120ms delay before showing skeleton (prevents flash for quick loads)
  * - 500ms minimum display time (ensures smooth UX when skeleton is shown)
@@ -24,7 +24,7 @@ export interface LoadingController {
 
 /**
  * Creates an enhanced loading state controller that should be used with a $state variable
- * 
+ *
  * Usage in Svelte component:
  * ```svelte
  * let showSkeleton = $state(true);
@@ -39,7 +39,7 @@ export function createLoadingController(
 	options: LoadingStateOptions = {}
 ): LoadingController {
 	const { showDelay = 120, minDisplayTime = 500 } = options;
-	
+
 	let showTimeout: ReturnType<typeof setTimeout> | null = null;
 	let minDisplayTimeout: ReturnType<typeof setTimeout> | null = null;
 	let skeletonShownAt: number | null = null;

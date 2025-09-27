@@ -4,15 +4,82 @@ export default class Shelf extends BaseComponent {
 
     itemsTable: Locator;
     stats: Locator;
+    expandButton: Locator;
+    totalValue: Locator;
+    shelfName: Locator;
 
     constructor($: Locator) {
         super($);
         this.itemsTable = this.$.locator('[data-testid="items-table"]');
         this.stats = this.$.locator('[data-testid="shelf-stats"]');
+        this.expandButton = this.$.locator('[data-testid="shelf-expand-button"]');
+        this.totalValue = this.$.locator('[data-testid="shelf-total-value"]');
+        this.shelfName = this.$.locator('[data-testid="shelf-name"]');
     }
 
     async getShelfId(): Promise<string> {
         return (await this.$.getAttribute('data-shelf-id')) || '';
+    }
+
+    async getShelfName(): Promise<string> {
+        return (await this.shelfName.textContent()) || '';
+    }
+
+    async isExpanded(): Promise<boolean> {
+        const ariaLabel = await this.expandButton.getAttribute('aria-label');
+        return ariaLabel?.includes('Collapse') || false;
+    }
+
+    async isCollapsed(): Promise<boolean> {
+        return !(await this.isExpanded());
+    }
+
+    async expand(): Promise<void> {
+        if (await this.isCollapsed()) {
+            await this.expandButton.click();
+            // Wait for loading to complete
+            await expect(this.expandButton.locator('svg.animate-spin')).not.toBeVisible({ timeout: 5000 });
+        }
+    }
+
+    async collapse(): Promise<void> {
+        if (await this.isExpanded()) {
+            await this.expandButton.click();
+            // Small wait for UI to update
+            await this.$.page().waitForTimeout(500);
+        }
+    }
+
+    async toggleExpansion(): Promise<void> {
+        await this.expandButton.click();
+        // Wait for state change
+        await this.$.page().waitForTimeout(500);
+    }
+
+    async shouldBeExpanded(): Promise<void> {
+        await expect(this.expandButton).toHaveAttribute('aria-label', /Collapse shelf/);
+    }
+
+    async shouldBeCollapsed(): Promise<void> {
+        await expect(this.expandButton).toHaveAttribute('aria-label', /Expand shelf/);
+    }
+
+    async shouldShowLoadingState(): Promise<void> {
+        await expect(this.expandButton.locator('svg.animate-spin')).toBeVisible();
+    }
+
+    async shouldNotShowLoadingState(): Promise<void> {
+        await expect(this.expandButton.locator('svg.animate-spin')).not.toBeVisible();
+    }
+
+    async shouldShowCollapsedStats(): Promise<void> {
+        await expect(this.stats).toContainText('?');
+        await expect(this.totalValue).toHaveText('---');
+    }
+
+    async shouldShowExpandedStats(): Promise<void> {
+        await expect(this.stats).not.toContainText('?');
+        await expect(this.totalValue).not.toHaveText('---');
     }
 
     async shouldHaveItemWithName(name: string) {

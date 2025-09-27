@@ -11,7 +11,8 @@
 		data: PageData;
 	}
 
-	let { data }: PageProps = $props();
+	// eslint-disable-next-line @typescript-eslint/no-unused-vars
+	let { data: _ }: PageProps = $props();
 
 	interface Label {
 		id: string;
@@ -46,17 +47,14 @@
 	let shelves = $state<Shelf[]>([]);
 	let labels = $state<Label[]>([]);
 	let recentLabels = $state<Label[]>([]);
-	
+
 	// Enhanced loading state with delay and minimum display time
 	let showSkeleton = $state(true);
-	const loadingController = createLoadingController(
-		(show) => showSkeleton = show,
-		{
-			showDelay: 120,    // 120ms delay before showing skeleton
-			minDisplayTime: 500 // 500ms minimum display time
-		}
-	);
-	
+	const loadingController = createLoadingController((show) => (showSkeleton = show), {
+		showDelay: 120, // 120ms delay before showing skeleton
+		minDisplayTime: 500 // 500ms minimum display time
+	});
+
 	let isCreatingShelf = $state(false);
 	let isCreatingItem = $state(false);
 	let isCreatingLabel = $state(false);
@@ -76,29 +74,9 @@
 	let quantityInput = $state(0);
 	let error = $state('');
 	let successMessage = $state('');
-	
+
 	// Track which shelves are currently loading items (for expand/collapse)
-	let loadingShelfItems = $state<Set<string>>(new Set());
-
-	let newShelf = $state({
-		name: ''
-	});
-
-	let newLabel = $state({
-		name: '',
-		color: '#3B82F6'
-	});
-
-	let newItem = $state({
-		name: '',
-		description: '',
-		price: 0,
-		cost: 0,
-		quantity: 0,
-		unit: Unit.PCS,
-		shelfId: '',
-		selectedLabels: [null, null] as (Label | null)[] // Two slots for labels
-	});
+	let loadingShelfItems = $state<string[]>([]);
 
 	// Load shelves data
 	async function loadShelves() {
@@ -139,24 +117,43 @@
 		}
 	}
 
+	let newShelf = $state({
+		name: ''
+	});
+
+	let newLabel = $state({
+		name: '',
+		color: '#3B82F6'
+	});
+
+	let newItem = $state({
+		name: '',
+		description: '',
+		price: 0,
+		cost: 0,
+		quantity: 0,
+		unit: Unit.PCS,
+		shelfId: '',
+		selectedLabels: [null, null] as (Label | null)[] // Two slots for labels
+	});
+
 	// Toggle shelf expand/collapse state
 	async function toggleShelfExpansion(shelfId: string) {
 		try {
-			const shelf = shelves.find(s => s.id === shelfId);
+			const shelf = shelves.find((s) => s.id === shelfId);
 			if (!shelf) return;
 
 			const newExpandedState = !shelf.isExpanded;
-			
+
 			// If expanding and shelf has no items loaded, load them
 			if (newExpandedState && shelf.items.length === 0) {
-				loadingShelfItems.add(shelfId);
-				loadingShelfItems = new Set(loadingShelfItems); // Trigger reactivity
-				
+				loadingShelfItems = [...loadingShelfItems, shelfId];
+
 				try {
 					const itemsResult = await trpc.dashboard.getShelfItems.query({ shelfId });
 					if (itemsResult.status === SuccessStatus.SUCCESS) {
 						// Update the shelf with loaded items
-						const shelfIndex = shelves.findIndex(s => s.id === shelfId);
+						const shelfIndex = shelves.findIndex((s) => s.id === shelfId);
 						if (shelfIndex !== -1) {
 							shelves[shelfIndex].items = itemsResult.items as Item[];
 						}
@@ -164,16 +161,15 @@
 				} catch (err) {
 					console.error('Failed to load shelf items:', err);
 					error = 'Failed to load shelf items';
-					setTimeout(() => error = '', 3000);
+					setTimeout(() => (error = ''), 3000);
 					return;
 				} finally {
-					loadingShelfItems.delete(shelfId);
-					loadingShelfItems = new Set(loadingShelfItems); // Trigger reactivity
+					loadingShelfItems = loadingShelfItems.filter((id) => id !== shelfId);
 				}
 			}
 
 			// Update local state immediately for UI responsiveness
-			const shelfIndex = shelves.findIndex(s => s.id === shelfId);
+			const shelfIndex = shelves.findIndex((s) => s.id === shelfId);
 			if (shelfIndex !== -1) {
 				shelves[shelfIndex].isExpanded = newExpandedState;
 			}
@@ -183,14 +179,13 @@
 				shelfId,
 				isExpanded: newExpandedState
 			});
-
 		} catch (err) {
 			console.error('Failed to toggle shelf expansion:', err);
 			error = 'Failed to update shelf state';
-			setTimeout(() => error = '', 3000);
-			
+			setTimeout(() => (error = ''), 3000);
+
 			// Revert local state on error
-			const shelfIndex = shelves.findIndex(s => s.id === shelfId);
+			const shelfIndex = shelves.findIndex((s) => s.id === shelfId);
 			if (shelfIndex !== -1) {
 				shelves[shelfIndex].isExpanded = !shelves[shelfIndex].isExpanded;
 			}
@@ -236,10 +231,6 @@
 	}
 
 	// Remove a label from a slot
-	function removeLabel(slotIndex: number) {
-		newItem.selectedLabels[slotIndex] = null;
-	}
-
 	// Get filtered labels based on search query
 	function getFilteredLabels(): Label[] {
 		// Always exclude already selected labels first
@@ -885,7 +876,7 @@
 					<!-- Labels Selection -->
 					<div class="mb-4">
 						<div class="flex space-x-4">
-							{#each [0, 1] as slotIndex}
+							{#each [0, 1] as slotIndex (slotIndex)}
 								<div class="relative">
 									{#if newItem.selectedLabels[slotIndex]}
 										<!-- Selected Label -->
@@ -1235,22 +1226,35 @@
 										<button
 											onclick={() => toggleShelfExpansion(shelf.id)}
 											class="mr-2 p-1 rounded-md hover:bg-gray-200 focus:outline-none focus:ring-2 focus:ring-indigo-500 transition-colors"
-											disabled={loadingShelfItems.has(shelf.id)}
+											disabled={loadingShelfItems.includes(shelf.id)}
 											data-testid="shelf-expand-button"
 											aria-label={shelf.isExpanded ? 'Collapse shelf' : 'Expand shelf'}
 										>
-											{#if loadingShelfItems.has(shelf.id)}
+											{#if loadingShelfItems.includes(shelf.id)}
 												<svg
 													class="h-5 w-5 text-gray-400 animate-spin"
 													fill="none"
 													viewBox="0 0 24 24"
 												>
-													<circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
-													<path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+													<circle
+														class="opacity-25"
+														cx="12"
+														cy="12"
+														r="10"
+														stroke="currentColor"
+														stroke-width="4"
+													></circle>
+													<path
+														class="opacity-75"
+														fill="currentColor"
+														d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+													></path>
 												</svg>
 											{:else}
 												<svg
-													class="h-5 w-5 text-gray-600 transform transition-transform duration-200 {shelf.isExpanded ? 'rotate-90' : ''}"
+													class="h-5 w-5 text-gray-600 transform transition-transform duration-200 {shelf.isExpanded
+														? 'rotate-90'
+														: ''}"
 													fill="none"
 													stroke="currentColor"
 													viewBox="0 0 24 24"
@@ -1264,7 +1268,7 @@
 												</svg>
 											{/if}
 										</button>
-										
+
 										<svg
 											class="h-6 w-6 text-yellow-500 mr-3"
 											fill="none"
@@ -1328,154 +1332,154 @@
 									</div>
 								{:else}
 									<div class="overflow-x-auto">
-									<table class="min-w-full divide-y divide-gray-200" data-testid="items-table">
-										<thead class="bg-gray-50">
-											<tr>
-												<th
-													class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
-												>
-													Item
-												</th>
-												<th
-													class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
-												>
-													Labels
-												</th>
-												<th
-													class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
-												>
-													Description
-												</th>
-												<th
-													class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
-												>
-													Cost
-												</th>
-												<th
-													class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
-												>
-													Price
-												</th>
-												<th
-													class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
-												>
-													Quantity
-												</th>
-												<th
-													class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
-												>
-													Unit
-												</th>
-												<th
-													class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
-												>
-													Total Value
-												</th>
-												<th
-													class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
-												>
-													Last Modified
-												</th>
-												<th
-													class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
-												>
-													Actions
-												</th>
-											</tr>
-										</thead>
-										<tbody class="bg-white divide-y divide-gray-200">
-											{#each shelf.items as item (item.id)}
-												<tr
-													class="hover:bg-gray-50 transition-colors"
-													data-testid="item-row"
-													data-item-id={item.id}
-												>
-													<td class="px-6 py-4 whitespace-nowrap">
-														<div class="flex items-center">
-															<div
-																class="h-8 w-8 bg-gradient-to-r from-indigo-600 to-cyan-600 rounded-lg flex items-center justify-center mr-3"
-															>
-																<span class="text-xs font-medium text-white">
-																	{item.name.charAt(0).toUpperCase()}
-																</span>
-															</div>
-															<div class="text-sm font-medium text-gray-900">{item.name}</div>
-														</div>
-													</td>
-													<td class="px-6 py-4 whitespace-nowrap">
-														<div class="flex items-center space-x-1">
-															{#each item.labels as label (label.id)}
-																<span
-																	class="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium border"
-																	style="background-color: {label.color}20; border-color: {label.color}40; color: {label.color}"
-																>
-																	{label.name}
-																</span>
-															{/each}
-															{#if item.labels.length === 0}
-																<span class="text-sm text-gray-400">—</span>
-															{/if}
-														</div>
-													</td>
-													<td class="px-6 py-4 whitespace-nowrap">
-														<div class="text-sm text-gray-900">
-															{item.description || '—'}
-														</div>
-													</td>
-													<td class="px-6 py-4 whitespace-nowrap">
-														<div class="text-sm text-gray-900">
-															{item.cost != null ? formatPrice(item.cost) : '-'}
-														</div>
-													</td>
-													<td class="px-6 py-4 whitespace-nowrap">
-														<div class="text-sm text-gray-900">{formatPrice(item.price)}</div>
-													</td>
-													<td class="px-6 py-4 whitespace-nowrap">
-														<div class="text-sm text-gray-900">{item.quantity}</div>
-													</td>
-													<td class="px-6 py-4 whitespace-nowrap">
-														<div class="text-sm text-gray-900">{item.unit}</div>
-													</td>
-													<td class="px-6 py-4 whitespace-nowrap">
-														<div class="text-sm font-semibold text-gray-900">
-															{formatPrice(item.price * item.quantity)}
-														</div>
-													</td>
-													<td class="px-6 py-4 whitespace-nowrap">
-														<div class="text-sm text-gray-900">{formatDate(item.updatedAt)}</div>
-														<div class="text-xs text-gray-500">by {item.lastModifiedBy}</div>
-													</td>
-													<td class="px-6 py-4 whitespace-nowrap">
-														<button
-															onclick={() => openEditModal(item)}
-															class="inline-flex items-center justify-center w-8 h-8 text-gray-400 hover:text-indigo-600 rounded-full hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-indigo-500 transition-colors"
-															aria-label="Edit item"
-															data-testid="edit-item-button"
-															data-item-id={item.id}
-														>
-															<!-- Pencil Icon -->
-															<svg
-																class="w-4 h-4"
-																fill="none"
-																stroke="currentColor"
-																viewBox="0 0 24 24"
-															>
-																<path
-																	stroke-linecap="round"
-																	stroke-linejoin="round"
-																	stroke-width="2"
-																	d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"
-																/>
-															</svg>
-														</button>
-													</td>
+										<table class="min-w-full divide-y divide-gray-200" data-testid="items-table">
+											<thead class="bg-gray-50">
+												<tr>
+													<th
+														class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
+													>
+														Item
+													</th>
+													<th
+														class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
+													>
+														Labels
+													</th>
+													<th
+														class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
+													>
+														Description
+													</th>
+													<th
+														class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
+													>
+														Cost
+													</th>
+													<th
+														class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
+													>
+														Price
+													</th>
+													<th
+														class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
+													>
+														Quantity
+													</th>
+													<th
+														class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
+													>
+														Unit
+													</th>
+													<th
+														class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
+													>
+														Total Value
+													</th>
+													<th
+														class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
+													>
+														Last Modified
+													</th>
+													<th
+														class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
+													>
+														Actions
+													</th>
 												</tr>
-											{/each}
-										</tbody>
-									</table>
-								</div>
+											</thead>
+											<tbody class="bg-white divide-y divide-gray-200">
+												{#each shelf.items as item (item.id)}
+													<tr
+														class="hover:bg-gray-50 transition-colors"
+														data-testid="item-row"
+														data-item-id={item.id}
+													>
+														<td class="px-6 py-4 whitespace-nowrap">
+															<div class="flex items-center">
+																<div
+																	class="h-8 w-8 bg-gradient-to-r from-indigo-600 to-cyan-600 rounded-lg flex items-center justify-center mr-3"
+																>
+																	<span class="text-xs font-medium text-white">
+																		{item.name.charAt(0).toUpperCase()}
+																	</span>
+																</div>
+																<div class="text-sm font-medium text-gray-900">{item.name}</div>
+															</div>
+														</td>
+														<td class="px-6 py-4 whitespace-nowrap">
+															<div class="flex items-center space-x-1">
+																{#each item.labels as label (label.id)}
+																	<span
+																		class="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium border"
+																		style="background-color: {label.color}20; border-color: {label.color}40; color: {label.color}"
+																	>
+																		{label.name}
+																	</span>
+																{/each}
+																{#if item.labels.length === 0}
+																	<span class="text-sm text-gray-400">—</span>
+																{/if}
+															</div>
+														</td>
+														<td class="px-6 py-4 whitespace-nowrap">
+															<div class="text-sm text-gray-900">
+																{item.description || '—'}
+															</div>
+														</td>
+														<td class="px-6 py-4 whitespace-nowrap">
+															<div class="text-sm text-gray-900">
+																{item.cost != null ? formatPrice(item.cost) : '-'}
+															</div>
+														</td>
+														<td class="px-6 py-4 whitespace-nowrap">
+															<div class="text-sm text-gray-900">{formatPrice(item.price)}</div>
+														</td>
+														<td class="px-6 py-4 whitespace-nowrap">
+															<div class="text-sm text-gray-900">{item.quantity}</div>
+														</td>
+														<td class="px-6 py-4 whitespace-nowrap">
+															<div class="text-sm text-gray-900">{item.unit}</div>
+														</td>
+														<td class="px-6 py-4 whitespace-nowrap">
+															<div class="text-sm font-semibold text-gray-900">
+																{formatPrice(item.price * item.quantity)}
+															</div>
+														</td>
+														<td class="px-6 py-4 whitespace-nowrap">
+															<div class="text-sm text-gray-900">{formatDate(item.updatedAt)}</div>
+															<div class="text-xs text-gray-500">by {item.lastModifiedBy}</div>
+														</td>
+														<td class="px-6 py-4 whitespace-nowrap">
+															<button
+																onclick={() => openEditModal(item)}
+																class="inline-flex items-center justify-center w-8 h-8 text-gray-400 hover:text-indigo-600 rounded-full hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-indigo-500 transition-colors"
+																aria-label="Edit item"
+																data-testid="edit-item-button"
+																data-item-id={item.id}
+															>
+																<!-- Pencil Icon -->
+																<svg
+																	class="w-4 h-4"
+																	fill="none"
+																	stroke="currentColor"
+																	viewBox="0 0 24 24"
+																>
+																	<path
+																		stroke-linecap="round"
+																		stroke-linejoin="round"
+																		stroke-width="2"
+																		d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"
+																	/>
+																</svg>
+															</button>
+														</td>
+													</tr>
+												{/each}
+											</tbody>
+										</table>
+									</div>
+								{/if}
 							{/if}
-						{/if}
 						</div>
 					{/each}
 				</div>

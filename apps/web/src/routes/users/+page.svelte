@@ -23,17 +23,14 @@
 	}
 
 	let users = $state<UserListItem[]>([]);
-	
+
 	// Enhanced loading state with delay and minimum display time
 	let showSkeleton = $state(true);
-	const loadingController = createLoadingController(
-		(show) => showSkeleton = show,
-		{
-			showDelay: 120,    // 120ms delay before showing skeleton
-			minDisplayTime: 500 // 500ms minimum display time
-		}
-	);
-	
+	const loadingController = createLoadingController((show) => (showSkeleton = show), {
+		showDelay: 120, // 120ms delay before showing skeleton
+		minDisplayTime: 500 // 500ms minimum display time
+	});
+
 	let isCreating = $state(false);
 	let isDeleting = $state('');
 	let isResetting = $state('');
