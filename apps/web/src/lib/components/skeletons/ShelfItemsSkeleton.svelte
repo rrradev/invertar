@@ -8,18 +8,6 @@
 
 	let { rows = 3 }: Props = $props();
 
-	const columns = [
-		{ width: '20%', label: 'Item' },
-		{ width: '15%', label: 'Labels' },
-		{ width: '20%', label: 'Description' },
-		{ width: '10%', label: 'Cost' },
-		{ width: '10%', label: 'Price' },
-		{ width: '10%', label: 'Quantity' },
-		{ width: '10%', label: 'Unit' },
-		{ width: '10%', label: 'Total Value' },
-		{ width: '15%', label: 'Last Modified' },
-		{ width: '10%', label: 'Actions' }
-	];
 </script>
 
 <div class="overflow-x-auto">
