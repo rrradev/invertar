@@ -892,7 +892,10 @@
 							>
 								<option value="">Select shelf</option>
 								{#each shelves as shelf (shelf.id)}
-									<option value={shelf.id}>{shelf.name}</option>
+									<option value={shelf.id}>
+										<!-- Using a simple colored square before the name -->
+										■ {shelf.name}
+									</option>
 								{/each}
 							</select>
 						</div>
@@ -1244,23 +1247,27 @@
 							data-shelf-id={shelf.id}
 						>
 							<!-- Shelf Header -->
-							<div class="px-6 py-4 bg-gray-50 border-b border-gray-200">
+							<div
+								class="px-6 py-4 border-b border-gray-200"
+								style="background-color: {shelf.color}20; border-color: {shelf.color}40"
+							>
 								<div class="flex items-center justify-between">
 									<div class="flex items-center">
 										<!-- Expand/Collapse Button -->
 										<button
 											onclick={() => toggleShelfExpansion(shelf.id)}
-											class="mr-2 p-1 rounded-md hover:bg-gray-200 focus:outline-none focus:ring-2 focus:ring-indigo-500 transition-colors"
+											class="mr-2 p-1 rounded-md hover:bg-white hover:bg-opacity-50 focus:outline-none focus:ring-2 focus:ring-indigo-500 transition-colors"
 											data-testid="shelf-expand-button"
 											aria-label={shelf.isExpanded ? 'Collapse shelf' : 'Expand shelf'}
 										>
 											<svg
-												class="h-5 w-5 text-gray-600 transform transition-transform duration-200 {shelf.isExpanded
+												class="h-5 w-5 transform transition-transform duration-200 {shelf.isExpanded
 													? 'rotate-90'
 													: ''}"
 												fill="none"
 												stroke="currentColor"
 												viewBox="0 0 24 24"
+												style="color: {shelf.color}"
 											>
 												<path
 													stroke-linecap="round"
@@ -1272,10 +1279,11 @@
 										</button>
 
 										<svg
-											class="h-6 w-6 text-yellow-500 mr-3"
+											class="h-6 w-6 mr-3"
 											fill="none"
 											stroke="currentColor"
 											viewBox="0 0 24 24"
+											style="color: {shelf.color}"
 										>
 											<path
 												stroke-linecap="round"
@@ -1284,22 +1292,21 @@
 												d="M3 6h18M3 12h18M3 18h18M3 6v12a1 1 0 001 1h16a1 1 0 001-1V6"
 											/>
 										</svg>
-										<div
-											class="w-4 h-4 rounded-full mr-3 border border-gray-200 flex-shrink-0"
-											style="background-color: {shelf.color}"
-											title="Shelf color: {shelf.color}"
-										></div>
 										<div>
-											<h3 class="text-lg font-medium text-gray-900" data-testid="shelf-name">
+											<h3
+												class="text-lg font-medium"
+												data-testid="shelf-name"
+												style="color: {shelf.color}"
+											>
 												{shelf.name}
 											</h3>
-											<p class="text-sm text-gray-500">
+											<p class="text-sm" style="color: {shelf.color}">
 												Created {formatDate(shelf.createdAt)} by {shelf.lastModifiedBy}
 											</p>
 										</div>
 									</div>
 									<div class="text-right">
-										<div class="text-sm text-gray-500" data-testid="shelf-stats">
+										<div class="text-sm" data-testid="shelf-stats" style="color: {shelf.color}">
 											{shelf.isExpanded ? shelf.items.length : '?'} items
 											{#if shelf.isExpanded}
 												• {Object.entries(getTotalItemsByUnit(shelf.items))
@@ -1309,8 +1316,9 @@
 											{/if}
 										</div>
 										<div
-											class="text-lg font-semibold text-gray-900"
+											class="text-lg font-semibold"
 											data-testid="shelf-total-value"
+											style="color: {shelf.color}"
 										>
 											{shelf.isExpanded ? formatPrice(getTotalValue(shelf.items)) : '---'}
 										</div>
