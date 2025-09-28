@@ -52,7 +52,6 @@
 	let shelves = $state<Shelf[]>([]);
 	let labels = $state<Label[]>([]);
 	let recentLabels = $state<Label[]>([]);
-	let userProfile = $state<{ username: string; role: string; organizationName: string } | null>(null);
 
 	// Enhanced loading state with delay and minimum display time
 	let showSkeleton = $state(true);
@@ -120,16 +119,6 @@
 			}
 		} catch (err) {
 			console.error('Failed to load recent labels:', err);
-		}
-	}
-
-	// Load user profile
-	async function loadUserProfile() {
-		try {
-			const result = await trpc.auth.profile.query();
-			userProfile = result;
-		} catch (err) {
-			console.error('Failed to load user profile:', err);
 		}
 	}
 
@@ -217,7 +206,6 @@
 	loadShelves();
 	loadLabels();
 	loadRecentLabels();
-	loadUserProfile();
 
 	// Open label dropdown for a specific slot
 	function openLabelDropdown(slotIndex: number) {
@@ -900,8 +888,8 @@
 					<!-- Image Upload -->
 					<div class="mb-4">
 						<label class="block text-sm font-medium text-gray-700 mb-2">Item Image</label>
-						<ImageUpload 
-							onImageUploaded={(publicId) => newItem.cloudinaryPublicId = publicId}
+						<ImageUpload
+							onImageUploaded={(publicId) => (newItem.cloudinaryPublicId = publicId)}
 							currentImagePublicId={newItem.cloudinaryPublicId}
 							disabled={isCreatingItem}
 						/>
@@ -919,7 +907,7 @@
 											onclick={() => openLabelDropdown(slotIndex)}
 											disabled={isCreatingItem}
 											class="inline-flex items-center px-4 py-2 rounded-full text-sm font-medium border-2 transition-all duration-200 hover:shadow-md focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 disabled:opacity-50 disabled:cursor-not-allowed"
-											style="{getLabelStyle(newItem.selectedLabels[slotIndex]!.color)}"
+											style={getLabelStyle(newItem.selectedLabels[slotIndex]!.color)}
 										>
 											{newItem.selectedLabels[slotIndex]!.name}
 										</button>
@@ -1404,7 +1392,7 @@
 													>
 														<td class="px-6 py-4 whitespace-nowrap">
 															<div class="flex items-center">
-																<ItemImage 
+																<ItemImage
 																	itemId={item.id}
 																	itemName={item.name}
 																	cloudinaryPublicId={item.cloudinaryPublicId}
