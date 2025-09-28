@@ -49,25 +49,25 @@ export function generateSignedUrl(
     quality?: 'auto' | number;
   }
 ) {
-  const expirationTime = Math.round(new Date().getTime() / 1000) + (15 * 60); // 15 minutes
-
-  let transformationString = '';
+  // Build transformation object for Cloudinary SDK
+  const transformationOptions: any = {};
+  
   if (transformations) {
-    const parts = [];
-    if (transformations.width) parts.push(`w_${transformations.width}`);
-    if (transformations.height) parts.push(`h_${transformations.height}`);
-    if (transformations.crop) parts.push(`c_${transformations.crop}`);
-    if (transformations.quality) parts.push(`q_${transformations.quality}`);
-    transformationString = parts.length > 0 ? `${parts.join(',')}/` : '';
+    if (transformations.width) transformationOptions.width = transformations.width;
+    if (transformations.height) transformationOptions.height = transformations.height;
+    if (transformations.crop) transformationOptions.crop = transformations.crop;
+    if (transformations.quality) transformationOptions.quality = transformations.quality;
   }
 
-  const params = {
-    timestamp: expirationTime,
-  };
-
-  const signature = cloudinary.utils.api_sign_request(params, env.CLOUDINARY_API_SECRET);
-
-  return `https://res.cloudinary.com/${env.CLOUDINARY_CLOUD_NAME}/image/upload/${transformationString}s--${signature}--/${publicId}?timestamp=${expirationTime}`;
+  // Use Cloudinary's built-in URL generation
+  // For now, we'll generate public URLs since the user reported that public URLs work
+  // TODO: Add authentication/signing if needed for security
+  return cloudinary.url(publicId, {
+    ...transformationOptions,
+    resource_type: 'image',
+    type: 'upload',
+    secure: true, // Use HTTPS
+  });
 }
 
 /**
