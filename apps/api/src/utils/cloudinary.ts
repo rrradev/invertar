@@ -29,6 +29,7 @@ export function generateUploadSignature(organizationId: string) {
     signature,
     timestamp,
     api_key: env.CLOUDINARY_API_KEY,
+    cloud_name: env.CLOUDINARY_CLOUD_NAME,
     folder,
   };
 }

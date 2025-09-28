@@ -13,10 +13,6 @@ import {
 } from "../../utils/cloudinary";
 
 // Input schemas
-const generateUploadSignatureInput = z.object({
-  organizationId: z.string().min(1, "Organization ID is required"),
-});
-
 const getItemImagesInput = z.object({
   itemIds: z.array(z.string()).min(1, "At least one item ID is required"),
 });
@@ -28,17 +24,8 @@ const deleteImageInput = z.object({
 export const imagesRouter = router({
   // Generate upload signature for creating new items
   generateUploadSignature: protectedProcedure
-    .input(generateUploadSignatureInput)
-    .mutation(async ({ input, ctx }) => {
-      // Verify user belongs to the organization
-      if (ctx.user!.organizationId !== input.organizationId) {
-        throw new TRPCError({
-          code: "FORBIDDEN",
-          message: "You can only generate upload signatures for your organization."
-        });
-      }
-
-      const signature = generateUploadSignature(input.organizationId);
+    .mutation(async ({ ctx }) => {
+      const signature = generateUploadSignature(ctx.user!.organizationId);
 
       return {
         status: SuccessStatus.SUCCESS,

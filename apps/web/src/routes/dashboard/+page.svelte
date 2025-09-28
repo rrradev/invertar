@@ -5,6 +5,8 @@
 	import Header from '$lib/components/Header.svelte';
 	import ShelfSkeleton from '$lib/components/skeletons/ShelfSkeleton.svelte';
 	import ShelfItemsSkeleton from '$lib/components/skeletons/ShelfItemsSkeleton.svelte';
+	import ImageUpload from '$lib/components/ImageUpload.svelte';
+	import ItemImage from '$lib/components/ItemImage.svelte';
 	import { createLoadingController } from '$lib/utils/loadingState';
 	import type { PageData } from './$types';
 	import { getLabelStyle } from '$lib/utils/labels';
@@ -30,6 +32,7 @@
 		cost?: number | null;
 		quantity: number;
 		unit: Unit;
+		cloudinaryPublicId?: string | null;
 		labels: Label[];
 		createdAt: string;
 		updatedAt: string;
@@ -49,6 +52,7 @@
 	let shelves = $state<Shelf[]>([]);
 	let labels = $state<Label[]>([]);
 	let recentLabels = $state<Label[]>([]);
+	let userProfile = $state<{ username: string; role: string; organizationName: string } | null>(null);
 
 	// Enhanced loading state with delay and minimum display time
 	let showSkeleton = $state(true);
@@ -119,6 +123,16 @@
 		}
 	}
 
+	// Load user profile
+	async function loadUserProfile() {
+		try {
+			const result = await trpc.auth.profile.query();
+			userProfile = result;
+		} catch (err) {
+			console.error('Failed to load user profile:', err);
+		}
+	}
+
 	let newShelf = $state({
 		name: ''
 	});
@@ -136,6 +150,7 @@
 		quantity: 0,
 		unit: Unit.PCS,
 		shelfId: '',
+		cloudinaryPublicId: '',
 		selectedLabels: [null, null] as (Label | null)[] // Two slots for labels
 	});
 
@@ -202,6 +217,7 @@
 	loadShelves();
 	loadLabels();
 	loadRecentLabels();
+	loadUserProfile();
 
 	// Open label dropdown for a specific slot
 	function openLabelDropdown(slotIndex: number) {
@@ -341,6 +357,7 @@
 				quantity: newItem.quantity || undefined,
 				unit: newItem.unit,
 				shelfId: targetShelfId,
+				cloudinaryPublicId: newItem.cloudinaryPublicId || undefined,
 				labelIds: newItem.selectedLabels.filter((label) => label !== null).map((label) => label!.id)
 			});
 
@@ -354,6 +371,7 @@
 					quantity: 0,
 					unit: Unit.PCS,
 					shelfId: '',
+					cloudinaryPublicId: '',
 					selectedLabels: [null, null]
 				};
 				showCreateItemForm = false;
@@ -879,6 +897,16 @@
 						</div>
 					</div>
 
+					<!-- Image Upload -->
+					<div class="mb-4">
+						<label class="block text-sm font-medium text-gray-700 mb-2">Item Image</label>
+						<ImageUpload 
+							onImageUploaded={(publicId) => newItem.cloudinaryPublicId = publicId}
+							currentImagePublicId={newItem.cloudinaryPublicId}
+							disabled={isCreatingItem}
+						/>
+					</div>
+
 					<!-- Labels Selection -->
 					<div class="mb-4">
 						<div class="flex space-x-4">
@@ -1376,13 +1404,12 @@
 													>
 														<td class="px-6 py-4 whitespace-nowrap">
 															<div class="flex items-center">
-																<div
-																	class="h-8 w-8 bg-gradient-to-r from-indigo-600 to-cyan-600 rounded-lg flex items-center justify-center mr-3"
-																>
-																	<span class="text-xs font-medium text-white">
-																		{item.name.charAt(0).toUpperCase()}
-																	</span>
-																</div>
+																<ItemImage 
+																	itemId={item.id}
+																	itemName={item.name}
+																	cloudinaryPublicId={item.cloudinaryPublicId}
+																	size="small"
+																/>
 																<div class="text-sm font-medium text-gray-900">{item.name}</div>
 															</div>
 														</td>
