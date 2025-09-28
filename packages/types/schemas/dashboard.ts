@@ -19,6 +19,7 @@ export const createItemInput = z.object({
   unit: z.nativeEnum(Unit).optional().default(Unit.PCS),
   shelfId: z.string().min(1, "Shelf ID is required"),
   labelIds: z.array(z.string()).max(2, "Items can have at most 2 labels").optional(),
+  cloudinaryPublicId: z.string().optional(), // Cloudinary public ID for the item image
 });
 
 export const updateShelfInput = z.object({
@@ -34,6 +35,7 @@ export const updateItemInput = z.object({
   cost: z.number().min(0, "Cost cannot be negative").optional(),
   unit: z.nativeEnum(Unit).optional(),
   labelIds: z.array(z.string()).max(2, "Items can have at most 2 labels").optional(),
+  cloudinaryPublicId: z.string().optional(), // Cloudinary public ID for the item image
   // quantity removed - will be handled by adjustItemQuantityInput
   // shelfId removed per requirements - shelf changes will be implemented later with move/copy functionality
 });

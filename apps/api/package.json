@@ -26,6 +26,7 @@
     "@repo/types": "workspace:*",
     "@repo/utils": "workspace:*",
     "@trpc/server": "^11.4.3",
+    "cloudinary": "^2.7.0",
     "dotenv": "^17.2.1",
     "fastify": "^5.4.0",
     "jsonwebtoken": "^9.0.2",
