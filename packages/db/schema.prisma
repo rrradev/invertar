@@ -116,6 +116,7 @@ model Item {
   photos           Photo[]
   labels           ItemLabel[] // Many-to-many relation with labels
   hashId           String      // Hash of name + sorted label names for uniqueness
+  cloudinaryPublicId String?   // Cloudinary public ID for the item image
 
   lastModifiedById String
   lastModifiedBy   User        @relation("ItemLastModifiedBy", fields: [lastModifiedById], references: [id])

@@ -5,6 +5,8 @@
 	import Header from '$lib/components/Header.svelte';
 	import ShelfSkeleton from '$lib/components/skeletons/ShelfSkeleton.svelte';
 	import ShelfItemsSkeleton from '$lib/components/skeletons/ShelfItemsSkeleton.svelte';
+	import ImageUpload from '$lib/components/ImageUpload.svelte';
+	import ItemImage from '$lib/components/ItemImage.svelte';
 	import { createLoadingController } from '$lib/utils/loadingState';
 	import type { PageData } from './$types';
 	import { getLabelStyle } from '$lib/utils/labels';
@@ -30,6 +32,7 @@
 		cost?: number | null;
 		quantity: number;
 		unit: Unit;
+		cloudinaryPublicId?: string | null;
 		labels: Label[];
 		createdAt: string;
 		updatedAt: string;
@@ -136,6 +139,7 @@
 		quantity: 0,
 		unit: Unit.PCS,
 		shelfId: '',
+		cloudinaryPublicId: '',
 		selectedLabels: [null, null] as (Label | null)[] // Two slots for labels
 	});
 
@@ -341,6 +345,7 @@
 				quantity: newItem.quantity || undefined,
 				unit: newItem.unit,
 				shelfId: targetShelfId,
+				cloudinaryPublicId: newItem.cloudinaryPublicId || undefined,
 				labelIds: newItem.selectedLabels.filter((label) => label !== null).map((label) => label!.id)
 			});
 
@@ -354,6 +359,7 @@
 					quantity: 0,
 					unit: Unit.PCS,
 					shelfId: '',
+					cloudinaryPublicId: '',
 					selectedLabels: [null, null]
 				};
 				showCreateItemForm = false;
@@ -847,6 +853,16 @@
 					<h3 class="text-lg font-medium text-gray-900 mb-4">Create New Item</h3>
 
 					<!-- Essential Fields -->
+					<!-- Image Upload -->
+					<div class="mb-4">
+						<label class="block text-sm font-medium text-gray-700 mb-2">Item Image</label>
+						<ImageUpload
+							onImageUploaded={(publicId) => (newItem.cloudinaryPublicId = publicId)}
+							currentImagePublicId={newItem.cloudinaryPublicId}
+							disabled={isCreatingItem}
+						/>
+					</div>
+
 					<div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
 						<div>
 							<label for="itemName" class="block text-sm font-medium text-gray-700 mb-2"
@@ -891,7 +907,7 @@
 											onclick={() => openLabelDropdown(slotIndex)}
 											disabled={isCreatingItem}
 											class="inline-flex items-center px-4 py-2 rounded-full text-sm font-medium border-2 transition-all duration-200 hover:shadow-md focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 disabled:opacity-50 disabled:cursor-not-allowed"
-											style="{getLabelStyle(newItem.selectedLabels[slotIndex]!.color)}"
+											style={getLabelStyle(newItem.selectedLabels[slotIndex]!.color)}
 										>
 											{newItem.selectedLabels[slotIndex]!.name}
 										</button>
@@ -1112,7 +1128,8 @@
 									quantity: 0,
 									unit: Unit.PCS,
 									shelfId: '',
-									selectedLabels: [null, null]
+									selectedLabels: [null, null],
+									cloudinaryPublicId: null
 								};
 							}}
 							class="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 transition-colors"
@@ -1376,13 +1393,12 @@
 													>
 														<td class="px-6 py-4 whitespace-nowrap">
 															<div class="flex items-center">
-																<div
-																	class="h-8 w-8 bg-gradient-to-r from-indigo-600 to-cyan-600 rounded-lg flex items-center justify-center mr-3"
-																>
-																	<span class="text-xs font-medium text-white">
-																		{item.name.charAt(0).toUpperCase()}
-																	</span>
-																</div>
+																<ItemImage
+																	itemId={item.id}
+																	itemName={item.name}
+																	cloudinaryPublicId={item.cloudinaryPublicId}
+																	size="small"
+																/>
 																<div class="text-sm font-medium text-gray-900">{item.name}</div>
 															</div>
 														</td>

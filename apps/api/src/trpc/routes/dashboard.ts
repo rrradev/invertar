@@ -15,6 +15,7 @@ import {
 } from '@repo/types/schemas/dashboard';
 import { SuccessStatus } from '@repo/types/trpc';
 import { generateItemHashId } from '@repo/utils/items';
+import { validatePublicIdForOrganization, deleteImage } from '../../utils/cloudinary';
 
 export const dashboardRouter = router({
   // Get all shelves with user preferences, but only load items for expanded shelves
@@ -110,6 +111,7 @@ export const dashboardRouter = router({
               cost: item.cost,
               quantity: item.quantity,
               unit: item.unit,
+              cloudinaryPublicId: item.cloudinaryPublicId,
               labels: item.labels.map((itemLabel: any) => ({
                 id: itemLabel.label.id,
                 name: itemLabel.label.name,
@@ -248,6 +250,16 @@ export const dashboardRouter = router({
         labelNames = labels.map(label => label.name);
       }
 
+      // Validate cloudinary public ID if provided
+      if (input.cloudinaryPublicId) {
+        if (!validatePublicIdForOrganization(input.cloudinaryPublicId, ctx.user!.organizationId)) {
+          throw new TRPCError({
+            code: "FORBIDDEN",
+            message: "Invalid image for your organization."
+          });
+        }
+      }
+
       // Generate hash for uniqueness validation
       const hashId = generateItemHashId(input.name, labelNames);
 
@@ -280,6 +292,7 @@ export const dashboardRouter = router({
             unit: input.unit ?? 'PCS',
             shelfId: input.shelfId,
             hashId: hashId,
+            cloudinaryPublicId: input.cloudinaryPublicId,
             lastModifiedById: ctx.user!.id,
           },
           include: {
@@ -338,6 +351,7 @@ export const dashboardRouter = router({
           cost: itemWithLabels!.cost,
           quantity: itemWithLabels!.quantity,
           unit: itemWithLabels!.unit,
+          cloudinaryPublicId: itemWithLabels!.cloudinaryPublicId,
           labels: itemWithLabels!.labels.map(itemLabel => ({
             id: itemLabel.label.id,
             name: itemLabel.label.name,
@@ -474,6 +488,16 @@ export const dashboardRouter = router({
         labelNames = item.labels.map(itemLabel => itemLabel.label.name);
       }
 
+      // Validate cloudinary public ID if provided
+      if (input.cloudinaryPublicId !== undefined) {
+        if (input.cloudinaryPublicId && !validatePublicIdForOrganization(input.cloudinaryPublicId, ctx.user!.organizationId)) {
+          throw new TRPCError({
+            code: "FORBIDDEN",
+            message: "Invalid image for your organization."
+          });
+        }
+      }
+
       // Generate new hash if name or labels changed
       const currentLabelNames = item.labels.map(itemLabel => itemLabel.label.name);
       const nameChanged = input.name !== item.name;
@@ -512,6 +536,7 @@ export const dashboardRouter = router({
             cost: input.cost ?? null, // Explicitly set to null when undefined
             unit: input.unit,
             hashId: newHashId,
+            cloudinaryPublicId: input.cloudinaryPublicId,
             lastModifiedById: ctx.user!.id,
           },
         });
@@ -649,6 +674,7 @@ export const dashboardRouter = router({
         where: { id: input.itemId },
         select: {
           name: true,
+          cloudinaryPublicId: true,
           shelf: {
             select: { organizationId: true },
           },
@@ -668,6 +694,16 @@ export const dashboardRouter = router({
           code: "FORBIDDEN",
           message: "You can only delete items in your organization."
         });
+      }
+
+      // Delete the associated image from Cloudinary if it exists
+      if (item.cloudinaryPublicId) {
+        try {
+          await deleteImage(item.cloudinaryPublicId);
+        } catch (error) {
+          console.error('Failed to delete image from Cloudinary:', error);
+          // Continue with item deletion even if image deletion fails
+        }
       }
 
       await prisma.item.delete({
@@ -823,6 +859,7 @@ export const dashboardRouter = router({
         cost: item.cost,
         quantity: item.quantity,
         unit: item.unit,
+        cloudinaryPublicId: item.cloudinaryPublicId,
         labels: item.labels.map((itemLabel: any) => ({
           id: itemLabel.label.id,
           name: itemLabel.label.name,
