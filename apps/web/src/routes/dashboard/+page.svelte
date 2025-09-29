@@ -853,6 +853,16 @@
 					<h3 class="text-lg font-medium text-gray-900 mb-4">Create New Item</h3>
 
 					<!-- Essential Fields -->
+					<!-- Image Upload -->
+					<div class="mb-4">
+						<label class="block text-sm font-medium text-gray-700 mb-2">Item Image</label>
+						<ImageUpload
+							onImageUploaded={(publicId) => (newItem.cloudinaryPublicId = publicId)}
+							currentImagePublicId={newItem.cloudinaryPublicId}
+							disabled={isCreatingItem}
+						/>
+					</div>
+
 					<div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
 						<div>
 							<label for="itemName" class="block text-sm font-medium text-gray-700 mb-2"
@@ -883,16 +893,6 @@
 								{/each}
 							</select>
 						</div>
-					</div>
-
-					<!-- Image Upload -->
-					<div class="mb-4">
-						<label class="block text-sm font-medium text-gray-700 mb-2">Item Image</label>
-						<ImageUpload
-							onImageUploaded={(publicId) => (newItem.cloudinaryPublicId = publicId)}
-							currentImagePublicId={newItem.cloudinaryPublicId}
-							disabled={isCreatingItem}
-						/>
 					</div>
 
 					<!-- Labels Selection -->
@@ -1128,7 +1128,8 @@
 									quantity: 0,
 									unit: Unit.PCS,
 									shelfId: '',
-									selectedLabels: [null, null]
+									selectedLabels: [null, null],
+									cloudinaryPublicId: null
 								};
 							}}
 							class="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 transition-colors"
