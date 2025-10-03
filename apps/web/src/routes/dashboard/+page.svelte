@@ -702,8 +702,8 @@
 					data-testid="create-shelf-form"
 				>
 					<h3 class="text-lg font-medium text-gray-900 mb-4">Create New Shelf</h3>
-					<div class="flex items-end space-x-4">
-						<div class="flex-1">
+					<div class="space-y-4">
+						<div>
 							<label for="shelfName" class="block text-sm font-medium text-gray-700 mb-2"
 								>Shelf Name</label
 							>
@@ -716,7 +716,7 @@
 								disabled={isCreatingShelf}
 							/>
 						</div>
-						<div class="flex space-x-3">
+						<div class="flex justify-end space-x-3">
 							<button
 								onclick={() => (showCreateShelfForm = false)}
 								class="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 transition-colors"
@@ -768,8 +768,8 @@
 					data-testid="create-label-form"
 				>
 					<h3 class="text-lg font-medium text-gray-900 mb-4">Create New Label</h3>
-					<div class="flex items-end space-x-4">
-						<div class="flex-1">
+					<div class="space-y-4">
+						<div>
 							<label for="labelName" class="block text-sm font-medium text-gray-700 mb-2"
 								>Label Name</label
 							>
@@ -782,63 +782,65 @@
 								disabled={isCreatingLabel}
 							/>
 						</div>
-						<div class="flex-shrink-0">
-							<label for="labelColor" class="block text-sm font-medium text-gray-700 mb-2"
-								>Color</label
-							>
-							<div class="relative">
-								<input
-									id="labelColor"
-									type="color"
-									bind:value={newLabel.color}
-									class="h-10 w-16 rounded-md border border-gray-300 cursor-pointer focus:ring-2 focus:ring-purple-500 focus:border-purple-500"
-									disabled={isCreatingLabel}
-								/>
+						<div class="flex items-end space-x-4">
+							<div class="flex-shrink-0">
+								<label for="labelColor" class="block text-sm font-medium text-gray-700 mb-2"
+									>Color</label
+								>
+								<div class="relative">
+									<input
+										id="labelColor"
+										type="color"
+										bind:value={newLabel.color}
+										class="h-10 w-16 rounded-md border border-gray-300 cursor-pointer focus:ring-2 focus:ring-purple-500 focus:border-purple-500"
+										disabled={isCreatingLabel}
+									/>
+								</div>
 							</div>
-						</div>
-						<div class="flex space-x-3">
-							<button
-								onclick={() => {
-									showCreateLabelForm = false;
-									newLabel = { name: '', color: '#3B82F6' };
-								}}
-								class="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-purple-500 transition-colors"
-								disabled={isCreatingLabel}
-								data-testid="cancel-label-button"
-							>
-								Cancel
-							</button>
-							<button
-								onclick={createLabel}
-								disabled={isCreatingLabel}
-								class="px-4 py-2 text-sm font-medium text-white bg-gradient-to-r from-purple-600 to-purple-700 hover:from-purple-700 hover:to-purple-800 rounded-md focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-purple-500 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200"
-								data-testid="submit-label-button"
-							>
-								{#if isCreatingLabel}
-									<svg
-										class="animate-spin -ml-1 mr-2 h-4 w-4 text-white inline"
-										fill="none"
-										viewBox="0 0 24 24"
-									>
-										<circle
-											class="opacity-25"
-											cx="12"
-											cy="12"
-											r="10"
-											stroke="currentColor"
-											stroke-width="4"
-										></circle>
-										<path
-											class="opacity-75"
-											fill="currentColor"
-											d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
-										></path>
-									</svg>
-									Creating...
-								{:else}
-									Create Label
-								{/if}
-							</button>
+							<div class="flex flex-1 justify-end space-x-3">
+								<button
+									onclick={() => {
+										showCreateLabelForm = false;
+										newLabel = { name: '', color: '#3B82F6' };
+									}}
+									class="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-purple-500 transition-colors"
+									disabled={isCreatingLabel}
+									data-testid="cancel-label-button"
+								>
+									Cancel
+								</button>
+								<button
+									onclick={createLabel}
+									disabled={isCreatingLabel}
+									class="px-4 py-2 text-sm font-medium text-white bg-gradient-to-r from-purple-600 to-purple-700 hover:from-purple-700 hover:to-purple-800 rounded-md focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-purple-500 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200"
+									data-testid="submit-label-button"
+								>
+									{#if isCreatingLabel}
+										<svg
+											class="animate-spin -ml-1 mr-2 h-4 w-4 text-white inline"
+											fill="none"
+											viewBox="0 0 24 24"
+										>
+											<circle
+												class="opacity-25"
+												cx="12"
+												cy="12"
+												r="10"
+												stroke="currentColor"
+												stroke-width="4"
+											></circle>
+											<path
+												class="opacity-75"
+												fill="currentColor"
+												d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+											></path>
+										</svg>
+										Creating...
+									{:else}
+										Create Label
+									{/if}
+								</button>
+							</div>
 						</div>
 					</div>
 				</div>
@@ -1650,7 +1652,7 @@
 							</div>
 
 							<!-- Quantity Input with Buttons -->
-							<div class="flex items-center space-x-2">
+							<div class="flex items-center gap-2 flex-wrap sm:flex-nowrap">
 								<!-- Decrease buttons -->
 								<button
 									type="button"
@@ -1670,15 +1672,6 @@
 								>
 									-1
 								</button>
-								<button
-									type="button"
-									onclick={() => adjustQuantityBy(-0.1)}
-									disabled={isUpdatingItem || isDeletingItem || quantityInput < 0.1}
-									class="px-2 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-indigo-500 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
-									data-testid="decrease-01-button"
-								>
-									-0.1
-								</button>
 
 								<!-- Quantity Input Field -->
 								<input
@@ -1686,21 +1679,12 @@
 									min="0"
 									step="0.01"
 									bind:value={quantityInput}
-									class="flex-1 px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-colors text-center"
+									class="flex-1 min-w-[80px] px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-colors text-center"
 									disabled={isUpdatingItem || isDeletingItem}
 									data-testid="quantity-input"
 								/>
 
 								<!-- Increase buttons -->
-								<button
-									type="button"
-									onclick={() => adjustQuantityBy(0.1)}
-									disabled={isUpdatingItem || isDeletingItem}
-									class="px-2 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-indigo-500 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
-									data-testid="increase-01-button"
-								>
-									+0.1
-								</button>
 								<button
 									type="button"
 									onclick={() => adjustQuantityBy(1)}
