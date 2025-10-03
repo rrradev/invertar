@@ -56,12 +56,7 @@
 <div class="{sizeClasses} rounded-lg flex items-center justify-center mr-3 overflow-hidden">
 	{#if loading}
 		<!-- Loading state with skeleton shimmer animation -->
-		<SkeletonBase 
-			width="100%" 
-			height="100%" 
-			className="absolute inset-0" 
-			rounded="lg" 
-		/>
+		<SkeletonBase width="100%" height="100%" className="absolute inset-0" rounded="lg" />
 	{:else if imageUrl && !imageError}
 		<!-- Actual image -->
 		<img
