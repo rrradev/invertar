@@ -1489,8 +1489,10 @@
 <!-- Edit Item Modal -->
 {#if showEditItemModal && editingItem}
 	<div class="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full z-50">
-		<div class="relative top-20 mx-auto p-5 border w-full max-w-2xl shadow-lg rounded-md bg-white">
-			<div class="mt-3">
+		<div
+			class="relative top-4 sm:top-20 mx-auto my-4 sm:my-0 p-4 sm:p-5 border w-full max-w-2xl shadow-lg rounded-md bg-white"
+		>
+			<div class="mt-1 sm:mt-3">
 				<div class="flex items-center justify-between mb-4">
 					<h3 class="text-lg font-medium text-gray-900" data-testid="edit-modal-title">
 						Edit Item
@@ -1529,7 +1531,7 @@
 				{/if}
 
 				<!-- Item Details Form -->
-				<div class="space-y-6">
+				<div class="space-y-4 sm:space-y-6">
 					<!-- Name Field (at top) -->
 					<div>
 						<label for="editItemName" class="block text-sm font-medium text-gray-700 mb-2">
