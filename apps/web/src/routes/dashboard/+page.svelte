@@ -1380,7 +1380,7 @@
 														<td class="px-6 py-4 whitespace-nowrap">
 															<div class="flex items-center gap-2">
 																<span
-																	class="inline-flex items-center justify-center px-2.5 py-1 rounded-md text-sm font-semibold bg-gradient-to-br from-indigo-50 to-cyan-50 text-indigo-700 border border-indigo-200 shadow-sm"
+																	class="inline-flex items-center justify-center px-2.5 py-1 rounded-md text-sm font-semibold bg-gradient-to-br from-orange-25 to-amber-50 text-black-200 border border-amber-200 shadow-sm"
 																>
 																	{item.quantity}x
 																</span>
