@@ -1385,46 +1385,14 @@
 
 							<!-- Items List - Only show when shelf is expanded -->
 							{#if shelf.isExpanded}
-								{#if loadingShelfItems.includes(shelf.id)}
-									<!-- Show skeleton while loading items -->
-									<ShelfItemsSkeleton rows={3} />
-								{:else}
-									<!-- Search Box -->
-									<div class="px-6 py-4 bg-white border-b border-gray-200">
-										<div class="relative">
-											<div
-												class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none"
-											>
-												<svg
-													class="h-5 w-5 text-gray-400"
-													fill="none"
-													stroke="currentColor"
-													viewBox="0 0 24 24"
-												>
-													<path
-														stroke-linecap="round"
-														stroke-linejoin="round"
-														stroke-width="2"
-														d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
-													/>
-												</svg>
-											</div>
-											<input
-												type="text"
-												placeholder="Search items..."
-												value={shelfSearchQueries[shelf.id] || ''}
-												oninput={(e) => handleSearchInput(shelf.id, e.currentTarget.value)}
-												class="block w-full pl-10 pr-3 py-3 border border-gray-300 rounded-lg leading-5 bg-white placeholder-gray-500 focus:outline-none focus:placeholder-gray-400 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm transition-all duration-200 shadow-sm hover:shadow-md"
-												data-testid="search-items-input"
-												data-shelf-id={shelf.id}
-											/>
-										</div>
-									</div>
-
-									{#if shelf.items.length === 0}
-										<div class="px-6 py-8 text-center" data-testid="empty-shelf-state">
+								<!-- Search Box - Always visible when shelf is expanded -->
+								<div class="px-6 py-4 bg-white border-b border-gray-200">
+									<div class="relative">
+										<div
+											class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none"
+										>
 											<svg
-												class="mx-auto h-8 w-8 text-gray-400"
+												class="h-5 w-5 text-gray-400"
 												fill="none"
 												stroke="currentColor"
 												viewBox="0 0 24 24"
@@ -1433,243 +1401,274 @@
 													stroke-linecap="round"
 													stroke-linejoin="round"
 													stroke-width="2"
-													d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"
+													d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
 												/>
 											</svg>
-											<p class="mt-2 text-sm text-gray-500">
-												{shelfSearchQueries[shelf.id]
-													? 'No items match your search'
-													: 'No items in this shelf yet'}
-											</p>
 										</div>
-									{:else}
-										<div class="overflow-x-auto">
-											<table class="min-w-full divide-y divide-gray-200" data-testid="items-table">
-												<thead class="bg-gray-50">
-													<tr>
-														<th
-															class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
-														>
-															Item
-														</th>
-														<th
-															class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
-														>
-															Labels
-														</th>
-														<th
-															class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
-														>
-															Description
-														</th>
-														<th
-															class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
-														>
-															Cost
-														</th>
-														<th
-															class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
-														>
-															Price
-														</th>
-														<th
-															class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
-														>
-															Total Value
-														</th>
-														<th
-															class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
-														>
-															Unit
-														</th>
-														<th
-															class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
-														>
-															Actions
-														</th>
-													</tr>
-												</thead>
-												<tbody class="bg-white divide-y divide-gray-200">
-													{#each shelf.items as item (item.id)}
-														<tr
-															class="hover:bg-gray-50 transition-colors"
-															data-testid="item-row"
-															data-item-id={item.id}
-														>
-															<td class="px-6 py-4 whitespace-nowrap">
-																<div class="flex items-center gap-2">
-																	<span
-																		class="inline-flex items-center justify-center px-2.5 py-1 rounded-md text-sm font-semibold bg-gradient-to-br from-orange-25 to-amber-50 text-black-200 border border-amber-200 shadow-sm"
-																	>
-																		{item.quantity}x
-																	</span>
-																	<ItemImage
-																		itemId={item.id}
-																		itemName={item.name}
-																		cloudinaryPublicId={item.cloudinaryPublicId}
-																		size="small"
-																	/>
-																	<div class="text-sm font-medium text-gray-900">{item.name}</div>
-																</div>
-															</td>
-															<td class="px-6 py-4 whitespace-nowrap">
-																<div class="flex items-center space-x-1">
-																	{#each item.labels as label (label.id)}
-																		<span
-																			class="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium border"
-																			style={getLabelStyle(label.color)}
-																		>
-																			{label.name}
-																		</span>
-																	{/each}
-																	{#if item.labels.length === 0}
-																		<span class="text-sm text-gray-400">—</span>
-																	{/if}
-																</div>
-															</td>
-															<td class="px-6 py-4 whitespace-nowrap">
-																<div class="text-sm text-gray-900">
-																	{item.description || '—'}
-																</div>
-															</td>
-															<td class="px-6 py-4 whitespace-nowrap">
-																<div class="text-sm text-gray-900">
-																	{item.cost != null ? formatPrice(item.cost) : '-'}
-																</div>
-															</td>
-															<td class="px-6 py-4 whitespace-nowrap">
-																<div class="text-sm text-gray-900">{formatPrice(item.price)}</div>
-															</td>
-															<td class="px-6 py-4 whitespace-nowrap">
-																<div class="text-sm font-semibold text-gray-900">
-																	{formatPrice(item.price * item.quantity)}
-																</div>
-															</td>
-															<td class="px-6 py-4 whitespace-nowrap">
-																<div class="text-sm text-gray-900">{item.unit}</div>
-															</td>
-															<td class="px-6 py-4 whitespace-nowrap">
-																<button
-																	onclick={() => openEditModal(item)}
-																	class="inline-flex items-center justify-center w-8 h-8 text-gray-400 hover:text-indigo-600 rounded-full hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-indigo-500 transition-colors"
-																	aria-label="Edit item"
-																	data-testid="edit-item-button"
-																	data-item-id={item.id}
+										<input
+											type="text"
+											placeholder="Search items..."
+											value={shelfSearchQueries[shelf.id] || ''}
+											oninput={(e) => handleSearchInput(shelf.id, e.currentTarget.value)}
+											class="block w-full pl-10 pr-3 py-3 border border-gray-300 rounded-lg leading-5 bg-white placeholder-gray-500 focus:outline-none focus:placeholder-gray-400 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm transition-all duration-200 shadow-sm hover:shadow-md"
+											data-testid="search-items-input"
+											data-shelf-id={shelf.id}
+										/>
+									</div>
+								</div>
+
+								<!-- Items Content Area -->
+								{#if loadingShelfItems.includes(shelf.id)}
+									<!-- Show skeleton while loading items -->
+									<ShelfItemsSkeleton rows={3} />
+								{:else if shelf.items.length === 0}
+									<div class="px-6 py-8 text-center" data-testid="empty-shelf-state">
+										<svg
+											class="mx-auto h-8 w-8 text-gray-400"
+											fill="none"
+											stroke="currentColor"
+											viewBox="0 0 24 24"
+										>
+											<path
+												stroke-linecap="round"
+												stroke-linejoin="round"
+												stroke-width="2"
+												d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"
+											/>
+										</svg>
+										<p class="mt-2 text-sm text-gray-500">
+											{shelfSearchQueries[shelf.id]
+												? 'No items match your search'
+												: 'No items in this shelf yet'}
+										</p>
+									</div>
+								{:else}
+									<div class="overflow-x-auto">
+										<table class="min-w-full divide-y divide-gray-200" data-testid="items-table">
+											<thead class="bg-gray-50">
+												<tr>
+													<th
+														class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
+													>
+														Item
+													</th>
+													<th
+														class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
+													>
+														Labels
+													</th>
+													<th
+														class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
+													>
+														Description
+													</th>
+													<th
+														class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
+													>
+														Cost
+													</th>
+													<th
+														class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
+													>
+														Price
+													</th>
+													<th
+														class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
+													>
+														Total Value
+													</th>
+													<th
+														class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
+													>
+														Unit
+													</th>
+													<th
+														class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
+													>
+														Actions
+													</th>
+												</tr>
+											</thead>
+											<tbody class="bg-white divide-y divide-gray-200">
+												{#each shelf.items as item (item.id)}
+													<tr
+														class="hover:bg-gray-50 transition-colors"
+														data-testid="item-row"
+														data-item-id={item.id}
+													>
+														<td class="px-6 py-4 whitespace-nowrap">
+															<div class="flex items-center gap-2">
+																<span
+																	class="inline-flex items-center justify-center px-2.5 py-1 rounded-md text-sm font-semibold bg-gradient-to-br from-orange-25 to-amber-50 text-black-200 border border-amber-200 shadow-sm"
 																>
-																	<!-- Pencil Icon -->
-																	<svg
-																		class="w-4 h-4"
-																		fill="none"
-																		stroke="currentColor"
-																		viewBox="0 0 24 24"
+																	{item.quantity}x
+																</span>
+																<ItemImage
+																	itemId={item.id}
+																	itemName={item.name}
+																	cloudinaryPublicId={item.cloudinaryPublicId}
+																	size="small"
+																/>
+																<div class="text-sm font-medium text-gray-900">{item.name}</div>
+															</div>
+														</td>
+														<td class="px-6 py-4 whitespace-nowrap">
+															<div class="flex items-center space-x-1">
+																{#each item.labels as label (label.id)}
+																	<span
+																		class="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium border"
+																		style={getLabelStyle(label.color)}
 																	>
-																		<path
-																			stroke-linecap="round"
-																			stroke-linejoin="round"
-																			stroke-width="2"
-																			d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"
-																		/>
-																	</svg>
-																</button>
-															</td>
-														</tr>
-													{/each}
-												</tbody>
-											</table>
-										</div>
-
-										<!-- Pagination Controls -->
-										{#if shelf.totalPages && shelf.totalPages > 1}
-											<div class="px-6 py-4 bg-gray-50 border-t border-gray-200">
-												<div class="flex items-center justify-between">
-													<div class="text-sm text-gray-700">
-														Showing page <span class="font-medium">{shelf.currentPage || 1}</span>
-														of{' '}
-														<span class="font-medium">{shelf.totalPages}</span>
-														<span class="text-gray-500 ml-2">
-															({shelf.totalCount || 0} total items)
-														</span>
-													</div>
-													<div class="flex items-center space-x-2">
-														<!-- Previous Button -->
-														<button
-															onclick={() => goToPage(shelf.id, (shelf.currentPage || 1) - 1)}
-															disabled={!shelf.hasPreviousPage}
-															class="relative inline-flex items-center px-3 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-indigo-500 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
-															data-testid="prev-page-button"
-														>
-															<svg
-																class="h-4 w-4"
-																fill="none"
-																stroke="currentColor"
-																viewBox="0 0 24 24"
-															>
-																<path
-																	stroke-linecap="round"
-																	stroke-linejoin="round"
-																	stroke-width="2"
-																	d="M15 19l-7-7 7-7"
-																/>
-															</svg>
-															Previous
-														</button>
-
-														<!-- Page Numbers -->
-														{#each Array.from({ length: Math.min(5, shelf.totalPages) }, (_, i) => {
-															const current = shelf.currentPage || 1;
-															const total = shelf.totalPages || 1;
-															let pageNum;
-
-															if (total <= 5) {
-																pageNum = i + 1;
-															} else if (current <= 3) {
-																pageNum = i + 1;
-															} else if (current >= total - 2) {
-																pageNum = total - 4 + i;
-															} else {
-																pageNum = current - 2 + i;
-															}
-															return pageNum;
-														}) as pageNum}
+																		{label.name}
+																	</span>
+																{/each}
+																{#if item.labels.length === 0}
+																	<span class="text-sm text-gray-400">—</span>
+																{/if}
+															</div>
+														</td>
+														<td class="px-6 py-4 whitespace-nowrap">
+															<div class="text-sm text-gray-900">
+																{item.description || '—'}
+															</div>
+														</td>
+														<td class="px-6 py-4 whitespace-nowrap">
+															<div class="text-sm text-gray-900">
+																{item.cost != null ? formatPrice(item.cost) : '-'}
+															</div>
+														</td>
+														<td class="px-6 py-4 whitespace-nowrap">
+															<div class="text-sm text-gray-900">{formatPrice(item.price)}</div>
+														</td>
+														<td class="px-6 py-4 whitespace-nowrap">
+															<div class="text-sm font-semibold text-gray-900">
+																{formatPrice(item.price * item.quantity)}
+															</div>
+														</td>
+														<td class="px-6 py-4 whitespace-nowrap">
+															<div class="text-sm text-gray-900">{item.unit}</div>
+														</td>
+														<td class="px-6 py-4 whitespace-nowrap">
 															<button
-																onclick={() => goToPage(shelf.id, pageNum)}
-																class="relative inline-flex items-center px-4 py-2 border text-sm font-medium rounded-md transition-colors focus:outline-none focus:ring-2 focus:ring-indigo-500 {pageNum ===
-																(shelf.currentPage || 1)
-																	? 'z-10 bg-indigo-600 border-indigo-600 text-white'
-																	: 'bg-white border-gray-300 text-gray-700 hover:bg-gray-50'}"
-																data-testid="page-button"
-																data-page={pageNum}
+																onclick={() => openEditModal(item)}
+																class="inline-flex items-center justify-center w-8 h-8 text-gray-400 hover:text-indigo-600 rounded-full hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-indigo-500 transition-colors"
+																aria-label="Edit item"
+																data-testid="edit-item-button"
+																data-item-id={item.id}
 															>
-																{pageNum}
+																<!-- Pencil Icon -->
+																<svg
+																	class="w-4 h-4"
+																	fill="none"
+																	stroke="currentColor"
+																	viewBox="0 0 24 24"
+																>
+																	<path
+																		stroke-linecap="round"
+																		stroke-linejoin="round"
+																		stroke-width="2"
+																		d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"
+																	/>
+																</svg>
 															</button>
-														{/each}
+														</td>
+													</tr>
+												{/each}
+											</tbody>
+										</table>
+									</div>
 
-														<!-- Next Button -->
-														<button
-															onclick={() => goToPage(shelf.id, (shelf.currentPage || 1) + 1)}
-															disabled={!shelf.hasNextPage}
-															class="relative inline-flex items-center px-3 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-indigo-500 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
-															data-testid="next-page-button"
+									<!-- Pagination Controls -->
+									{#if shelf.totalPages && shelf.totalPages > 1}
+										<div class="px-6 py-4 bg-gray-50 border-t border-gray-200">
+											<div class="flex items-center justify-between">
+												<div class="text-sm text-gray-700">
+													Showing page <span class="font-medium">{shelf.currentPage || 1}</span>
+													of{' '}
+													<span class="font-medium">{shelf.totalPages}</span>
+													<span class="text-gray-500 ml-2">
+														({shelf.totalCount || 0} total items)
+													</span>
+												</div>
+												<div class="flex items-center space-x-2">
+													<!-- Previous Button -->
+													<button
+														onclick={() => goToPage(shelf.id, (shelf.currentPage || 1) - 1)}
+														disabled={!shelf.hasPreviousPage}
+														class="relative inline-flex items-center px-3 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-indigo-500 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+														data-testid="prev-page-button"
+													>
+														<svg
+															class="h-4 w-4"
+															fill="none"
+															stroke="currentColor"
+															viewBox="0 0 24 24"
 														>
-															Next
-															<svg
-																class="h-4 w-4 ml-1"
-																fill="none"
-																stroke="currentColor"
-																viewBox="0 0 24 24"
-															>
-																<path
-																	stroke-linecap="round"
-																	stroke-linejoin="round"
-																	stroke-width="2"
-																	d="M9 5l7 7-7 7"
-																/>
-															</svg>
+															<path
+																stroke-linecap="round"
+																stroke-linejoin="round"
+																stroke-width="2"
+																d="M15 19l-7-7 7-7"
+															/>
+														</svg>
+														Previous
+													</button>
+
+													<!-- Page Numbers -->
+													{#each Array.from({ length: Math.min(5, shelf.totalPages) }, (_, i) => {
+														const current = shelf.currentPage || 1;
+														const total = shelf.totalPages || 1;
+														let pageNum;
+
+														if (total <= 5) {
+															pageNum = i + 1;
+														} else if (current <= 3) {
+															pageNum = i + 1;
+														} else if (current >= total - 2) {
+															pageNum = total - 4 + i;
+														} else {
+															pageNum = current - 2 + i;
+														}
+														return pageNum;
+													}) as pageNum}
+														<button
+															onclick={() => goToPage(shelf.id, pageNum)}
+															class="relative inline-flex items-center px-4 py-2 border text-sm font-medium rounded-md transition-colors focus:outline-none focus:ring-2 focus:ring-indigo-500 {pageNum ===
+															(shelf.currentPage || 1)
+																? 'z-10 bg-indigo-600 border-indigo-600 text-white'
+																: 'bg-white border-gray-300 text-gray-700 hover:bg-gray-50'}"
+															data-testid="page-button"
+															data-page={pageNum}
+														>
+															{pageNum}
 														</button>
-													</div>
+													{/each}
+
+													<!-- Next Button -->
+													<button
+														onclick={() => goToPage(shelf.id, (shelf.currentPage || 1) + 1)}
+														disabled={!shelf.hasNextPage}
+														class="relative inline-flex items-center px-3 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-indigo-500 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+														data-testid="next-page-button"
+													>
+														Next
+														<svg
+															class="h-4 w-4 ml-1"
+															fill="none"
+															stroke="currentColor"
+															viewBox="0 0 24 24"
+														>
+															<path
+																stroke-linecap="round"
+																stroke-linejoin="round"
+																stroke-width="2"
+																d="M9 5l7 7-7 7"
+															/>
+														</svg>
+													</button>
 												</div>
 											</div>
-										{/if}
+										</div>
 									{/if}
 								{/if}
 							{/if}
