@@ -35,8 +35,6 @@
 		cloudinaryPublicId?: string | null;
 		labels: Label[];
 		createdAt: string;
-		updatedAt: string;
-		lastModifiedBy: string;
 	}
 
 	interface Shelf {
@@ -424,9 +422,7 @@
 			quantity: item.quantity,
 			unit: item.unit,
 			labels: item.labels.map((label) => ({ ...label })), // Deep copy labels array
-			createdAt: item.createdAt,
-			updatedAt: item.updatedAt,
-			lastModifiedBy: item.lastModifiedBy
+			createdAt: item.createdAt
 		};
 		// Store original values for change detection
 		originalItem = {
@@ -438,9 +434,7 @@
 			quantity: item.quantity,
 			unit: item.unit,
 			labels: item.labels.map((label) => ({ ...label })), // Deep copy labels array
-			createdAt: item.createdAt,
-			updatedAt: item.updatedAt,
-			lastModifiedBy: item.lastModifiedBy
+			createdAt: item.createdAt
 		};
 		quantityInput = item.quantity;
 		showEditItemModal = true;
@@ -1362,22 +1356,12 @@
 													<th
 														class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
 													>
-														Quantity
-													</th>
-													<th
-														class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
-													>
-														Unit
-													</th>
-													<th
-														class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
-													>
 														Total Value
 													</th>
 													<th
 														class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
 													>
-														Last Modified
+														Unit
 													</th>
 													<th
 														class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
@@ -1394,7 +1378,12 @@
 														data-item-id={item.id}
 													>
 														<td class="px-6 py-4 whitespace-nowrap">
-															<div class="flex items-center">
+															<div class="flex items-center gap-2">
+																<span
+																	class="inline-flex items-center justify-center px-2.5 py-1 rounded-md text-sm font-semibold bg-gradient-to-br from-orange-25 to-amber-50 text-black-200 border border-amber-200 shadow-sm"
+																>
+																	{item.quantity}x
+																</span>
 																<ItemImage
 																	itemId={item.id}
 																	itemName={item.name}
@@ -1433,19 +1422,12 @@
 															<div class="text-sm text-gray-900">{formatPrice(item.price)}</div>
 														</td>
 														<td class="px-6 py-4 whitespace-nowrap">
-															<div class="text-sm text-gray-900">{item.quantity}</div>
-														</td>
-														<td class="px-6 py-4 whitespace-nowrap">
-															<div class="text-sm text-gray-900">{item.unit}</div>
-														</td>
-														<td class="px-6 py-4 whitespace-nowrap">
 															<div class="text-sm font-semibold text-gray-900">
 																{formatPrice(item.price * item.quantity)}
 															</div>
 														</td>
 														<td class="px-6 py-4 whitespace-nowrap">
-															<div class="text-sm text-gray-900">{formatDate(item.updatedAt)}</div>
-															<div class="text-xs text-gray-500">by {item.lastModifiedBy}</div>
+															<div class="text-sm text-gray-900">{item.unit}</div>
 														</td>
 														<td class="px-6 py-4 whitespace-nowrap">
 															<button

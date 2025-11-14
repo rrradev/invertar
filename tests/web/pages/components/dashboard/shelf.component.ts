@@ -86,10 +86,8 @@ export default class Shelf extends BaseComponent {
             'Description',
             'Cost',
             'Price',
-            'Quantity',
-            'Unit',
             'Total Value',
-            'Last Modified',
+            'Unit',
             'Actions',
         ];
 

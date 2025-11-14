@@ -118,8 +118,6 @@ export const dashboardRouter = router({
                 color: itemLabel.label.color,
               })),
               createdAt: item.createdAt.toISOString(),
-              updatedAt: item.updatedAt.toISOString(),
-              lastModifiedBy: item.lastModifiedBy.username,
             }))
           : [];
 
@@ -358,8 +356,6 @@ export const dashboardRouter = router({
             color: itemLabel.label.color,
           })),
           createdAt: itemWithLabels!.createdAt.toISOString(),
-          updatedAt: itemWithLabels!.updatedAt.toISOString(),
-          lastModifiedBy: itemWithLabels!.lastModifiedBy.username,
         },
       };
     }),
@@ -866,8 +862,6 @@ export const dashboardRouter = router({
           color: itemLabel.label.color,
         })),
         createdAt: item.createdAt.toISOString(),
-        updatedAt: item.updatedAt.toISOString(),
-        lastModifiedBy: item.lastModifiedBy.username,
       }));
 
       return {

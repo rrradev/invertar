@@ -165,10 +165,9 @@ test.describe('Dashboard - Item Management', () => {
       await expect(headers.nth(2)).toContainText('Description');
       await expect(headers.nth(3)).toContainText('Cost');
       await expect(headers.nth(4)).toContainText('Price');
-      await expect(headers.nth(5)).toContainText('Quantity');
+      await expect(headers.nth(5)).toContainText('Total Value');
       await expect(headers.nth(6)).toContainText('Unit');
-      await expect(headers.nth(7)).toContainText('Total Value');
-      await expect(headers.nth(8)).toContainText('Last Modified');
+      await expect(headers.nth(7)).toContainText('Actions');
     }
   });
 });
