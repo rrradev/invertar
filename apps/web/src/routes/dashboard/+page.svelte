@@ -1390,9 +1390,7 @@
 																	cloudinaryPublicId={item.cloudinaryPublicId}
 																	size="small"
 																/>
-																<div class="text-sm font-medium text-gray-900">
-																	{item.name}
-																</div>
+																<div class="text-sm font-medium text-gray-900">{item.name}</div>
 															</div>
 														</td>
 														<td class="px-6 py-4 whitespace-nowrap">
