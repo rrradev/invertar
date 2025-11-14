@@ -7,6 +7,9 @@ export default class Shelf extends BaseComponent {
     expandButton: Locator;
     totalValue: Locator;
     shelfName: Locator;
+    searchInput: Locator;
+    prevPageButton: Locator;
+    nextPageButton: Locator;
 
     constructor($: Locator) {
         super($);
@@ -15,6 +18,9 @@ export default class Shelf extends BaseComponent {
         this.expandButton = this.$.locator('[data-testid="shelf-expand-button"]');
         this.totalValue = this.$.locator('[data-testid="shelf-total-value"]');
         this.shelfName = this.$.locator('[data-testid="shelf-name"]');
+        this.searchInput = this.$.locator('[data-testid="search-items-input"]');
+        this.prevPageButton = this.$.locator('[data-testid="prev-page-button"]');
+        this.nextPageButton = this.$.locator('[data-testid="next-page-button"]');
     }
 
     async getShelfId(): Promise<string> {
@@ -116,4 +122,58 @@ export default class Shelf extends BaseComponent {
     async getName(): Promise<string> {
         return (await this.$.getByTestId('shelf-name').textContent()) || '';
     }
+
+    // Search methods
+    async searchItems(query: string): Promise<void> {
+        await this.searchInput.fill(query);
+        // Wait for debounce (250ms) + request
+        await this.$.page().waitForTimeout(500);
+    }
+
+    async clearSearch(): Promise<void> {
+        await this.searchInput.clear();
+        await this.$.page().waitForTimeout(500);
+    }
+
+    async getSearchQuery(): Promise<string> {
+        return (await this.searchInput.inputValue()) || '';
+    }
+
+    // Pagination methods
+    async goToNextPage(): Promise<void> {
+        await this.nextPageButton.click();
+        await this.$.page().waitForTimeout(500);
+    }
+
+    async goToPreviousPage(): Promise<void> {
+        await this.prevPageButton.click();
+        await this.$.page().waitForTimeout(500);
+    }
+
+    async goToPage(pageNumber: number): Promise<void> {
+        const pageButton = this.$.locator(`[data-testid="page-button"][data-page="${pageNumber}"]`);
+        await pageButton.click();
+        await this.$.page().waitForTimeout(500);
+    }
+
+    async getCurrentPage(): Promise<number> {
+        const text = await this.$.textContent();
+        const match = text?.match(/Showing page (\d+) of \d+/);
+        return match ? parseInt(match[1]) : 1;
+    }
+
+    async getTotalPages(): Promise<number> {
+        const text = await this.$.textContent();
+        const match = text?.match(/Showing page \d+ of (\d+)/);
+        return match ? parseInt(match[1]) : 1;
+    }
+
+    async isNextPageEnabled(): Promise<boolean> {
+        return !(await this.nextPageButton.isDisabled());
+    }
+
+    async isPreviousPageEnabled(): Promise<boolean> {
+        return !(await this.prevPageButton.isDisabled());
+    }
 }
+
