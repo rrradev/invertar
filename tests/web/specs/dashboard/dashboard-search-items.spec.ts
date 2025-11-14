@@ -6,6 +6,36 @@ test.describe('Dashboard - Search and Pagination', () => {
 	let shelfId: string;
 	const itemNames: string[] = [];
 
+	test('should hide search box when shelf is empty', async ({ authenticatedPage }) => {
+		// Navigate to dashboard
+		await authenticatedPage.goto('/dashboard');
+		await expect(authenticatedPage.locator('[data-testid="dashboard-title"]')).toBeVisible();
+
+		// Create an empty test shelf
+		const emptyShelfName = `Empty Shelf ${faker.string.alphanumeric(6)}`;
+		await authenticatedPage.locator('[data-testid="create-shelf-button"]').click();
+		await authenticatedPage.locator('#shelfName').fill(emptyShelfName);
+		await authenticatedPage.locator('[data-testid="submit-shelf-button"]').click();
+		await expect(authenticatedPage.locator('[data-testid="success-message"]')).toBeVisible();
+
+		// Expand the empty shelf
+		const emptyShelf = authenticatedPage
+			.locator('[data-testid="shelf-item"]')
+			.filter({ hasText: emptyShelfName });
+		await emptyShelf.locator('[data-testid="shelf-expand-button"]').click();
+		await authenticatedPage.waitForTimeout(500);
+
+		// Search box should NOT be visible for empty shelf
+		const searchInput = emptyShelf.locator('[data-testid="search-items-input"]');
+		await expect(searchInput).not.toBeVisible();
+
+		// Empty state should be visible
+		await expect(emptyShelf.locator('[data-testid="empty-shelf-state"]')).toBeVisible();
+		await expect(emptyShelf.locator('[data-testid="empty-shelf-state"]')).toContainText(
+			'No items in this shelf yet'
+		);
+	});
+
 	test.beforeEach(async ({ authenticatedPage, adminUsername, adminPassword }) => {
 		// Navigate to dashboard
 		await authenticatedPage.goto('/dashboard');
