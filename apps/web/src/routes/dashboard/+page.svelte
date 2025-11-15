@@ -262,6 +262,15 @@
 			clearTimeout(shelfSearchTimeouts[shelfId]);
 		}
 
+		// Don't trigger search if query is empty or only whitespace
+		if (query.trim() === '') {
+			// If query becomes empty, reset to show all items
+			shelfSearchTimeouts[shelfId] = setTimeout(() => {
+				searchShelfItems(shelfId, 1);
+			}, 250) as unknown as number;
+			return;
+		}
+
 		// Set new timeout for debounce (250ms)
 		shelfSearchTimeouts[shelfId] = setTimeout(() => {
 			searchShelfItems(shelfId, 1);
@@ -1597,7 +1606,7 @@
 													<button
 														onclick={() => goToPage(shelf.id, (shelf.currentPage || 1) - 1)}
 														disabled={!shelf.hasPreviousPage}
-														class="relative inline-flex items-center px-3 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-indigo-500 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+														class="relative inline-flex items-center px-3 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 hover:border-gray-400 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200 shadow-sm"
 														data-testid="prev-page-button"
 													>
 														<svg
@@ -1635,10 +1644,10 @@
 													}) as pageNum}
 														<button
 															onclick={() => goToPage(shelf.id, pageNum)}
-															class="relative inline-flex items-center px-4 py-2 border text-sm font-medium rounded-md transition-colors focus:outline-none focus:ring-2 focus:ring-indigo-500 {pageNum ===
+															class="relative inline-flex items-center px-4 py-2 border text-sm font-medium rounded-md transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 {pageNum ===
 															(shelf.currentPage || 1)
-																? 'z-10 bg-indigo-600 border-indigo-600 text-white'
-																: 'bg-white border-gray-300 text-gray-700 hover:bg-gray-50'}"
+																? 'z-10 bg-gradient-to-r from-indigo-600 to-cyan-600 border-transparent text-white shadow-md hover:from-indigo-700 hover:to-cyan-700'
+																: 'bg-white border-gray-300 text-gray-700 hover:bg-gray-50 hover:border-gray-400'}"
 															data-testid="page-button"
 															data-page={pageNum}
 														>
@@ -1650,7 +1659,7 @@
 													<button
 														onclick={() => goToPage(shelf.id, (shelf.currentPage || 1) + 1)}
 														disabled={!shelf.hasNextPage}
-														class="relative inline-flex items-center px-3 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-indigo-500 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+														class="relative inline-flex items-center px-3 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 hover:border-gray-400 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200 shadow-sm"
 														data-testid="next-page-button"
 													>
 														Next
