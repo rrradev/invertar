@@ -255,6 +255,12 @@
 
 	// Handle search input with debounce
 	function handleSearchInput(shelfId: string, query: string) {
+		// No change if both previous and current queries are empty or identical
+		if ((query.trim() === '' && !shelfSearchQueries[shelfId]) 
+			|| shelfSearchQueries[shelfId]?.trim() === query.trim()) {
+			return;
+		}
+
 		shelfSearchQueries[shelfId] = query;
 
 		// Clear existing timeout
@@ -271,10 +277,10 @@
 			return;
 		}
 
-		// Set new timeout for debounce (250ms)
+		// Set new timeout for debounce (500ms)
 		shelfSearchTimeouts[shelfId] = setTimeout(() => {
 			searchShelfItems(shelfId, 1);
-		}, 250) as unknown as number;
+		}, 500) as unknown as number;
 	}
 
 	// Navigate to a specific page
@@ -1431,7 +1437,7 @@
 								<!-- Items Content Area -->
 								{#if loadingShelfItems.includes(shelf.id)}
 									<!-- Show skeleton while loading items -->
-									<ShelfItemsSkeleton rows={3} />
+									<ShelfItemsSkeleton rows={2} />
 								{:else if shelf.items.length === 0}
 									<div class="px-6 py-8 text-center" data-testid="empty-shelf-state">
 										<svg
@@ -1591,7 +1597,7 @@
 
 									<!-- Pagination Controls -->
 									{#if shelf.totalPages && shelf.totalPages > 1}
-										<div class="px-6 py-4 bg-gray-50 border-t border-gray-200">
+										<div class="px-6 py-4 bg-gray-50 border-t border-gray-200" data-testid="pagination-controls">
 											<div class="flex items-center justify-between">
 												<div class="text-sm text-gray-700">
 													Showing page <span class="font-medium">{shelf.currentPage || 1}</span>

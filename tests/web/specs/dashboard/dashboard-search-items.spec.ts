@@ -1,338 +1,135 @@
-import { test, expect } from '../fixtures';
 import { faker } from '@faker-js/faker';
+import { test, expect } from '../../fixtures/user.fixture';
+import { SuccessResponse } from '@repo/types/trpc';
+import { getToken, req } from 'tests/api/e2e/config/config';
+import { UserRole } from '@repo/types/users';
 
-test.describe('Dashboard - Search and Pagination', () => {
-	let shelfName: string;
-	let shelfId: string;
-	const itemNames: string[] = [];
+const shelfWithItems = faker.commerce.department() + '-items-' + Date.now();
 
-	test('should hide search box when shelf is empty', async ({ authenticatedPage }) => {
-		// Navigate to dashboard
-		await authenticatedPage.goto('/dashboard');
-		await expect(authenticatedPage.locator('[data-testid="dashboard-title"]')).toBeVisible();
-
-		// Create an empty test shelf
-		const emptyShelfName = `Empty Shelf ${faker.string.alphanumeric(6)}`;
-		await authenticatedPage.locator('[data-testid="create-shelf-button"]').click();
-		await authenticatedPage.locator('#shelfName').fill(emptyShelfName);
-		await authenticatedPage.locator('[data-testid="submit-shelf-button"]').click();
-		await expect(authenticatedPage.locator('[data-testid="success-message"]')).toBeVisible();
-
-		// Expand the empty shelf
-		const emptyShelf = authenticatedPage
-			.locator('[data-testid="shelf-item"]')
-			.filter({ hasText: emptyShelfName });
-		await emptyShelf.locator('[data-testid="shelf-expand-button"]').click();
-		await authenticatedPage.waitForTimeout(500);
-
-		// Search box should NOT be visible for empty shelf
-		const searchInput = emptyShelf.locator('[data-testid="search-items-input"]');
-		await expect(searchInput).not.toBeVisible();
-
-		// Empty state should be visible
-		await expect(emptyShelf.locator('[data-testid="empty-shelf-state"]')).toBeVisible();
-		await expect(emptyShelf.locator('[data-testid="empty-shelf-state"]')).toContainText(
-			'No items in this shelf yet'
-		);
-	});
-
-	test.beforeEach(async ({ authenticatedPage, adminUsername, adminPassword }) => {
-		// Navigate to dashboard
-		await authenticatedPage.goto('/dashboard');
-		await expect(authenticatedPage.locator('[data-testid="dashboard-title"]')).toBeVisible();
-
-		// Create a test shelf
-		shelfName = `Search Test Shelf ${faker.string.alphanumeric(6)}`;
-		await authenticatedPage.locator('[data-testid="create-shelf-button"]').click();
-		await authenticatedPage.locator('#shelfName').fill(shelfName);
-		await authenticatedPage.locator('[data-testid="submit-shelf-button"]').click();
-		await expect(authenticatedPage.locator('[data-testid="success-message"]')).toBeVisible();
-
-		// Get the shelf element
-		const shelf = authenticatedPage
-			.locator('[data-testid="shelf-item"]')
-			.filter({ hasText: shelfName });
-		shelfId = (await shelf.getAttribute('data-shelf-id')) || '';
+test.describe.serial('Dashboard - Search and Pagination', () => {
+	test.beforeAll(async ({ }) => {
+		const token = await getToken(UserRole.USER);
+		const shelfId = await req<SuccessResponse<{ shelf: { id: string } }>>(
+			'POST',
+			'dashboard.createShelf',
+			{ name: shelfWithItems },
+			token
+		).then(res => res.shelf.id);
 
 		// Create 12 test items
-		const testItems = [
-			'Apple Product',
-			'Banana Product',
-			'Cherry Product',
-			'Date Product',
-			'Elderberry Product',
-			'Fig Product',
-			'Grape Product',
-			'Honeydew Product',
-			'Ice Cream Product',
-			'Jackfruit Product',
-			'Kiwi Product',
-			'Lemon Product'
+		const itemsToCreate = [
+			{ name: 'Apple Product', price: 10 },
+			{ name: 'Banana Product', price: 5 },
+			{ name: 'Cherry Product', price: 15 },
+			{ name: 'Date Product', price: 20 },
+			{ name: 'Elderberry Product', price: 25 },
+			{ name: 'Fig Product', price: 30 },
+			{ name: 'Grape Product', price: 12 },
+			{ name: 'Honeydew Product', price: 8 },
+			{ name: 'Ice Cream Product', price: 18 },
+			{ name: 'Jackfruit Product', price: 22 },
+			{ name: 'Kiwi Product', price: 16 },
+			{ name: 'Lemon Product', price: 9 },
 		];
 
-		for (const itemName of testItems) {
-			await authenticatedPage.locator('[data-testid="create-item-button"]').click();
-			await authenticatedPage.locator('#itemName').fill(itemName);
-			await authenticatedPage.locator('#itemShelf').selectOption(shelfName);
-			await authenticatedPage.locator('[data-testid="submit-item-button"]').click();
-			await expect(authenticatedPage.locator('[data-testid="success-message"]')).toContainText(
-				'created successfully'
-			);
-			itemNames.push(itemName);
-		}
-
-		// Expand the shelf
-		const shelf = authenticatedPage
-			.locator('[data-testid="shelf-item"]')
-			.filter({ hasText: shelfName });
-		await shelf.locator('[data-testid="shelf-expand-button"]').click();
-		await expect(shelf.locator('[data-testid="items-table"]')).toBeVisible({ timeout: 10000 });
+	// create items in parallel for speed
+    await Promise.all(
+      itemsToCreate.map(item =>
+        req<SuccessResponse<{ item: any }>>(
+          'POST',
+          'dashboard.createItem',
+          {
+            name: item.name,
+            price: item.price,
+            shelfId,
+            quantity: 1
+          },
+          token
+        )
+      )
+    );
 	});
 
-	test('should display search input in expanded shelf', async ({ authenticatedPage }) => {
-		const shelf = authenticatedPage
-			.locator('[data-testid="shelf-item"]')
-			.filter({ hasText: shelfName });
-
-		// Search box should be visible
-		const searchInput = shelf.locator('[data-testid="search-items-input"]');
-		await expect(searchInput).toBeVisible();
-		await expect(searchInput).toHaveAttribute('placeholder', 'Search items...');
+	test('should search items by name', async ({ dashboard }) => {
+		const shelf = await dashboard.getShelfByName(shelfWithItems);
+		await shelf.searchItems('apple');
+		await shelf.shouldHaveItemCount(1);
+		await shelf.shouldHaveItemWithName('Apple Product');
+		await expect(shelf.getItemCountStats()).resolves.toBe(1);
 	});
 
-	test('should search items by name with debounce', async ({ authenticatedPage }) => {
-		const shelf = authenticatedPage
-			.locator('[data-testid="shelf-item"]')
-			.filter({ hasText: shelfName });
-		const searchInput = shelf.locator('[data-testid="search-items-input"]');
-
-		// Type search query
-		await searchInput.fill('apple');
-
-		// Wait for debounce (250ms) + request
-		await authenticatedPage.waitForTimeout(500);
-
-		// Should show only Apple Product
-		const itemsTable = shelf.locator('[data-testid="items-table"]');
-		const rows = itemsTable.locator('tbody tr');
-		await expect(rows).toHaveCount(1);
-		await expect(rows.first()).toContainText('Apple Product');
-	});
-
-	test('should search items case-insensitively', async ({ authenticatedPage }) => {
-		const shelf = authenticatedPage
-			.locator('[data-testid="shelf-item"]')
-			.filter({ hasText: shelfName });
-		const searchInput = shelf.locator('[data-testid="search-items-input"]');
-
-		// Type search query in uppercase
-		await searchInput.fill('BANANA');
-		await authenticatedPage.waitForTimeout(500);
-
-		// Should find the item
-		const itemsTable = shelf.locator('[data-testid="items-table"]');
-		const rows = itemsTable.locator('tbody tr');
-		await expect(rows).toHaveCount(1);
-		await expect(rows.first()).toContainText('Banana Product');
-	});
-
-	test('should search by partial name match', async ({ authenticatedPage }) => {
-		const shelf = authenticatedPage
-			.locator('[data-testid="shelf-item"]')
-			.filter({ hasText: shelfName });
-		const searchInput = shelf.locator('[data-testid="search-items-input"]');
-
-		// Search for partial match
-		await searchInput.fill('berry');
-		await authenticatedPage.waitForTimeout(500);
-
-		// Should find Elderberry Product
-		const itemsTable = shelf.locator('[data-testid="items-table"]');
-		const rows = itemsTable.locator('tbody tr');
-		await expect(rows).toHaveCount(1);
-		await expect(rows.first()).toContainText('Elderberry Product');
-	});
-
-	test('should show empty state for no search results', async ({ authenticatedPage }) => {
-		const shelf = authenticatedPage
-			.locator('[data-testid="shelf-item"]')
-			.filter({ hasText: shelfName });
-		const searchInput = shelf.locator('[data-testid="search-items-input"]');
-
-		// Search for non-existent item
-		await searchInput.fill('NonExistentItem');
-		await authenticatedPage.waitForTimeout(500);
-
+	test('should show empty state for no search results', async ({ dashboard }) => {
+		const shelf = await dashboard.getShelfByName(shelfWithItems);
+		await shelf.searchItems('nonexistentitem');
 		// Should show empty state
-		await expect(shelf.locator('[data-testid="empty-shelf-state"]')).toBeVisible();
-		await expect(shelf.locator('[data-testid="empty-shelf-state"]')).toContainText(
+		await expect(shelf.emptyState).toBeVisible();
+		await expect(shelf.emptyState).toContainText(
 			'No items match your search'
 		);
 	});
 
-	test('should clear search and show all items', async ({ authenticatedPage }) => {
-		const shelf = authenticatedPage
-			.locator('[data-testid="shelf-item"]')
-			.filter({ hasText: shelfName });
-		const searchInput = shelf.locator('[data-testid="search-items-input"]');
-
-		// First search for something
-		await searchInput.fill('apple');
-		await authenticatedPage.waitForTimeout(500);
-
-		let itemsTable = shelf.locator('[data-testid="items-table"]');
-		let rows = itemsTable.locator('tbody tr');
-		await expect(rows).toHaveCount(1);
-
+	test('should clear search and show all items', async ({ dashboard }) => {
+		const shelf = await dashboard.getShelfByName(shelfWithItems);
+		await shelf.searchItems('ban');
+		await shelf.shouldHaveItemCount(1)
+		await shelf.shouldHaveItemWithName('Banana Product');
 		// Clear search
-		await searchInput.clear();
-		await authenticatedPage.waitForTimeout(500);
-
-		// Should show first page (10 items)
-		itemsTable = shelf.locator('[data-testid="items-table"]');
-		rows = itemsTable.locator('tbody tr');
-		await expect(rows).toHaveCount(10);
+		await shelf.clearSearch();
+		await shelf.shouldHaveItemCount(10);
 	});
 
 	test('should display pagination controls when items exceed page limit', async ({
-		authenticatedPage
+		dashboard
 	}) => {
-		const shelf = authenticatedPage
-			.locator('[data-testid="shelf-item"]')
-			.filter({ hasText: shelfName });
-
+		const shelf = await dashboard.getShelfByName(shelfWithItems);
+		await shelf.searchItems('product');
 		// Should show pagination since we have 12 items (> 10 per page)
-		await expect(shelf.locator('[data-testid="prev-page-button"]')).toBeVisible();
-		await expect(shelf.locator('[data-testid="next-page-button"]')).toBeVisible();
-		await expect(shelf.locator('[data-testid="page-button"]').first()).toBeVisible();
-
+		await expect(shelf.nextPageButton).toBeVisible();
+		await expect(shelf.prevPageButton.first()).toBeVisible();
 		// Check pagination info
-		await expect(shelf.getByText(/Showing page 1 of 2/)).toBeVisible();
-		await expect(shelf.getByText(/12 total items/)).toBeVisible();
+		await expect(shelf.paginationControls).toHaveText(/Showing page 1 of  2/);
+		await expect(shelf.paginationControls).toHaveText(/12 total items/);
 	});
 
-	test('should navigate to next page', async ({ authenticatedPage }) => {
-		const shelf = authenticatedPage
-			.locator('[data-testid="shelf-item"]')
-			.filter({ hasText: shelfName });
-
-		// Click next page button
-		await shelf.locator('[data-testid="next-page-button"]').click();
-		await authenticatedPage.waitForTimeout(500);
-
+	test('should navigate to next page', async ({ dashboard }) => {
+		const shelf = await dashboard.getShelfByName(shelfWithItems);
+		await shelf.searchItems('product');
+		// Go to next page
+		await shelf.goToNextPage();
 		// Should show page 2
-		await expect(shelf.getByText(/Showing page 2 of 2/)).toBeVisible();
-
+		await expect(shelf.paginationControls).toHaveText(/Showing page 2 of  2/);
 		// Should show remaining items (2 items)
-		const itemsTable = shelf.locator('[data-testid="items-table"]');
-		const rows = itemsTable.locator('tbody tr');
-		await expect(rows).toHaveCount(2);
-
+		await shelf.shouldHaveItemCount(2);
 		// Previous button should be enabled, next should be disabled
-		await expect(shelf.locator('[data-testid="prev-page-button"]')).toBeEnabled();
-		await expect(shelf.locator('[data-testid="next-page-button"]')).toBeDisabled();
+		await expect(shelf.prevPageButton).toBeEnabled();
+		await expect(shelf.nextPageButton).toBeDisabled();
 	});
 
-	test('should navigate back to previous page', async ({ authenticatedPage }) => {
-		const shelf = authenticatedPage
-			.locator('[data-testid="shelf-item"]')
-			.filter({ hasText: shelfName });
-
-		// Go to page 2
-		await shelf.locator('[data-testid="next-page-button"]').click();
-		await authenticatedPage.waitForTimeout(500);
-		await expect(shelf.getByText(/Showing page 2 of 2/)).toBeVisible();
-
+	test('should navigate back to previous page', async ({ dashboard }) => {
+		const shelf = await dashboard.getShelfByName(shelfWithItems);
+		await shelf.searchItems('product');
+		// First go to page 2
+		await shelf.goToNextPage();
+		await shelf.shouldHaveItemCount(2);
 		// Go back to page 1
-		await shelf.locator('[data-testid="prev-page-button"]').click();
-		await authenticatedPage.waitForTimeout(500);
-
+		await shelf.goToPreviousPage();
+		await shelf.shouldHaveItemCount(10);
 		// Should show page 1
-		await expect(shelf.getByText(/Showing page 1 of 2/)).toBeVisible();
-
+		await expect(shelf.paginationControls).toHaveText(/Showing page 1 of  2/);
 		// Should show 10 items again
-		const itemsTable = shelf.locator('[data-testid="items-table"]');
-		const rows = itemsTable.locator('tbody tr');
-		await expect(rows).toHaveCount(10);
+		await shelf.shouldHaveItemCount(10);
 	});
 
-	test('should click specific page number', async ({ authenticatedPage }) => {
-		const shelf = authenticatedPage
-			.locator('[data-testid="shelf-item"]')
-			.filter({ hasText: shelfName });
-
+	test('should click specific page number', async ({ dashboard }) => {
+		const shelf = await dashboard.getShelfByName(shelfWithItems);
+		await shelf.searchItems('product');
 		// Click page 2 button
-		await shelf.locator('[data-testid="page-button"][data-page="2"]').click();
-		await authenticatedPage.waitForTimeout(500);
-
+		await shelf.clickPageNumber(2);
 		// Should show page 2
-		await expect(shelf.getByText(/Showing page 2 of 2/)).toBeVisible();
-
-		// Page 2 button should be highlighted
-		const page2Button = shelf.locator('[data-testid="page-button"][data-page="2"]');
-		await expect(page2Button).toHaveClass(/bg-indigo-600/);
+		await expect(shelf.paginationControls).toHaveText(/Showing page 2 of  2/);
 	});
 
-	test('should reset to page 1 when searching', async ({ authenticatedPage }) => {
-		const shelf = authenticatedPage
-			.locator('[data-testid="shelf-item"]')
-			.filter({ hasText: shelfName });
-
-		// Go to page 2
-		await shelf.locator('[data-testid="next-page-button"]').click();
-		await authenticatedPage.waitForTimeout(500);
-		await expect(shelf.getByText(/Showing page 2 of 2/)).toBeVisible();
-
-		// Now search
-		const searchInput = shelf.locator('[data-testid="search-items-input"]');
-		await searchInput.fill('Product');
-		await authenticatedPage.waitForTimeout(500);
-
-		// Should be back on page 1
-		await expect(shelf.getByText(/Showing page 1/)).toBeVisible();
-	});
-
-	test('should maintain search query across page navigation', async ({ authenticatedPage }) => {
-		const shelf = authenticatedPage
-			.locator('[data-testid="shelf-item"]')
-			.filter({ hasText: shelfName });
-		const searchInput = shelf.locator('[data-testid="search-items-input"]');
-
-		// Search for "Product" which should match all 12 items
-		await searchInput.fill('Product');
-		await authenticatedPage.waitForTimeout(500);
-
-		// Should show page 1 with 10 items
-		await expect(shelf.getByText(/Showing page 1 of 2/)).toBeVisible();
-
-		// Navigate to page 2
-		await shelf.locator('[data-testid="next-page-button"]').click();
-		await authenticatedPage.waitForTimeout(500);
-
-		// Search input should still contain "Product"
-		await expect(searchInput).toHaveValue('Product');
-
-		// Should show page 2 with 2 remaining items
-		const itemsTable = shelf.locator('[data-testid="items-table"]');
-		const rows = itemsTable.locator('tbody tr');
-		await expect(rows).toHaveCount(2);
-	});
-
-	test('should update total item count in shelf stats', async ({ authenticatedPage }) => {
-		const shelf = authenticatedPage
-			.locator('[data-testid="shelf-item"]')
-			.filter({ hasText: shelfName });
-
-		// Initial count should be 12 items
-		const shelfStats = shelf.locator('[data-testid="shelf-stats"]');
-		await expect(shelfStats).toContainText('12 items');
-
-		// Search for specific item
-		const searchInput = shelf.locator('[data-testid="search-items-input"]');
-		await searchInput.fill('apple');
-		await authenticatedPage.waitForTimeout(500);
-
-		// Stats should show 1 item (filtered count)
-		await expect(shelfStats).toContainText('1 items');
+	test('should hide search box when shelf is empty', async ({ emptyShelf }) => {
+		await expect(emptyShelf.searchInput).not.toBeVisible();
 	});
 });

@@ -4,7 +4,7 @@ import { Unit } from '@repo/types/units';
 
 test.describe('Dashboard - Item Management', () => {
 
-  test('should show shelf options in item creation form', async ({ dashboard, shelf }) => {
+  test('should show shelf options in item creation form', async ({ dashboard, emptyShelf }) => {
     await dashboard.openCreateItemForm();
 
     // Verify shelf select is populated with at least our test shelf
@@ -14,15 +14,15 @@ test.describe('Dashboard - Item Management', () => {
 
     // Verify our test shelf is in the options
     const optionsText = await options.allTextContents();
-    expect(optionsText).toContain(await shelf.getName());
+    expect(optionsText).toContain(await emptyShelf.getName());
 
     await dashboard.cancelItemCreation();
   });
 
-  test('should create a basic item successfully', async ({ dashboard, shelf, randomItemName }) => {
+  test('should create a basic item successfully', async ({ dashboard, emptyShelf, randomItemName }) => {
     // Create basic item (name + shelf only)
-    await dashboard.createBasicItem(randomItemName, shelf);
-
+    const shelf = await dashboard.createBasicItem(randomItemName, emptyShelf);
+    
     // Verify success message
     await dashboard.waitForSuccessMessage();
     const successMessage = await dashboard.getSuccessMessageText();
@@ -33,10 +33,10 @@ test.describe('Dashboard - Item Management', () => {
   });
 
   test('should create an item with advanced fields including cost, unit and labels', { tag: '@smoke' },
-    async ({ dashboard, shelf, randomItemName, label1, label2 }) => {
+    async ({ dashboard, emptyShelf, randomItemName, label1, label2 }) => {
       const itemData = {
         name: randomItemName,
-        shelf,
+        shelf: emptyShelf,
         description: faker.commerce.productDescription(),
         price: parseFloat(faker.commerce.price()),
         cost: parseFloat((Math.random() * 50 + 10).toFixed(2)), // Random cost between 10-60
@@ -44,11 +44,10 @@ test.describe('Dashboard - Item Management', () => {
         unit: Unit.KG,
         labels: [label1, label2]
       };
-
       await dashboard.page.waitForTimeout(1000); // Wait for any UI animations to complete
 
       // Create item with all fields
-      await dashboard.createAdvancedItem(itemData);
+      const shelf = await dashboard.createAdvancedItem(itemData);
 
       // Verify success message
       await dashboard.waitForSuccessMessage();
@@ -69,10 +68,10 @@ test.describe('Dashboard - Item Management', () => {
       await expect(itemRow).toContainText(label2);
     });
 
-  test('should not create item without required fields', async ({ dashboard, shelf }) => {
+  test('should not create item without required fields', async ({ dashboard, emptyShelf }) => {
     // Try to create item without name
     await dashboard.openCreateItemForm();
-    await dashboard.itemShelfSelect.selectOption(await shelf.getName());
+    await dashboard.itemShelfSelect.selectOption(await emptyShelf.getName());
     await dashboard.submitItemButton.click();
 
     // Verify error message
@@ -93,14 +92,14 @@ test.describe('Dashboard - Item Management', () => {
     await dashboard.cancelItemCreation();
   });
 
-  test('should handle item creation form cancellation', async ({ dashboard, shelf }) => {
+  test('should handle item creation form cancellation', async ({ dashboard, emptyShelf }) => {
     // Get current item count in the test shelf
-    const initialItemCount = await shelf.getItemCount();
+    const initialItemCount = await emptyShelf.getItemCountStats();
 
     // Start creating item but cancel
     await dashboard.openCreateItemForm();
     await dashboard.itemNameInput.fill('cancelled-item');
-    await dashboard.itemShelfSelect.selectOption(await shelf.getName());
+    await dashboard.itemShelfSelect.selectOption(await emptyShelf.getName());
     await dashboard.toggleAdvancedFields();
     await dashboard.itemDescriptionInput.fill('This should not be saved');
     await dashboard.cancelItemCreation();
@@ -109,14 +108,14 @@ test.describe('Dashboard - Item Management', () => {
     await expect(dashboard.createItemForm).not.toBeVisible();
 
     // Verify item count hasn't changed
-    const finalItemCount = await shelf.getItemCount();
+    const finalItemCount = await emptyShelf.getItemCountStats();
     expect(finalItemCount).toBe(initialItemCount);
   });
 
-  test('should validate advanced field types including decimals', async ({ dashboard, shelf }) => {
+  test('should validate advanced field types including decimals', async ({ dashboard, emptyShelf }) => {
     await dashboard.openCreateItemForm();
     await dashboard.itemNameInput.fill('validation-test');
-    await dashboard.itemShelfSelect.selectOption(await shelf.getName());
+    await dashboard.itemShelfSelect.selectOption(await emptyShelf.getName());
 
     // Show advanced fields
     await dashboard.toggleAdvancedFields();
@@ -142,7 +141,17 @@ test.describe('Dashboard - Item Management', () => {
     await dashboard.cancelItemCreation();
   });
 
-  test('should calculate and display shelf totals correctly', async ({ shelf }) => {
+  test('should calculate and display shelf totals correctly', async ({ dashboard, emptyShelf }) => {
+    const shelf = await dashboard.createAdvancedItem({
+      name: 'Total Test Item 1',
+      shelf: emptyShelf,
+      price: 20.00,
+      cost: 10.00,
+      quantity: 2,
+      unit: Unit.PCS
+    });
+
+    await shelf.shouldHaveItemWithName('Total Test Item 1');
     // Get shelf stats and total value
     const totalValue = await shelf.getTotalValue();
 
@@ -151,11 +160,11 @@ test.describe('Dashboard - Item Management', () => {
 
     // Since we created items with specific prices, we can verify calculations
     // This is a basic check that the total is reasonable
-    expect(totalValue).toBeGreaterThanOrEqual(0);
+    expect(totalValue).toBe(40.00);
   });
 
-  test('should display items table with correct headers', async ({ dashboard, shelf }) => {
-    const itemsTable = shelf.itemsTable;
+  test('should display items table with correct headers', async ({ emptyShelf }) => {
+    const itemsTable = emptyShelf.itemsTable;
 
     if (await itemsTable.isVisible()) {
       // Verify table headers

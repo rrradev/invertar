@@ -5,9 +5,11 @@ export default class Shelf extends BaseComponent {
     itemsTable: Locator;
     stats: Locator;
     expandButton: Locator;
+    emptyState: Locator;
     totalValue: Locator;
     shelfName: Locator;
     searchInput: Locator;
+    paginationControls: Locator;
     prevPageButton: Locator;
     nextPageButton: Locator;
 
@@ -16,9 +18,11 @@ export default class Shelf extends BaseComponent {
         this.itemsTable = this.$.locator('[data-testid="items-table"]');
         this.stats = this.$.locator('[data-testid="shelf-stats"]');
         this.expandButton = this.$.locator('[data-testid="shelf-expand-button"]');
+        this.emptyState = this.$.locator('[data-testid="empty-shelf-state"]');
         this.totalValue = this.$.locator('[data-testid="shelf-total-value"]');
         this.shelfName = this.$.locator('[data-testid="shelf-name"]');
         this.searchInput = this.$.locator('[data-testid="search-items-input"]');
+        this.paginationControls = this.$.locator('[data-testid="pagination-controls"]');    
         this.prevPageButton = this.$.locator('[data-testid="prev-page-button"]');
         this.nextPageButton = this.$.locator('[data-testid="next-page-button"]');
     }
@@ -111,7 +115,7 @@ export default class Shelf extends BaseComponent {
         return result;
     }
 
-    async getItemCount(): Promise<number> {
+    async getItemCountStats(): Promise<number> {
         return parseInt((await this.stats.textContent())?.match(/(\d+) items/)?.[1] || '0');
     }
 
@@ -174,6 +178,18 @@ export default class Shelf extends BaseComponent {
 
     async isPreviousPageEnabled(): Promise<boolean> {
         return !(await this.prevPageButton.isDisabled());
+    }
+
+    async shouldHaveItemCount(count: number): Promise<void> {
+        const rows = this.itemsTable.locator('tbody tr');
+        await expect(rows).toHaveCount(count);
+    }
+
+    async clickPageNumber(pageNumber: number): Promise<void> {
+        const pageButton = this.$.locator('[data-testid="page-button"]', {
+            hasText: pageNumber.toString(),
+        });
+        await pageButton.click();
     }
 }
 
