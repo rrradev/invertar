@@ -50,7 +50,7 @@ test.describe.serial('Dashboard - Search and Pagination', () => {
     );
 	});
 
-	test('should search items by name', async ({ dashboard }) => {
+	test('should search items by name', { tag: '@smoke' }, async ({ dashboard }) => {
 		const shelf = await dashboard.getShelfByName(shelfWithItems);
 		await shelf.searchItems('apple');
 		await shelf.shouldHaveItemCount(1);
