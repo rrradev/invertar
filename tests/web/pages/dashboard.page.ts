@@ -191,11 +191,12 @@ export default class Dashboard extends BasePage {
         await expect(this.createShelfForm).not.toBeVisible();
     }
 
-    async createBasicItem(name: string, shelf: Shelf) {
+    async createBasicItem(name: string, shelf: Shelf) : Promise<Shelf> {
         await this.openCreateItemForm();
         await this.itemNameInput.fill(name);
         await this.itemShelfSelect.selectOption(await shelf.getShelfId());
         await this.submitItemButton.click();
+        return shelf;
     }
 
     async createAdvancedItem(data: {
@@ -207,7 +208,7 @@ export default class Dashboard extends BasePage {
         quantity?: number;
         unit?: string;
         labels?: string[];
-    }) {
+    }) : Promise<Shelf> {
         await this.openCreateItemForm();
         await this.itemNameInput.fill(data.name);
         await this.itemShelfSelect.selectOption(await data.shelf.getShelfId());
@@ -241,6 +242,7 @@ export default class Dashboard extends BasePage {
         }
 
         await this.submitItemButton.click();
+        return data.shelf;
     }
 
     async cancelItemCreation() {

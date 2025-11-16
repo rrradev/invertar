@@ -12,7 +12,8 @@ const password = process.env.USER_PASSWORD!;
 
 type MyFixtures = {
     dashboard: Dashboard;
-    shelf: Shelf;
+    emptyShelf: Shelf;
+    shelfWithItems: Shelf;
     randomItemName: string;
     accessToken: string;
     label1: string;
@@ -33,13 +34,15 @@ export const test = base.extend<MyFixtures>({
         await use(dashboard);
     },
 
-    shelf: async ({ dashboard }, use) => {
+    emptyShelf: async ({ dashboard }, use) => {
         // Create a shelf for item tests
         const testShelfName = faker.commerce.department() + '-items-' + Date.now();
         await dashboard.createShelf(testShelfName);
         await dashboard.waitForSuccessMessage();
         await dashboard.waitForShelvesToLoad();
         const shelf = await dashboard.getShelfByName(testShelfName);
+        await expect(shelf.emptyState).toBeVisible();
+        await expect(shelf.emptyState).toContainText('No items in this shelf yet');
         await use(shelf);
     },
 
@@ -53,15 +56,15 @@ export const test = base.extend<MyFixtures>({
         await use(token);
     },
 
-    label1: async ({ }, use) => {         
+    label1: async ({ }, use) => {
         const label = faker.commerce.productMaterial() + Date.now();
-         await req<any>(
-              'POST',
-              'dashboard.createLabel',
-              { name: label, color: faker.color.rgb() },
-              await getToken(UserRole.USER)
-            );
-            await use(label);
+        await req<any>(
+            'POST',
+            'dashboard.createLabel',
+            { name: label, color: faker.color.rgb() },
+            await getToken(UserRole.USER)
+        );
+        await use(label);
     },
 
     label2: async ({ }, use) => {

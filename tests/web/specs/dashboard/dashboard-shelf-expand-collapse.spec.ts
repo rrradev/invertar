@@ -2,20 +2,19 @@ import { test } from '../../fixtures/user.fixture';
 
 test.describe('Dashboard - Shelf Expand/Collapse', () => {
     test('should persist shelf state across page reloads', { tag: "@smoke" },
-        async ({ dashboard, shelf }) => {
-            await shelf.shouldBeExpanded();
+        async ({ dashboard, emptyShelf }) => {
+            await emptyShelf.shouldBeExpanded();
 
-            await shelf.collapse();
-            await shelf.shouldBeCollapsed();
-
+            await emptyShelf.collapse();
+            await emptyShelf.shouldBeCollapsed();
             await dashboard.page.reload();
-            await shelf.shouldBeCollapsed();
+            await emptyShelf.shouldBeCollapsed();
         });
     test('should be expanded for newly created shelves', { tag: "@smoke" },
-        async ({ dashboard, shelf }) => {
-            await shelf.shouldBeExpanded();
+        async ({ dashboard, emptyShelf }) => {
+            await emptyShelf.shouldBeExpanded();
 
             await dashboard.page.reload();
-            await shelf.shouldBeExpanded();
+            await emptyShelf.shouldBeExpanded();
         });
 });

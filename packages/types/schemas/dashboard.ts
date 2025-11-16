@@ -62,6 +62,13 @@ export const getShelfItemsInput = z.object({
   shelfId: z.string().min(1, "Shelf ID is required"),
 });
 
+export const searchShelfItemsInput = z.object({
+  shelfId: z.string().min(1, "Shelf ID is required"),
+  searchQuery: z.string().trim().optional(),
+  page: z.number().int().min(1).optional().default(1),
+  limit: z.number().int().min(1).max(100).optional().default(10),
+});
+
 export type CreateLabelInput = z.infer<typeof createLabelInput>;
 export type CreateShelfInput = z.infer<typeof createShelfInput>;
 export type CreateItemInput = z.infer<typeof createItemInput>;
@@ -72,3 +79,4 @@ export type DeleteItemInput = z.infer<typeof deleteItemInput>;
 export type AdjustItemQuantityInput = z.infer<typeof adjustItemQuantityInput>;
 export type UpdateShelfPreferenceInput = z.infer<typeof updateShelfPreferenceInput>;
 export type GetShelfItemsInput = z.infer<typeof getShelfItemsInput>;
+export type SearchShelfItemsInput = z.infer<typeof searchShelfItemsInput>;

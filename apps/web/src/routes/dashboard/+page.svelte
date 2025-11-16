@@ -45,11 +45,23 @@
 		lastModifiedBy: string;
 		isExpanded: boolean;
 		items: Item[];
+		// Search and pagination state
+		searchQuery?: string;
+		currentPage?: number;
+		totalPages?: number;
+		totalCount?: number;
+		hasNextPage?: boolean;
+		hasPreviousPage?: boolean;
 	}
 
 	let shelves = $state<Shelf[]>([]);
 	let labels = $state<Label[]>([]);
 	let recentLabels = $state<Label[]>([]);
+
+	// Search state per shelf
+	let shelfSearchQueries = $state<Record<string, string>>({});
+	let shelfSearchTimeouts = $state<Record<string, number>>({});
+	let shelfAbortControllers = $state<Record<string, AbortController>>({});
 
 	// Enhanced loading state with delay and minimum display time
 	let showSkeleton = $state(true);
@@ -155,19 +167,11 @@
 				shelves[shelfIndex].isExpanded = newExpandedState;
 			}
 
-			// If expanding, always reload items to get latest data
+			// If expanding, load items with search/pagination
 			if (newExpandedState) {
-				// Add to loading state immediately so skeleton shows right away
-				loadingShelfItems = [...loadingShelfItems, shelfId];
-
 				try {
-					const itemsResult = await trpc.dashboard.getShelfItems.query({ shelfId });
-					if (itemsResult.status === SuccessStatus.SUCCESS) {
-						// Update the shelf with loaded items
-						if (shelfIndex !== -1) {
-							shelves[shelfIndex].items = itemsResult.items as Item[];
-						}
-					}
+					// Use search function which handles pagination
+					await searchShelfItems(shelfId, 1);
 				} catch (err) {
 					console.error('Failed to load shelf items:', err);
 					error = 'Failed to load shelf items';
@@ -177,8 +181,6 @@
 						shelves[shelfIndex].isExpanded = false;
 					}
 					return;
-				} finally {
-					loadingShelfItems = loadingShelfItems.filter((id) => id !== shelfId);
 				}
 			}
 
@@ -197,6 +199,97 @@
 			if (shelfIndex !== -1) {
 				shelves[shelfIndex].isExpanded = !shelves[shelfIndex].isExpanded;
 			}
+		}
+	}
+
+	// Search items in a shelf with debounce and pagination
+	async function searchShelfItems(shelfId: string, page: number = 1) {
+		try {
+			const searchQuery = shelfSearchQueries[shelfId] || '';
+
+			// Cancel any ongoing request for this shelf
+			if (shelfAbortControllers[shelfId]) {
+				shelfAbortControllers[shelfId].abort();
+			}
+
+			// Don't search if query is empty string (but allow showing all with undefined)
+			const queryToUse = searchQuery.trim() === '' ? undefined : searchQuery;
+
+			// Add to loading state
+			loadingShelfItems = [...loadingShelfItems, shelfId];
+
+			const result = await trpc.dashboard.searchShelfItems.query({
+				shelfId,
+				searchQuery: queryToUse,
+				page,
+				limit: 10
+			});
+
+			if (result.status === SuccessStatus.SUCCESS) {
+				// Update the shelf with search results and pagination info
+				const shelfIndex = shelves.findIndex((s) => s.id === shelfId);
+				if (shelfIndex !== -1) {
+					shelves[shelfIndex] = {
+						...shelves[shelfIndex],
+						items: result.items as Item[],
+						searchQuery,
+						currentPage: result.pagination.page,
+						totalPages: result.pagination.totalPages,
+						totalCount: result.pagination.totalCount,
+						hasNextPage: result.pagination.hasNextPage,
+						hasPreviousPage: result.pagination.hasPreviousPage
+					};
+				}
+			}
+		} catch (err: any) {
+			// Ignore abort errors
+			if (err?.name !== 'AbortError') {
+				console.error('Failed to search shelf items:', err);
+				error = 'Failed to search items';
+				setTimeout(() => (error = ''), 3000);
+			}
+		} finally {
+			loadingShelfItems = loadingShelfItems.filter((id) => id !== shelfId);
+		}
+	}
+
+	// Handle search input with debounce
+	function handleSearchInput(shelfId: string, query: string) {
+		// No change if both previous and current queries are empty or identical
+		if ((query.trim() === '' && !shelfSearchQueries[shelfId]) 
+			|| shelfSearchQueries[shelfId]?.trim() === query.trim()) {
+			return;
+		}
+
+		shelfSearchQueries[shelfId] = query;
+
+		// Clear existing timeout
+		if (shelfSearchTimeouts[shelfId]) {
+			clearTimeout(shelfSearchTimeouts[shelfId]);
+		}
+
+		// Don't trigger search if query is empty or only whitespace
+		if (query.trim() === '') {
+			// If query becomes empty, reset to show all items
+			shelfSearchTimeouts[shelfId] = setTimeout(() => {
+				searchShelfItems(shelfId, 1);
+			}, 250) as unknown as number;
+			return;
+		}
+
+		// Set new timeout for debounce (500ms)
+		shelfSearchTimeouts[shelfId] = setTimeout(() => {
+			searchShelfItems(shelfId, 1);
+		}, 500) as unknown as number;
+	}
+
+	// Navigate to a specific page
+	function goToPage(shelfId: string, page: number) {
+		const shelf = shelves.find((s) => s.id === shelfId);
+		if (!shelf) return;
+
+		if (page >= 1 && page <= (shelf.totalPages || 1)) {
+			searchShelfItems(shelfId, page);
 		}
 	}
 
@@ -1283,7 +1376,11 @@
 									</div>
 									<div class="text-right">
 										<div class="text-sm text-gray-500" data-testid="shelf-stats">
-											{shelf.isExpanded ? shelf.items.length : '?'} items
+											{shelf.isExpanded
+												? shelf.totalCount !== undefined
+													? shelf.totalCount
+													: shelf.items.length
+												: '?'} items
 											{#if shelf.isExpanded}
 												• {Object.entries(getTotalItemsByUnit(shelf.items))
 													.map(([unit, total]) => (total ? `${total} ${unit}` : ''))
@@ -1303,9 +1400,44 @@
 
 							<!-- Items List - Only show when shelf is expanded -->
 							{#if shelf.isExpanded}
+								<!-- Search Box - Only show if shelf has items or search is active -->
+								{#if (shelf.totalCount !== undefined ? shelf.totalCount > 0 : shelf.items.length > 0) || shelfSearchQueries[shelf.id]}
+									<div class="px-6 py-4 bg-white border-b border-gray-200">
+										<div class="relative">
+											<div
+												class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none"
+											>
+												<svg
+													class="h-5 w-5 text-gray-400"
+													fill="none"
+													stroke="currentColor"
+													viewBox="0 0 24 24"
+												>
+													<path
+														stroke-linecap="round"
+														stroke-linejoin="round"
+														stroke-width="2"
+														d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
+													/>
+												</svg>
+											</div>
+											<input
+												type="text"
+												placeholder="Search items..."
+												value={shelfSearchQueries[shelf.id] || ''}
+												oninput={(e) => handleSearchInput(shelf.id, e.currentTarget.value)}
+												class="block w-full pl-10 pr-3 py-3 border border-gray-300 rounded-lg leading-5 bg-white placeholder-gray-500 focus:outline-none focus:placeholder-gray-400 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm transition-all duration-200 shadow-sm hover:shadow-md"
+												data-testid="search-items-input"
+												data-shelf-id={shelf.id}
+											/>
+										</div>
+									</div>
+								{/if}
+
+								<!-- Items Content Area -->
 								{#if loadingShelfItems.includes(shelf.id)}
 									<!-- Show skeleton while loading items -->
-									<ShelfItemsSkeleton rows={3} />
+									<ShelfItemsSkeleton rows={2} />
 								{:else if shelf.items.length === 0}
 									<div class="px-6 py-8 text-center" data-testid="empty-shelf-state">
 										<svg
@@ -1321,7 +1453,11 @@
 												d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"
 											/>
 										</svg>
-										<p class="mt-2 text-sm text-gray-500">No items in this shelf yet</p>
+										<p class="mt-2 text-sm text-gray-500">
+											{shelfSearchQueries[shelf.id]
+												? 'No items match your search'
+												: 'No items in this shelf yet'}
+										</p>
 									</div>
 								{:else}
 									<div class="overflow-x-auto">
@@ -1458,6 +1594,99 @@
 											</tbody>
 										</table>
 									</div>
+
+									<!-- Pagination Controls -->
+									{#if shelf.totalPages && shelf.totalPages > 1}
+										<div class="px-6 py-4 bg-gray-50 border-t border-gray-200" data-testid="pagination-controls">
+											<div class="flex items-center justify-between">
+												<div class="text-sm text-gray-700">
+													Showing page <span class="font-medium">{shelf.currentPage || 1}</span>
+													of{' '}
+													<span class="font-medium">{shelf.totalPages}</span>
+													<span class="text-gray-500 ml-2">
+														({shelf.totalCount || 0} total items)
+													</span>
+												</div>
+												<div class="flex items-center space-x-2">
+													<!-- Previous Button -->
+													<button
+														onclick={() => goToPage(shelf.id, (shelf.currentPage || 1) - 1)}
+														disabled={!shelf.hasPreviousPage}
+														class="relative inline-flex items-center px-3 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 hover:border-gray-400 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200 shadow-sm"
+														data-testid="prev-page-button"
+													>
+														<svg
+															class="h-4 w-4"
+															fill="none"
+															stroke="currentColor"
+															viewBox="0 0 24 24"
+														>
+															<path
+																stroke-linecap="round"
+																stroke-linejoin="round"
+																stroke-width="2"
+																d="M15 19l-7-7 7-7"
+															/>
+														</svg>
+														Previous
+													</button>
+
+													<!-- Page Numbers -->
+													{#each Array.from({ length: Math.min(5, shelf.totalPages) }, (_, i) => {
+														const current = shelf.currentPage || 1;
+														const total = shelf.totalPages || 1;
+														let pageNum;
+
+														if (total <= 5) {
+															pageNum = i + 1;
+														} else if (current <= 3) {
+															pageNum = i + 1;
+														} else if (current >= total - 2) {
+															pageNum = total - 4 + i;
+														} else {
+															pageNum = current - 2 + i;
+														}
+														return pageNum;
+													}) as pageNum}
+														<button
+															onclick={() => goToPage(shelf.id, pageNum)}
+															class="relative inline-flex items-center px-4 py-2 border text-sm font-medium rounded-md transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 {pageNum ===
+															(shelf.currentPage || 1)
+																? 'z-10 bg-gradient-to-r from-indigo-600 to-cyan-600 border-transparent text-white shadow-md hover:from-indigo-700 hover:to-cyan-700'
+																: 'bg-white border-gray-300 text-gray-700 hover:bg-gray-50 hover:border-gray-400'}"
+															data-testid="page-button"
+															data-page={pageNum}
+														>
+															{pageNum}
+														</button>
+													{/each}
+
+													<!-- Next Button -->
+													<button
+														onclick={() => goToPage(shelf.id, (shelf.currentPage || 1) + 1)}
+														disabled={!shelf.hasNextPage}
+														class="relative inline-flex items-center px-3 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 hover:border-gray-400 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200 shadow-sm"
+														data-testid="next-page-button"
+													>
+														Next
+														<svg
+															class="h-4 w-4 ml-1"
+															fill="none"
+															stroke="currentColor"
+															viewBox="0 0 24 24"
+														>
+															<path
+																stroke-linecap="round"
+																stroke-linejoin="round"
+																stroke-width="2"
+																d="M9 5l7 7-7 7"
+															/>
+														</svg>
+													</button>
+												</div>
+											</div>
+										</div>
+									{/if}
 								{/if}
 							{/if}
 						</div>

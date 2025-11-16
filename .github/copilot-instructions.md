@@ -132,6 +132,8 @@ Focus on E2E testing.
    - Use existing config from `tests/api/e2e/config/config.ts`
    - Do NOT add any additional libraries like `supertest` or `axios` or `fetch`, the `req` function in `tests/api/e2e/config/config.ts` should be used for making requests.
    - Create hooks and fixtures when needed and reuse them - DRY!
+   - All new tests should follow the established patterns and practices in existing tests. Check existing tests for examples. Examples:
+     - `tests\api\e2e\dashboard-shelf-preferences.test.ts`
    - Avoid the following assumption mistake in tests:
 ```
  Expected:
@@ -165,6 +167,8 @@ Focus on E2E testing.
    - Never invent success/ error messages, toasts, etc. - check the actual strings from the html and use them in your tests.
    - Avoid using locators directly in the specs/tests - instead create methods in the page objects and use those methods or expose the locators from the page objects.
    - Avoid `await page.goto(...)` in the tests for navigation - instead simulate user actions like clicks to navigate. Use `goto(...)` only when testing direct URL access, redirects or intercepting routes traffic.
+   - All new tests should follow the established patterns and practices in existing tests. Check existing tests for examples. Examples:
+     - `tests\web\specs\dashboard\dashboard-items.spec.ts`
    - Avoid unnecessary visibility checks mid test like:
    ```
      // Verify Create Admin button is visible

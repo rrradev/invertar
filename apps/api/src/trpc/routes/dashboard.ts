@@ -11,7 +11,8 @@ import {
   deleteItemInput,
   adjustItemQuantityInput,
   updateShelfPreferenceInput,
-  getShelfItemsInput
+  getShelfItemsInput,
+  searchShelfItemsInput
 } from '@repo/types/schemas/dashboard';
 import { SuccessStatus } from '@repo/types/trpc';
 import { generateItemHashId } from '@repo/utils/items';
@@ -913,6 +914,111 @@ export const dashboardRouter = router({
         preference: {
           shelfId: preference.shelfId,
           isExpanded: preference.isExpanded,
+        },
+      };
+    }),
+
+  // Search items in a specific shelf with pagination
+  searchShelfItems: protectedProcedure
+    .input(searchShelfItemsInput)
+    .query(async ({ input, ctx }) => {
+      // Verify shelf belongs to user's organization
+      const shelf = await prisma.shelf.findFirst({
+        where: {
+          id: input.shelfId,
+          organizationId: ctx.user!.organizationId,
+        },
+      });
+
+      if (!shelf) {
+        throw new TRPCError({
+          code: "NOT_FOUND",
+          message: "Shelf not found or access denied."
+        });
+      }
+
+      // Build search condition
+      const searchCondition = input.searchQuery && input.searchQuery.trim()
+        ? {
+            name: {
+              contains: input.searchQuery.trim(),
+              mode: 'insensitive' as const,
+            },
+          }
+        : {};
+
+      // Get total count for pagination
+      const totalCount = await prisma.item.count({
+        where: {
+          shelfId: input.shelfId,
+          ...searchCondition,
+        },
+      });
+
+      // Calculate pagination
+      const page = input.page ?? 1;
+      const limit = input.limit ?? 10;
+      const skip = (page - 1) * limit;
+      const totalPages = Math.ceil(totalCount / limit);
+
+      // Fetch paginated items
+      const items = await prisma.item.findMany({
+        where: {
+          shelfId: input.shelfId,
+          ...searchCondition,
+        },
+        include: {
+          lastModifiedBy: {
+            select: {
+              username: true,
+            },
+          },
+          labels: {
+            include: {
+              label: {
+                select: {
+                  id: true,
+                  name: true,
+                  color: true,
+                },
+              },
+            },
+          },
+        },
+        orderBy: {
+          createdAt: 'desc',
+        },
+        skip,
+        take: limit,
+      });
+
+      const formattedItems = items.map((item: any) => ({
+        id: item.id,
+        name: item.name,
+        description: item.description,
+        price: item.price,
+        cost: item.cost,
+        quantity: item.quantity,
+        unit: item.unit,
+        cloudinaryPublicId: item.cloudinaryPublicId,
+        labels: item.labels.map((itemLabel: any) => ({
+          id: itemLabel.label.id,
+          name: itemLabel.label.name,
+          color: itemLabel.label.color,
+        })),
+        createdAt: item.createdAt.toISOString(),
+      }));
+
+      return {
+        status: SuccessStatus.SUCCESS,
+        items: formattedItems,
+        pagination: {
+          page,
+          limit,
+          totalCount,
+          totalPages,
+          hasNextPage: page < totalPages,
+          hasPreviousPage: page > 1,
         },
       };
     }),
