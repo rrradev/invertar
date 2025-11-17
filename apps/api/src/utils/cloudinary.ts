@@ -1,5 +1,6 @@
 import { v2 as cloudinary } from 'cloudinary';
 import { env } from '../load-env';
+import { maskIdBase62 } from '@repo/auth/secure';
 
 // Configure Cloudinary
 cloudinary.config({
@@ -15,8 +16,8 @@ cloudinary.config({
  */
 export function generateUploadSignature(organizationId: string) {
   const timestamp = Math.round(new Date().getTime() / 1000);
-  const folder = `invertar/${organizationId}/items`;
-  
+  const folder = `invertar/${generateSlug(organizationId)}/items`;
+
   const params = {
     timestamp: timestamp,
     folder: folder,
@@ -41,7 +42,7 @@ export function generateUploadSignature(organizationId: string) {
  * @returns Signed URL
  */
 export function generateSignedUrl(
-  publicId: string, 
+  publicId: string,
   transformations?: {
     width?: number;
     height?: number;
@@ -51,7 +52,7 @@ export function generateSignedUrl(
 ) {
   // Build transformation object for Cloudinary SDK
   const transformationOptions: any = {};
-  
+
   if (transformations) {
     if (transformations.width) transformationOptions.width = transformations.width;
     if (transformations.height) transformationOptions.height = transformations.height;
@@ -120,6 +121,10 @@ export async function deleteImage(publicId: string) {
  * @returns boolean indicating if the public ID is valid for the organization
  */
 export function validatePublicIdForOrganization(publicId: string, organizationId: string): boolean {
-  const expectedPrefix = `invertar/${organizationId}/items/`;
+  const expectedPrefix = `invertar/${generateSlug(organizationId)}/items/`;
   return publicId.startsWith(expectedPrefix);
+}
+
+function generateSlug(organizationId: string): string {
+  return maskIdBase62(organizationId, 20);
 }

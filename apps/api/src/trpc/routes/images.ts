@@ -1,11 +1,10 @@
-import { router, protectedProcedure } from "../../trpc";
+import { router, protectedProcedure, adminProcedure } from "../../trpc";
 import { TRPCError } from "@trpc/server";
 import { z } from "zod";
 import { SuccessStatus } from "@repo/types/trpc";
 import { prisma } from "@repo/db";
 import { 
   generateUploadSignature, 
-  generateSignedUrl, 
   getItemThumbnailUrl,
   getItemMediumUrl,
   deleteImage,
@@ -83,7 +82,7 @@ export const imagesRouter = router({
     }),
 
   // Delete an image from Cloudinary
-  deleteImage: protectedProcedure
+  deleteImage: adminProcedure
     .input(deleteImageInput)
     .mutation(async ({ input, ctx }) => {
       // Validate that the public ID belongs to the user's organization

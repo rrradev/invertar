@@ -3,7 +3,7 @@ import { TRPCError } from "@trpc/server";
 import { prisma } from "@repo/db";
 import { createUserInput, deleteUserInput, resetUserInput } from '@repo/types/schemas/auth';
 import { UserRole } from "@repo/types/users/roles";
-import { generateAccessCode } from "@repo/auth/password";
+import { generateAccessCode } from "@repo/auth/secure";
 import { SuccessStatus } from '@repo/types/trpc';
 
 export const adminRouter = router({
