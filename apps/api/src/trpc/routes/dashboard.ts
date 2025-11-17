@@ -127,7 +127,7 @@ export const dashboardRouter = router({
           name: shelf.name,
           createdAt: shelf.createdAt.toISOString(),
           updatedAt: shelf.updatedAt.toISOString(),
-          lastModifiedBy: shelf.lastModifiedBy.username,
+          lastModifiedBy: shelf.lastModifiedBy?.username ?? "inactive user (x)",
           isExpanded,
           items,
         };
@@ -161,8 +161,8 @@ export const dashboardRouter = router({
       const newShelf = await prisma.shelf.create({
         data: {
           name: input.name,
-          organizationId: ctx.user!.organizationId,
-          lastModifiedById: ctx.user!.id,
+          organizationId: ctx.user?.organizationId ?? '',
+          lastModifiedById: ctx.user?.id ?? '',
         },
         include: {
           lastModifiedBy: {
@@ -190,7 +190,7 @@ export const dashboardRouter = router({
           name: newShelf.name,
           createdAt: newShelf.createdAt.toISOString(),
           updatedAt: newShelf.updatedAt.toISOString(),
-          lastModifiedBy: newShelf.lastModifiedBy.username,
+          lastModifiedBy: newShelf.lastModifiedBy?.username ?? "inactive user (x)",
           isExpanded: true, // New shelves should be expanded by default for better UX
           items: [],
         },

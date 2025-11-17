@@ -10,33 +10,16 @@ async function purgeAllTestUsers() {
 
     // Filter organizations whose name ends with a numeric pattern (timestamp-like)
     const testOrgs = allOrgs.filter(org => /\d{10,}$/.test(org.name));
-    
+
     for (const org of testOrgs) {
         if (!orgs.includes(org.name)) {
             orgs.push(org.name);
         }
     }
 
-    for (const orgName of orgs) {
-        const org = await prisma.organization.findUnique({
-            where: { name: orgName },
-            include: { shelves: { include: { items: true } } },
-        });
-
-        if (!org) continue;
-
-        await prisma.label.deleteMany({ where: { organizationId: org.id } });
-    
-        for (const shelf of org.shelves) {
-            await prisma.item.deleteMany({ where: { shelfId: shelf.id } });
-        }
-
-        await prisma.shelf.deleteMany({ where: { organizationId: org.id } });
-
-        await prisma.user.deleteMany({ where: { organizationId: org.id } });
-
-        await prisma.organization.delete({ where: { id: org.id } });
-    }
+    await prisma.organization.deleteMany({
+        where: { name: { in: orgs } }
+    });
 
     console.log('Purged all test users and organizations');
     await prisma.$disconnect();

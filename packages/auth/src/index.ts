@@ -11,3 +11,4 @@ export {
   verifyRefreshToken 
 } from './jwt';
 export { hashPassword, verifyPassword } from './password';
+export * from './secure';

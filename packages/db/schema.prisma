@@ -26,7 +26,7 @@ model User {
   oneTimeAccessCodeExpiry DateTime?
   role              UserRole     @default(USER)
   organizationId    String
-  organization      Organization @relation(fields: [organizationId], references: [id])
+  organization      Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
   refreshToken      String?
 
   // Back-relations for lastModifiedBy
@@ -65,15 +65,15 @@ model Shelf {
   id               String   @id @default(cuid())
   name             String
   organizationId   String
-  organization     Organization @relation(fields: [organizationId], references: [id])
+  organization     Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
   items            Item[]
   photos           Photo[]
   
   // User preferences for this shelf
   userPreferences  UserShelfPreference[]
 
-  lastModifiedById String
-  lastModifiedBy   User     @relation("ShelfLastModifiedBy", fields: [lastModifiedById], references: [id])
+  lastModifiedById String?
+  lastModifiedBy   User?     @relation("ShelfLastModifiedBy", fields: [lastModifiedById], references: [id], onDelete: SetNull)
 
   createdAt        DateTime @default(now())
   updatedAt        DateTime @updatedAt
@@ -84,7 +84,7 @@ model Label {
   name           String
   color          String   // Hex color code (e.g., #FF5733)
   organizationId String
-  organization   Organization @relation(fields: [organizationId], references: [id])
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
   items          ItemLabel[] // Many-to-many relation with items
 
   createdAt      DateTime @default(now())
@@ -112,14 +112,14 @@ model Item {
   quantity         Float       @default(0)
   unit             Unit        @default(PCS)
   shelfId          String
-  shelf            Shelf       @relation(fields: [shelfId], references: [id])
+  shelf            Shelf       @relation(fields: [shelfId], references: [id], onDelete: Cascade)
   photos           Photo[]
   labels           ItemLabel[] // Many-to-many relation with labels
   hashId           String      // Hash of name + sorted label names for uniqueness
   cloudinaryPublicId String?   // Cloudinary public ID for the item image
 
-  lastModifiedById String
-  lastModifiedBy   User        @relation("ItemLastModifiedBy", fields: [lastModifiedById], references: [id])
+  lastModifiedById String?
+  lastModifiedBy   User?       @relation("ItemLastModifiedBy", fields: [lastModifiedById], references: [id], onDelete: SetNull)
 
   createdAt        DateTime    @default(now())
   updatedAt        DateTime    @updatedAt
@@ -132,8 +132,8 @@ model Photo {
   url       String
   itemId    String?  // Photo belongs either to an item
   shelfId   String?  // or to a shelf
-  item      Item?    @relation(fields: [itemId], references: [id])
-  shelf     Shelf?   @relation(fields: [shelfId], references: [id])
+  item      Item?    @relation(fields: [itemId], references: [id], onDelete: Cascade)
+  shelf     Shelf?   @relation(fields: [shelfId], references: [id], onDelete: Cascade)
   createdAt DateTime @default(now())
 }
 
