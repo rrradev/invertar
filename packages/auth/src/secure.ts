@@ -12,19 +12,36 @@ export function generateAccessCode(length = 12): string {
   const allChars = letters + numbers;
 
   const getRandom = (chars: string, count: number) =>
-    Array.from({ length: count }, () => chars[crypto.randomBytes(1)[0] % chars.length]);
+    Array.from({ length: count }, () => {
+      let randomByte;
+      const limit = 256 - (256 % chars.length);
+      do {
+        randomByte = crypto.randomBytes(1)[0];
+      } while (randomByte >= limit);
+      return chars[randomByte % chars.length];
+    });
 
   const letterPart = getRandom(letters, 6);
   const numberPart = getRandom(numbers, 6);
 
   const combined = [...letterPart, ...numberPart];
   for (let i = combined.length - 1; i > 0; i--) {
-    const j = crypto.randomBytes(1)[0] % (i + 1);
+    let randomByte;
+    const limit = 256 - (256 % (i + 1));
+    do {
+      randomByte = crypto.randomBytes(1)[0];
+    } while (randomByte >= limit);
+    const j = randomByte % (i + 1);
     [combined[i], combined[j]] = [combined[j], combined[i]];
   }
 
   while (combined.length < length) {
-    combined.push(allChars[crypto.randomBytes(1)[0] % allChars.length]);
+    let randomByte;
+    const limit = 256 - (256 % allChars.length);
+    do {
+      randomByte = crypto.randomBytes(1)[0];
+    } while (randomByte >= limit);
+    combined.push(allChars[randomByte % allChars.length]);
   }
 
   return combined.join("");
