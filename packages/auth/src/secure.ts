@@ -59,9 +59,13 @@ export function maskIdBase62(id: string, length = 25): string {
   let value = BigInt("0x" + hash.toString("hex"));
   let slug = "";
 
-  for (let i = 0; i < length; i++) {
+  for (let i = 0; i < length && value !== 0n; i++) {
     slug += BASE62[Number(value % 62n)];
     value = value / 62n;
+  }
+  // Pad with BASE62[0] if slug is shorter than desired length
+  if (slug.length < length) {
+    slug = slug.padEnd(length, BASE62[0]);
   }
 
   return slug;
