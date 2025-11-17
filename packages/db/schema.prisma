@@ -73,7 +73,7 @@ model Shelf {
   userPreferences  UserShelfPreference[]
 
   lastModifiedById String?
-  lastModifiedBy   User?     @relation("ShelfLastModifiedBy", fields: [lastModifiedById], references: [id])
+  lastModifiedBy   User?     @relation("ShelfLastModifiedBy", fields: [lastModifiedById], references: [id], onDelete: SetNull)
 
   createdAt        DateTime @default(now())
   updatedAt        DateTime @updatedAt
